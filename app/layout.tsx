@@ -38,9 +38,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head>
-        <link rel="icon" href="/logos/liptis-nutrition.png" />
-      </head>
       <body className="min-h-screen flex flex-col font-sans selection:bg-blue-100 selection:text-blue-900">
         {children}
       </body>

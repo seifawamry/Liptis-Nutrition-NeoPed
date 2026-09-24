@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import {
   calculateLbwNutrition,
   NutritionCalculationResult,
@@ -327,10 +328,13 @@ export function NutritionEngine({
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                 {/* Product Tin Visual (max-h-200px) */}
                 <div className="shrink-0 flex items-center justify-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm">
-                  <img
+                  <Image
                     src={result.imageSrc}
                     alt="Pediamil 1 Standard Infant Formula Tin"
+                    width={180}
+                    height={200}
                     className="max-h-[190px] sm:max-h-[200px] w-auto object-contain drop-shadow-sm"
+                    unoptimized
                   />
                 </div>
 
@@ -527,10 +531,13 @@ export function NutritionEngine({
               {/* Product Pack Visual & Recommendation Banner */}
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
                 <div className="shrink-0 flex items-center justify-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
-                  <img
+                  <Image
                     src={result.imageSrc}
                     alt={`${result.formulaProfile.brand} Product Pack`}
+                    width={160}
+                    height={190}
                     className="max-h-[175px] sm:max-h-[190px] w-auto object-contain"
+                    unoptimized
                   />
                 </div>
                 <div className="space-y-2 flex-1 text-center sm:text-left">

@@ -268,10 +268,13 @@ export function FeedSheetModal({
             </h3>
             <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-50 p-2.5 rounded-md border border-slate-200">
               <div className="shrink-0 w-14 h-16 flex items-center justify-center bg-white rounded-lg border border-slate-200 p-1 shadow-2xs">
-                <img
+                <Image
                   src={nut.imageSrc}
                   alt={`${nut.formulaProfile.brand} Product Pack`}
+                  width={56}
+                  height={64}
                   className="max-h-full max-w-full object-contain"
+                  unoptimized
                 />
               </div>
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs w-full">
