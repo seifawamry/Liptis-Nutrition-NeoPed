@@ -60,15 +60,16 @@ export default function Home() {
     setHeadCircumferenceCm(27.2);
   }, [defaultDates]);
 
-  // Deterministic nutrition calculation with strict validation
-  const calculationResult = useMemo(() => {
-    return calculateLbwNutrition(weightGrams, fluidAllowance);
-  }, [weightGrams, fluidAllowance]);
-
   // Derived ages with strict validation
   const ages = useMemo(() => {
     return calculateAges(gaWeeks, gaDays, dob, dom);
   }, [gaWeeks, gaDays, dob, dom]);
+
+  // Deterministic nutrition calculation with strict validation & age-specific targets
+  const calculationResult = useMemo(() => {
+    const pmaWeeks = ages && !ages.isBlocked ? ages.pmaWeeksDecimal : undefined;
+    return calculateLbwNutrition(weightGrams, fluidAllowance, undefined, pmaWeeks);
+  }, [weightGrams, fluidAllowance, ages]);
 
   // Derived dataset & percentiles
   const growthDataset = useMemo(() => {
@@ -128,6 +129,7 @@ export default function Home() {
               onFluidChange={setFluidAllowance}
               calculationResult={calculationResult}
               onResetPatient={handleResetPatient}
+              ages={ages}
             />
           </section>
         )}

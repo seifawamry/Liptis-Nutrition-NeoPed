@@ -6,6 +6,7 @@ import {
   NutritionCalculationResult,
   ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
+import { AgeCalculations } from "@/lib/growth-engine";
 import { PatientNutrientPayload } from "./patient-nutrient-payload";
 import { ClinicalCard, RangeGauge, StatusBadge } from "./ui-primitives";
 import {
@@ -26,6 +27,7 @@ import {
   BookOpen,
   ChevronDown,
   ChevronUp,
+  Calendar,
 } from "lucide-react";
 
 interface NutritionEngineProps {
@@ -35,6 +37,7 @@ interface NutritionEngineProps {
   onFluidChange: (val: number) => void;
   calculationResult: NutritionCalculationResult;
   onResetPatient?: () => void;
+  ages?: AgeCalculations;
 }
 
 export function NutritionEngine({
@@ -44,6 +47,7 @@ export function NutritionEngine({
   onFluidChange,
   calculationResult: result,
   onResetPatient,
+  ages,
 }: NutritionEngineProps) {
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
@@ -290,6 +294,22 @@ export function NutritionEngine({
             icon={<Scale className="w-4 h-4 text-clinical-navy-800" aria-hidden="true" />}
           >
             <div className="space-y-5">
+              {/* Patient Gestational Age & PMA Stratification Banner */}
+              {ages && !ages.isBlocked && (
+                <div className="p-2.5 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50/70 border border-blue-200/90 text-xs flex items-center justify-between text-blue-950 shadow-2xs">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-3.5 h-3.5 text-blue-700 shrink-0" aria-hidden="true" />
+                    <span className="font-bold text-blue-950">Patient Gestation:</span>
+                    <span className="font-mono font-bold text-blue-900 bg-white px-2 py-0.5 rounded border border-blue-200 text-[11px]">
+                      PMA {ages.pmaFormatted}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-blue-700">
+                    Day of Life: <strong className="text-blue-950 font-mono">{ages.dayOfLife}</strong>
+                  </span>
+                </div>
+              )}
+
               {/* Weight Input */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
