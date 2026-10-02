@@ -528,27 +528,27 @@ export function NutritionEngine({
               className="p-6 rounded-2xl bg-blue-50 border-2 border-blue-400 shadow-sm space-y-5 text-blue-950"
             >
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                {/* Product Tin Visual (max-h-200px) with Quick Powder Niche */}
-                <div className="shrink-0 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm gap-2 w-full sm:w-auto">
+                {/* Product Tin Visual with Crisp Outlined Powder Box */}
+                <div className="shrink-0 flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl border-2 border-slate-300 shadow-sm gap-2.5 w-full sm:w-auto">
                   <Image
                     src={result.imageSrc || "/pediamil-1.png"}
                     alt="Pediamil 1 Standard Infant Formula Tin"
                     width={180}
                     height={200}
-                    className="max-h-[190px] sm:max-h-[200px] w-auto object-contain drop-shadow-sm"
+                    className="max-h-[190px] sm:max-h-[200px] w-auto object-contain drop-shadow-md"
                     unoptimized
                   />
                   {result.deliveredNutrientPayload && (
-                    <div className="w-full p-2 bg-blue-50/90 rounded-lg border border-blue-200 text-center text-[10.5px] space-y-0.5 shadow-2xs">
-                      <span className="font-bold text-blue-950 uppercase tracking-wider block text-[9.5px]">
+                    <div className="w-full p-2.5 bg-blue-50 rounded-xl border-2 border-blue-400 text-center text-xs space-y-0.5 shadow-xs">
+                      <span className="font-black text-blue-950 uppercase tracking-wider block text-[10px]">
                         Patient Daily Powder Need
                       </span>
-                      <div className="font-mono font-bold text-blue-900 text-sm">
+                      <div className="font-mono font-black text-blue-950 text-base">
                         {result.deliveredNutrientPayload.dailyPowderGrams}g{" "}
-                        <span className="text-[10px] font-normal text-blue-700">powder/day</span>
+                        <span className="text-xs font-semibold text-blue-800">powder/day</span>
                       </div>
-                      <div className="text-blue-800 text-[10px]">
-                        ≈ <strong>{result.deliveredNutrientPayload.dailyScoops}</strong> scoops/day
+                      <div className="text-blue-900 text-xs font-bold font-mono">
+                        ≈ {result.deliveredNutrientPayload.dailyScoops} scoops/day
                       </div>
                     </div>
                   )}
@@ -760,60 +760,60 @@ export function NutritionEngine({
               icon={<Info className="w-4 h-4 text-clinical-navy-800" />}
             >
               <div className="space-y-4 text-xs leading-relaxed text-slate-700">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="shrink-0 flex flex-col items-center justify-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs gap-2 w-full sm:w-auto">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-4 rounded-xl bg-slate-50 border-2 border-slate-300">
+                  <div className="shrink-0 flex flex-col items-center justify-center p-3 bg-white rounded-2xl border-2 border-slate-300 shadow-sm gap-2.5 w-full sm:w-auto">
                     <Image
                       src={result.imageSrc || "/pediamil-lbw.png"}
                       alt={`${result.formulaProfile.brand} Product Pack`}
-                      width={160}
-                      height={190}
-                      className="max-h-[175px] sm:max-h-[190px] w-auto object-contain"
+                      width={170}
+                      height={200}
+                      className="max-h-[185px] sm:max-h-[200px] w-auto object-contain drop-shadow-md"
                       unoptimized
                     />
                     {result.deliveredNutrientPayload && (
-                      <div className="w-full p-2 bg-emerald-50/90 rounded-lg border border-emerald-200 text-center text-[10.5px] space-y-0.5 shadow-2xs">
-                        <span className="font-bold text-emerald-950 uppercase tracking-wider block text-[9.5px]">
+                      <div className="w-full p-2.5 bg-emerald-50 rounded-xl border-2 border-emerald-400 text-center text-xs space-y-1 shadow-xs">
+                        <span className="font-black text-emerald-950 uppercase tracking-wider block text-[10px]">
                           Patient Daily Powder Need
                         </span>
-                        <div className="font-mono font-bold text-emerald-900 text-sm">
+                        <div className="font-mono font-black text-emerald-950 text-base">
                           {result.deliveredNutrientPayload.dailyPowderGrams}g{" "}
-                          <span className="text-[10px] font-normal text-emerald-700">powder/day</span>
+                          <span className="text-xs font-semibold text-emerald-800">powder/day</span>
                         </div>
-                        <div className="text-emerald-800 text-[10px]">
-                          ≈ <strong>{result.deliveredNutrientPayload.dailyScoops}</strong> scoops/day
+                        <div className="text-emerald-900 text-xs font-bold font-mono">
+                          ≈ {result.deliveredNutrientPayload.dailyScoops} scoops/day
                         </div>
                       </div>
                     )}
                   </div>
-                  <div className="space-y-2 flex-1 text-center sm:text-left">
+                  <div className="space-y-3 flex-1 text-center sm:text-left">
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                      <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
+                      <span className="px-3 py-1 rounded text-xs font-black uppercase tracking-wider bg-emerald-100 text-emerald-950 border-2 border-emerald-400">
                         Matrix: {result.formulaProfile.brand}
                       </span>
-                      <span className="text-slate-500 font-mono text-[11px]">
+                      <span className="text-slate-800 font-mono text-xs font-bold bg-slate-100 px-2.5 py-0.5 rounded border border-slate-300">
                         {result.isGraduated ? "Term Infant" : `${result.proteinBracket?.classification} Bracket`} ({result.currentWeightGrams}g)
                       </span>
                     </div>
-                    <p className="text-xs font-semibold text-slate-900 leading-relaxed bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                    <p className="text-xs font-bold text-slate-900 leading-relaxed bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-2xs">
                       {result.recommendationText}
                     </p>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-800 bg-white p-3 rounded-xl border-2 border-slate-300 shadow-2xs">
                       <div>
-                        <span className="text-slate-400 block text-[10px]">Energy Density</span>
-                        <strong>{result.formulaProfile.energyKcalPer100Ml} kcal/100mL</strong>
+                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Energy Density</span>
+                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.energyKcalPer100Ml} kcal/100mL</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px]">Protein Content</span>
-                        <strong>{result.formulaProfile.proteinGramsPer100Ml} g/100mL</strong>
+                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Protein Content</span>
+                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.proteinGramsPer100Ml} g/100mL</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px]">Carbohydrates</span>
-                        <strong>{result.formulaProfile.carbsGramsPer100Ml ?? "—"} g/100mL</strong>
+                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Carbohydrates</span>
+                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.carbsGramsPer100Ml ?? "—"} g/100mL</strong>
                       </div>
                       <div>
-                        <span className="text-slate-400 block text-[10px]">Total Lipids</span>
-                        <strong>{result.formulaProfile.fatGramsPer100Ml ?? "—"} g/100mL</strong>
+                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Total Lipids</span>
+                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.fatGramsPer100Ml ?? "—"} g/100mL</strong>
                       </div>
                     </div>
                   </div>
