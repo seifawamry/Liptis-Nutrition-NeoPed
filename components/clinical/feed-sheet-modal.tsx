@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { X, Printer, ShieldAlert, FileText, GraduationCap } from "lucide-react";
+import { X, Printer, ShieldAlert, FileText, GraduationCap, AlertTriangle } from "lucide-react";
 import {
   NutritionCalculationResult,
-  ESPGHAN_ENERGY_FRAMEWORK,
-  ESPGHAN_PE_RATIO_FRAMEWORK,
+  ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
 import { AgeCalculations, BiologicalSex, PercentileEvaluation } from "@/lib/growth-engine";
 
@@ -46,6 +45,7 @@ export function FeedSheetModal({
   const [nicuBed, setNicuBed] = useState("NICU Incubator #04 (Level III)");
   const [patientId, setPatientId] = useState("NEO-" + Math.floor(100000 + Math.random() * 900000));
   const [clinicianName, setClinicianName] = useState("Attending Neonatologist, MD / Clinical Dietitian");
+  const [allowNutritionOnly, setAllowNutritionOnly] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const printBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -101,6 +101,9 @@ export function FeedSheetModal({
     year: "numeric",
   });
 
+  const isGrowthBlocked = ages.isBlocked;
+  const isPrintingBlocked = nut.isBlocked || (isGrowthBlocked && !allowNutritionOnly);
+
   return (
     <div
       ref={modalRef}
@@ -128,7 +131,7 @@ export function FeedSheetModal({
               ref={printBtnRef}
               type="button"
               onClick={handlePrint}
-              disabled={nut.isBlocked}
+              disabled={isPrintingBlocked}
               aria-label="Print Hospital Feed Sheet or Save as PDF"
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-2 transition-all border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-50"
             >
@@ -148,16 +151,55 @@ export function FeedSheetModal({
 
         {/* Printable Feed Sheet Document Body */}
         <div className="p-6 sm:p-8 overflow-y-auto print:p-0 print:overflow-visible space-y-5 print:space-y-4 text-slate-900 bg-white">
-          {/* Safety Warning if Blocked */}
+          {/* CRITICAL STOP: Nutrition Validation Blocked */}
           {nut.isBlocked ? (
             <div className="p-8 bg-rose-50 border-2 border-rose-400 rounded-xl text-center space-y-3">
               <ShieldAlert className="w-10 h-10 text-rose-600 mx-auto" />
               <h3 className="text-base font-bold text-rose-900">
-                Feed Sheet Generation Blocked
+                Feed Sheet Generation Blocked: Invalid Nutritional Inputs
               </h3>
               <p className="text-xs text-rose-800 max-w-md mx-auto">
-                Patient parameters violate physiological safety boundaries. Correct invalid entries (e.g. weight &lt; 400g) in the primary module before printing enteral feed sheets.
+                Patient weight or fluid allowance violates clinical safety boundaries. Correct invalid entries (e.g. weight &lt; 400g) in the primary module before printing enteral feed sheets.
               </p>
+            </div>
+          ) : isGrowthBlocked && !allowNutritionOnly ? (
+            /* PREFERRED BEHAVIOR: Block if Demographic/Growth Data is Invalid */
+            <div className="p-8 bg-amber-50 border-2 border-amber-400 rounded-xl text-center space-y-4">
+              <AlertTriangle className="w-10 h-10 text-amber-600 mx-auto" />
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-amber-950">
+                  Feed sheet generation is unavailable until the growth-demographic validation errors are corrected.
+                </h3>
+                <p className="text-xs text-amber-800 max-w-md mx-auto">
+                  The clinical sheet cannot be generated with invalid or malformed dates (e.g. measurement date preceding birth date, invalid calendar day, or future assessment date).
+                </p>
+              </div>
+
+              <div className="p-3 bg-white rounded-lg border border-amber-200 text-left max-w-lg mx-auto text-xs space-y-1">
+                <span className="font-bold text-amber-900 block">Identified Validation Errors:</span>
+                <ul className="list-disc list-inside text-amber-950 space-y-0.5">
+                  {ages.validation.errors.map((err, i) => (
+                    <li key={i}>{err.message}</li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="pt-2 flex justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg text-xs font-semibold"
+                >
+                  Return and Correct Demographics
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAllowNutritionOnly(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow"
+                >
+                  Generate Nutrition-Only Sheet (Growth Omitted)
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -188,6 +230,11 @@ export function FeedSheetModal({
                 <div className="text-right">
                   <h1 className="text-base font-extrabold tracking-tight text-clinical-navy-950 uppercase">
                     Neonatal Enteral Feed Sheet
+                    {allowNutritionOnly && (
+                      <span className="block text-xs font-bold text-amber-700">
+                        (Nutrition-Only Calculation)
+                      </span>
+                    )}
                   </h1>
                   <p className="text-xs font-semibold text-slate-600">
                     ESPGHAN 2022 Preterm Nutrition Protocol
@@ -238,48 +285,47 @@ export function FeedSheetModal({
                 </div>
               </div>
 
-              {/* Section 1: Demographics & Age Assessment */}
+              {/* Section 1: Demographics & Age Assessment (Omitted or Clean in Nutrition-Only Mode) */}
               <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
                 <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                  <span>1. Gestational Milestones & Age Correction</span>
+                  <span>1. Gestational Milestones & Demographics</span>
                 </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div>
-                    <span className="text-slate-500 text-[11px] block">Biological Sex:</span>
-                    <strong className="text-slate-900 capitalize">
-                      {biologicalSex ? (biologicalSex === "male" ? "Male (♂)" : "Female (♀)") : "Unspecified"}
-                    </strong>
+
+                {allowNutritionOnly ? (
+                  <div className="p-2.5 bg-amber-50 rounded border border-amber-200 text-amber-900 text-xs">
+                    <strong>Nutrition-Only Notice:</strong> Growth assessment was not performed due to demographic validation errors. Malformed dates or calculated ages have been completely omitted from this record.
                   </div>
-                  <div>
-                    <span className="text-slate-500 text-[11px] block">GA at Birth:</span>
-                    <strong className="text-slate-900 font-mono">
-                      {gaWeeks}w + {gaDays}d
-                    </strong>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                      <span className="text-slate-500 text-[11px] block">Biological Sex:</span>
+                      <strong className="text-slate-900 capitalize">
+                        {biologicalSex ? (biologicalSex === "male" ? "Male (♂)" : "Female (♀)") : "Unspecified"}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[11px] block">GA at Birth:</span>
+                      <strong className="text-slate-900 font-mono">
+                        {gaWeeks}w + {gaDays}d
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[11px] block">Chronological Age:</span>
+                      <strong className="text-slate-900 font-mono">
+                        {ages.caFormatted}
+                      </strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 text-[11px] block">Post-Menstrual Age:</span>
+                      <strong className="text-blue-900 font-mono font-bold">
+                        {ages.pmaFormatted}
+                      </strong>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-slate-500 text-[11px] block">Chronological Age:</span>
-                    <strong className="text-slate-900 font-mono">
-                      {ages.caFormatted}
-                    </strong>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 text-[11px] block">Post-Menstrual Age:</span>
-                    <strong className="text-blue-900 font-mono font-bold">
-                      {ages.pmaFormatted}
-                    </strong>
-                  </div>
-                </div>
-                <div className="text-[11.5px] text-slate-600 pt-1 border-t border-slate-100 flex items-center justify-between">
-                  <span>
-                    <strong>Corrected Age (CCA):</strong> {ages.ccaFormatted}
-                  </span>
-                  <span className="font-mono text-slate-500">
-                    DOB: {dob} | Assessment: {dom}
-                  </span>
-                </div>
+                )}
               </div>
 
-              {/* Section 2: Enteral Feed Prescription & Feeding Schedule */}
+              {/* Section 2: Enteral Feed Prescription & Schedule */}
               <div className="border border-slate-200 rounded-lg p-3.5 space-y-3">
                 <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
                   <span>2. Enteral Nutrition Prescription & Schedule</span>
@@ -376,6 +422,19 @@ export function FeedSheetModal({
                     </p>
                   </div>
                 )}
+
+                {/* Preparation & Reconstitution Instructions */}
+                {nut.formulaProfile?.productProfile && (
+                  <div className="p-2.5 bg-slate-50 rounded border border-slate-200 text-[11px] space-y-1">
+                    <span className="font-bold text-slate-900 block">Preparation & Reconstitution Protocol:</span>
+                    <p className="text-slate-700">
+                      {nut.formulaProfile.productProfile.reconstitution.preparationInstructions}
+                    </p>
+                    <p className="text-[10px] text-slate-500 font-mono">
+                      Standard Dilution: {nut.formulaProfile.productProfile.reconstitution.standardDilutionPercent}% w/v ({nut.formulaProfile.productProfile.reconstitution.powderMassGramsPer100Ml}g powder per 100 mL feed).
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Section 3: ESPGHAN 2022 Macronutrient Compliance Audit */}
@@ -417,7 +476,7 @@ export function FeedSheetModal({
                         {nut.deliveredEnergyKcalPerKgPerDay} kcal/kg/day
                       </div>
                       <div className="text-[11px] text-slate-600 font-medium">
-                        ESPGHAN: {ESPGHAN_ENERGY_FRAMEWORK.TYPICAL_MIN}–{ESPGHAN_ENERGY_FRAMEWORK.TYPICAL_MAX} kcal/kg/d
+                        ESPGHAN: {ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MIN}–{ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MAX} kcal/kg/d
                       </div>
                       <div className="pt-1 flex items-center gap-1">
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${nut.energyCompliance?.badgeClass}`}>
@@ -452,12 +511,12 @@ export function FeedSheetModal({
                         Protein-to-Energy Ratio
                       </span>
                       <div className="text-sm font-bold font-mono text-slate-900">
-                        {nut.proteinToEnergyRatioGramsPer100Kcal} g / 100 kcal
+                        {nut.proteinToEnergyRatioGramsPer100Kcal} g/100 kcal
                       </div>
                       <div className="text-[11px] text-slate-600 font-medium">
-                        ESPGHAN: {ESPGHAN_PE_RATIO_FRAMEWORK.MIN_G_PER_100_KCAL}–{ESPGHAN_PE_RATIO_FRAMEWORK.MAX_G_PER_100_KCAL} g/100 kcal
+                        ESPGHAN: {ESPGHAN_DIRECT_GUIDELINES.PE_RATIO.MIN_G_PER_100_KCAL}–{ESPGHAN_DIRECT_GUIDELINES.PE_RATIO.MAX_G_PER_100_KCAL} g/100 kcal
                       </div>
-                      <div className="pt-1">
+                      <div className="pt-1 flex items-center gap-1">
                         <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${nut.peRatioCompliance?.badgeClass}`}>
                           {nut.peRatioCompliance?.badgeLabel}
                         </span>
@@ -465,74 +524,82 @@ export function FeedSheetModal({
                     </div>
                   </div>
                 )}
+              </div>
 
-                <p className="text-[11px] text-slate-600 italic bg-blue-50/60 p-2 rounded border border-blue-100 font-mono">
-                  {nut.clinicalSummary}
+              {/* Section 4: Anthropometric Growth Interpretation (Omitted in Nutrition-Only Mode) */}
+              {!allowNutritionOnly && weightPercentile && (
+                <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                    <span>4. Anthropometric Growth Trajectory Assessment</span>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
+                      <span className="text-slate-500 block text-[10px] uppercase font-semibold">Weight for Age:</span>
+                      <div className="font-bold text-slate-900 font-mono">
+                        {weightPercentile.percentileFormatted} ({weightPercentile.zScoreFormatted})
+                      </div>
+                      <p className="text-[10.5px] text-slate-600 leading-tight">{weightPercentile.clinicalNote}</p>
+                    </div>
+
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
+                      <span className="text-slate-500 block text-[10px] uppercase font-semibold">Length for Age:</span>
+                      <div className="font-bold text-slate-900 font-mono">
+                        {lengthPercentile ? `${lengthPercentile.percentileFormatted} (${lengthPercentile.zScoreFormatted})` : "Not recorded"}
+                      </div>
+                      <p className="text-[10.5px] text-slate-600 leading-tight">
+                        {lengthPercentile ? lengthPercentile.clinicalNote : "Optional measurement not entered."}
+                      </p>
+                    </div>
+
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
+                      <span className="text-slate-500 block text-[10px] uppercase font-semibold">Head Circumference:</span>
+                      <div className="font-bold text-slate-900 font-mono">
+                        {hcPercentile ? `${hcPercentile.percentileFormatted} (${hcPercentile.zScoreFormatted})` : "Not recorded"}
+                      </div>
+                      <p className="text-[10.5px] text-slate-600 leading-tight">
+                        {hcPercentile ? hcPercentile.clinicalNote : "Optional measurement not entered."}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic">
+                    Methodology: Linear interpolation between tabulated LMS parameters. Screening assessment only; not an automatic treatment recommendation.
+                  </p>
+                </div>
+              )}
+
+              {/* Institutional Sign-Off Block */}
+              <div className="border-t-2 border-slate-900 pt-4 grid grid-cols-2 gap-8 text-xs">
+                <div className="space-y-4">
+                  <span className="font-bold text-slate-900 block uppercase tracking-wider text-[11px]">
+                    Prescribing Attending Neonatologist / Pediatrician:
+                  </span>
+                  <div className="h-10 border-b border-dashed border-slate-400" />
+                  <div className="text-[10px] text-slate-500 flex justify-between font-mono">
+                    <span>Signature & Medical License Stamp</span>
+                    <span>Date / Time</span>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <span className="font-bold text-slate-900 block uppercase tracking-wider text-[11px]">
+                    Registered Clinical Dietitian / NICU Nurse Verification:
+                  </span>
+                  <div className="h-10 border-b border-dashed border-slate-400" />
+                  <div className="text-[10px] text-slate-500 flex justify-between font-mono">
+                    <span>Staff Signature & Hospital Badge ID</span>
+                    <span>Date / Time</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Regulatory & Institutional Audit Footnote */}
+              <div className="text-[10px] text-slate-400 pt-2 border-t border-slate-200 space-y-1 font-mono">
+                <p>
+                  <strong>Clinical Notice:</strong> {nut.auditMetadata.nonDeviceDisclaimer}
                 </p>
-              </div>
-
-              {/* Section 4: Somatic Growth & Anthropometric Percentile Assessment */}
-              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
-                <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                  <span>4. Somatic Growth Trajectory (Continuous LMS Standards)</span>
-                </h3>
-
-                <div className="grid grid-cols-3 gap-3 text-xs">
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md">
-                    <span className="text-slate-500 text-[11px] block">Weight:</span>
-                    <strong className="text-slate-900 font-mono">{nut.currentWeightGrams} g</strong>
-                    <div className="text-[11px] text-slate-700 mt-1 font-semibold">
-                      {weightPercentile?.percentileFormatted || "Evaluated"}
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-mono">
-                      Z-Score: {weightPercentile?.zScoreFormatted || "N/A"}
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md">
-                    <span className="text-slate-500 text-[11px] block">Length:</span>
-                    <strong className="text-slate-900 font-mono">{lengthCm} cm</strong>
-                    <div className="text-[11px] text-slate-700 mt-1 font-semibold">
-                      {lengthPercentile?.percentileFormatted || "Evaluated"}
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-mono">
-                      Z-Score: {lengthPercentile?.zScoreFormatted || "N/A"}
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-md">
-                    <span className="text-slate-500 text-[11px] block">Head Circ (OFC):</span>
-                    <strong className="text-slate-900 font-mono">{headCircumferenceCm} cm</strong>
-                    <div className="text-[11px] text-slate-700 mt-1 font-semibold">
-                      {hcPercentile?.percentileFormatted || "Evaluated"}
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-mono">
-                      Z-Score: {hcPercentile?.zScoreFormatted || "N/A"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 5: Clinician Signature Block & Clinical Disclaimers */}
-              <div className="pt-2 border-t border-slate-300 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 text-xs text-slate-600">
-                <div className="space-y-1 text-[10.5px] text-slate-500 max-w-md">
-                  <p>
-                    <strong>Clinical Notice:</strong> Reference calculation utility only. Not an order or prescription.
-                    Formulated against ESPGHAN 2022 guidelines and Fenton 2013 / WHO 2006 LMS standards.
-                    Clinical judgment, patient tolerance, diuresis, and electrolyte status supersede standardized calculations.
-                  </p>
-                  <p className="font-mono text-[10px] text-slate-400">
-                    Engine: {nut.auditMetadata.engineVersion} • Computed: {nut.auditMetadata.calculatedAtUtc}
-                  </p>
-                </div>
-
-                <div className="space-y-4 text-right w-full sm:w-auto">
-                  <div className="h-10 border-b border-slate-400 w-56 ml-auto" />
-                  <div className="text-[11px]">
-                    <strong className="text-slate-900 block">Attending Neonatologist / Dietitian Signature</strong>
-                    <span className="text-slate-400">Date & Stamp: ______________________</span>
-                  </div>
-                </div>
+                <p>
+                  <strong>Product Notice:</strong> {nut.productDisclaimer}
+                </p>
               </div>
             </>
           )}

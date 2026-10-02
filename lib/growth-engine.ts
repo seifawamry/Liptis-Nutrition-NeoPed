@@ -2,12 +2,22 @@
  * Liptis Nutrition NeoPed™ LBW Clinical Suite
  * Sex-Specific Growth, Age Correction & Longitudinal Tracking Engine
  * Reference: Fenton 2013 Preterm Growth Curves & WHO 2006 Child Growth Standards
- * Features continuous LMS interpolation, exact Z-scores, normal CDF percentiles,
- * and serial weight velocity calculations.
+ * 
+ * Technical Implementation:
+ * - Linear interpolation between tabulated LMS parameters
+ * - Exact Box-Cox Z-score calculation
+ * - Cumulative normal CDF percentiles
+ * - Patel et al. 2005 2-point exponential weight velocity
+ * - Cautious decision-support clinical interpretation wording
  */
 
 import growthLmsData from "./data/growth-curves-lms.json";
-import { validateGrowthInputs, ValidationReport, CLINICAL_BOUNDS } from "./validation";
+import {
+  validateGrowthInputs,
+  ValidationReport,
+  CLINICAL_BOUNDS,
+  parseStrictCalendarDate,
+} from "./validation";
 
 export type BiologicalSex = "male" | "female";
 export type GrowthMetric = "weight" | "length" | "headCircumference";
@@ -80,8 +90,37 @@ export interface GrowthChartDataset {
   patientPlotAge: number;
   isAgeOutOfRange: boolean;
   ageOutOfRangeWarning?: string;
+  routingRationale: string;
+  supportedAgeRange: string;
   data: CurvePoint[];
 }
+
+export interface TechnicalMethodology {
+  interpolationType: "Linear interpolation between tabulated LMS parameters";
+  lmsFormula: string;
+  percentileFormula: string;
+  extremeZHandling: string;
+  outOfRangeHandling: string;
+}
+
+export const TECHNICAL_METHODOLOGY: TechnicalMethodology = {
+  interpolationType: "Linear interpolation between tabulated LMS parameters",
+  lmsFormula: "Z = ((X / M)^L - 1) / (L * S) for L != 0; Z = ln(X / M) / S for L == 0",
+  percentileFormula: "Percentile = Phi(Z) * 100 via standard normal cumulative distribution function",
+  extremeZHandling: "WHO right-tail and left-tail standard deviation adjustments applied for |Z| > 3 SD per WHO MGRS specification",
+  outOfRangeHandling: "Values outside supported dataset age horizons (Fenton <22w or WHO >24m) return 'Out of range' status with no fabricated percentiles",
+};
+
+export const CLINICAL_INTERPRETATION_FACTORS = [
+  "Accurate gestational-age dating at birth (ultrasound vs LMP)",
+  "Reliable and standardized anthropometric measurement techniques",
+  "Serial longitudinal data rather than isolated single cross-sectional points",
+  "Fluid balance, third-spacing, and peripheral edema",
+  "Birth size, intrauterine growth trajectory, and birth percentile",
+  "Acute and chronic systemic illness (e.g. BPD, NEC, sepsis)",
+  "Actual enteral and parenteral nutrient intake",
+  "Serial laboratory and metabolic status (BUN, creatinine, electrolytes, acid-base)",
+];
 
 export interface PercentileEvaluation {
   metric: GrowthMetric;
@@ -89,14 +128,15 @@ export interface PercentileEvaluation {
   plotAge: number;
   ageUnit: string;
   p50Value: number;
-  zScore: number; // Exact continuous Z-score (e.g. -1.42)
-  zScoreFormatted: string; // "-1.42 SD"
-  percentile: number; // Exact continuous percentile (e.g. 7.8)
-  percentileFormatted: string; // "7.8th Percentile"
+  zScore: number;
+  zScoreFormatted: string; // e.g. "-1.42 SD"
+  percentile: number;
+  percentileFormatted: string; // e.g. "7.8th Percentile"
   percentileBracket: string;
   shortBadge: "<3rd" | "3rd-10th" | "10th-50th" | "50th-90th" | "90th-97th" | ">97th" | "Out of Range" | "N/A";
   badgeClass: string;
   clinicalNote: string;
+  clinicalCaveat: string;
   interpolatedLms: LmsParams;
   methodology: string;
 }
@@ -113,12 +153,13 @@ export interface LongitudinalRecord {
   weightZScore: number;
   weightPercentile: number;
   deltaWeightZScore?: number; // delta Z compared to previous record
-  weightVelocityGPerKgPerDay?: number; // Average weight velocity
+  weightVelocityGPerKgPerDay?: number; // Patel et al. 2005 2-point exponential model
   lengthZScore?: number;
   lengthPercentile?: number;
   hcZScore?: number;
   hcPercentile?: number;
   trendAlert?: string;
+  isDuplicateDate?: boolean;
 }
 
 /**
@@ -187,13 +228,13 @@ export function calculateWhoAdjustedWeightZScore(weightGrams: number, lms: LmsPa
 
 /**
  * Deterministic UTC-Safe Age Calculation Engine
- * Strict verification: Zero silent clamping of DOM < DOB.
+ * Rejects invalid dates, impossible dates, and future assessment dates.
  */
 export function calculateAges(
   gaWeeks: number,
   gaDays: number,
-  dateOfBirth: string | Date,
-  dateOfMeasurement: string | Date = new Date()
+  dateOfBirth: unknown,
+  dateOfMeasurement: unknown
 ): AgeCalculations {
   const validation = validateGrowthInputs({
     gaWeeks,
@@ -210,7 +251,7 @@ export function calculateAges(
     caDays: 0,
     caWeeksDecimal: 0,
     caMonthsDecimal: 0,
-    dayOfLife: 1,
+    dayOfLife: 0,
     caFormatted: "Validation Blocked",
     pmaTotalDays: 0,
     pmaWeeks: 0,
@@ -230,14 +271,15 @@ export function calculateAges(
     return emptyAge;
   }
 
-  const dob = typeof dateOfBirth === "string" ? new Date(dateOfBirth) : dateOfBirth;
-  const dom = typeof dateOfMeasurement === "string" ? new Date(dateOfMeasurement) : dateOfMeasurement;
+  const parsedDob = parseStrictCalendarDate(dateOfBirth);
+  const parsedDom = parseStrictCalendarDate(dateOfMeasurement);
 
-  const dobUtc = Date.UTC(dob.getFullYear(), dob.getMonth(), dob.getDate());
-  const domUtc = Date.UTC(dom.getFullYear(), dom.getMonth(), dom.getDate());
+  if (!parsedDob.isValid || !parsedDom.isValid || !parsedDob.utcTimestamp || !parsedDom.utcTimestamp) {
+    return emptyAge;
+  }
 
   const msPerDay = 24 * 60 * 60 * 1000;
-  const caTotalDays = Math.floor((domUtc - dobUtc) / msPerDay);
+  const caTotalDays = Math.floor((parsedDom.utcTimestamp - parsedDob.utcTimestamp) / msPerDay);
 
   const caWeeks = Math.floor(caTotalDays / 7);
   const caDays = caTotalDays % 7;
@@ -311,7 +353,7 @@ export function calculateAges(
  * Dynamic Dataset Routing:
  * - If PMA <= 50 weeks: Fenton Preterm Chart (PMA on X-axis)
  * - If PMA > 50 weeks: WHO Child Growth Standards (CCA in months on X-axis)
- * - Strict checking: flags if age exceeds chart boundary instead of silent clamping.
+ * - Returns explicit routing metadata, supported range, and clinical rationale.
  */
 export function getGrowthDataset(
   sex: BiologicalSex,
@@ -329,6 +371,8 @@ export function getGrowthDataset(
       patientPlotAge: 28,
       isAgeOutOfRange: true,
       ageOutOfRangeWarning: "Age calculation blocked by input validation.",
+      routingRationale: "Validation blocked; chart display inactive.",
+      supportedAgeRange: "22 to 50 weeks PMA",
       data: raw.points,
     };
   }
@@ -339,10 +383,10 @@ export function getGrowthDataset(
     const datasetKey = sex === "male" ? "fenton_male" : "fenton_female";
     const raw = (growthLmsData as Record<string, any>)[datasetKey];
 
-    const isUnderMin = ages.pmaWeeksDecimal < 22;
+    const isUnderMin = ages.pmaWeeksDecimal < CLINICAL_BOUNDS.FENTON_MIN_PMA_WEEKS;
     const isAgeOutOfRange = isUnderMin;
     const ageOutOfRangeWarning = isUnderMin
-      ? `PMA (${ages.pmaWeeksDecimal} weeks) is below the Fenton 2013 chart minimum of 22 weeks.`
+      ? `Post-menstrual age (${ages.pmaWeeksDecimal} weeks PMA) is below the Fenton 2013 chart lower limit of 22 weeks PMA.`
       : undefined;
 
     return {
@@ -355,6 +399,8 @@ export function getGrowthDataset(
       patientPlotAge: ages.pmaWeeksDecimal,
       isAgeOutOfRange,
       ageOutOfRangeWarning,
+      routingRationale: `Patient PMA is ${ages.pmaWeeksDecimal} weeks (<= 50 completed weeks). Fenton 2013 preterm reference standard applies.`,
+      supportedAgeRange: "22 to 50 completed weeks PMA",
       data: raw.points,
     };
   } else {
@@ -365,7 +411,7 @@ export function getGrowthDataset(
     const isOverMax = ccaMonths > CLINICAL_BOUNDS.WHO_MAX_CCA_MONTHS;
     const isAgeOutOfRange = isOverMax;
     const ageOutOfRangeWarning = isOverMax
-      ? `Corrected age (${ccaMonths.toFixed(1)} months) exceeds the supported WHO 0–24 month infant growth standard.`
+      ? `Corrected chronological age (${ccaMonths.toFixed(1)} months) exceeds the supported WHO 0–24 month infant growth standard.`
       : undefined;
 
     return {
@@ -378,13 +424,15 @@ export function getGrowthDataset(
       patientPlotAge: ccaMonths,
       isAgeOutOfRange,
       ageOutOfRangeWarning,
+      routingRationale: `Patient PMA (${ages.pmaWeeksDecimal} weeks) exceeds 50 weeks. Standard WHO 2006 Child Growth Standards applied with age corrected for prematurity.`,
+      supportedAgeRange: "0 to 24 months Corrected Chronological Age",
       data: raw.points,
     };
   }
 }
 
 /**
- * Continuous linear interpolation of LMS parameters between curve points
+ * Linear interpolation between tabulated LMS parameters
  */
 export function interpolateLms(
   targetAge: number,
@@ -402,7 +450,7 @@ export function interpolateLms(
     return { lms: pt.lms, p50: pt.p50 };
   }
 
-  // Find bounding points
+  // Find bounding tabulated points
   let lower = sorted[0];
   let upper = sorted[sorted.length - 1];
 
@@ -436,13 +484,17 @@ export function interpolateLms(
 }
 
 /**
- * Continuous LMS Percentile and Z-Score Evaluation Engine
+ * Anthropometric Percentile and Z-Score Evaluation Engine
+ * Uses linear interpolation between tabulated LMS parameters and cautious clinical wording.
  */
 export function evaluatePercentile(
   value: number | undefined,
   metric: GrowthMetric,
   dataset: GrowthChartDataset
 ): PercentileEvaluation {
+  const clinicalCaveat =
+    "Screening assessment only; not a diagnosis or automatic treatment recommendation. Evaluate alongside serial trajectory, clinical illness, and hydration.";
+
   const emptyEval: PercentileEvaluation = {
     metric,
     observedValue: 0,
@@ -457,8 +509,9 @@ export function evaluatePercentile(
     shortBadge: "N/A",
     badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
     clinicalNote: "Enter a valid measurement to determine exact percentile and Z-score.",
+    clinicalCaveat,
     interpolatedLms: { L: 1, M: 0, S: 0 },
-    methodology: "LMS continuous interpolation",
+    methodology: "Linear interpolation between tabulated LMS parameters",
   };
 
   if (value === undefined || value === null || isNaN(value) || value <= 0) {
@@ -472,10 +525,11 @@ export function evaluatePercentile(
       shortBadge: "Out of Range",
       badgeClass: "bg-amber-100 text-amber-900 border-amber-300",
       clinicalNote: dataset.ageOutOfRangeWarning || "Patient age is outside supported growth reference curves.",
+      clinicalCaveat,
     };
   }
 
-  // Interpolate continuous LMS
+  // Linear interpolation of LMS parameters
   const { lms, p50 } = interpolateLms(dataset.patientPlotAge, metric, dataset.data);
 
   // Compute exact continuous Z-score
@@ -494,7 +548,7 @@ export function evaluatePercentile(
   const roundedPercentile = Math.round(pNorm * 10) / 10;
   const percentileFormatted = `${roundedPercentile.toFixed(1)}th Percentile`;
 
-  // Determine standard clinical percentile bracket
+  // Determine standard clinical percentile bracket with cautious decision-support language
   let bracket = "";
   let shortBadge: PercentileEvaluation["shortBadge"] = "N/A";
   let badgeClass = "";
@@ -504,35 +558,41 @@ export function evaluatePercentile(
     bracket = "< 3rd Percentile (Significant Growth Restriction / Small for Gestational Age)";
     shortBadge = "<3rd";
     badgeClass = "bg-rose-100 text-rose-900 border-rose-300";
-    clinicalNote = "Significantly below expected percentile channel (Z < -1.88 SD). Indicates high risk of extrauterine growth restriction (EUGR); requires nutritional intensification review.";
+    clinicalNote =
+      "This value is a screening flag for clinician review. Interpret with serial growth, fluid status, measurement quality, illness severity, and nutrient intake.";
   } else if (roundedZ < -1.28) {
     bracket = "3rd to 10th Percentile (Mild Growth Restriction / Borderline Low Zone)";
     shortBadge = "3rd-10th";
     badgeClass = "bg-amber-100 text-amber-900 border-amber-300";
-    clinicalNote = "Borderline low somatic growth channel (-1.88 to -1.28 SD). Close clinical monitoring and optimized protein-to-energy ratio recommended.";
+    clinicalNote =
+      "Value lies in borderline low reference channel (-1.88 to -1.28 SD). Screening alert for clinician review; interpret with nutritional intake and serial growth.";
   } else if (roundedZ <= 0) {
     bracket = "10th to 50th Percentile (Normal Appropriate Range)";
     shortBadge = "10th-50th";
     badgeClass = "bg-emerald-100 text-emerald-900 border-emerald-300";
-    clinicalNote = "Appropriate for gestational age (AGA, -1.28 to 0 SD). Stable somatic growth trajectory.";
+    clinicalNote =
+      "Trajectory is within the selected reference channel; interpret alongside clinical context.";
   } else if (roundedZ <= 1.28) {
     bracket = "50th to 90th Percentile (Normal Appropriate Range)";
     shortBadge = "50th-90th";
     badgeClass = "bg-emerald-100 text-emerald-900 border-emerald-300";
-    clinicalNote = "Optimal catch-up trajectory within standard physiological limits (0 to +1.28 SD).";
+    clinicalNote =
+      "Trajectory is within the selected reference channel; interpret alongside clinical context.";
   } else if (roundedZ <= 1.88) {
     bracket = "90th to 97th Percentile (Upper Physiological Range)";
     shortBadge = "90th-97th";
     badgeClass = "bg-blue-100 text-blue-900 border-blue-300";
-    clinicalNote = "Robust somatic accretion (+1.28 to +1.88 SD). Verify fluid balance and metabolic tolerance.";
+    clinicalNote =
+      "Upper reference channel (+1.28 to +1.88 SD). Monitor somatic accretion and verify fluid balance.";
   } else {
     bracket = "> 97th Percentile (Large for Gestational Age / Macrocephaly)";
     shortBadge = ">97th";
     badgeClass = "bg-purple-100 text-purple-900 border-purple-300";
-    clinicalNote = "Exceeds 97th percentile band (Z > +1.88 SD). Screen for excessive fat accretion or fluid retention.";
+    clinicalNote =
+      "Value exceeds 97th percentile reference line (> +1.88 SD). Screening alert for clinician review; evaluate for fluid retention or maternal metabolic factors.";
   }
 
-  const methodology = `${dataset.standardName} (${dataset.sex === "male" ? "Boys" : "Girls"}) continuous LMS interpolation (L=${lms.L}, M=${lms.M}, S=${lms.S})`;
+  const methodology = `${dataset.standardName} (${dataset.sex === "male" ? "Boys" : "Girls"}) linear interpolation between tabulated LMS parameters (L=${lms.L}, M=${lms.M}, S=${lms.S})`;
 
   return {
     metric,
@@ -548,14 +608,16 @@ export function evaluatePercentile(
     shortBadge,
     badgeClass,
     clinicalNote,
+    clinicalCaveat,
     interpolatedLms: lms,
     methodology,
   };
 }
 
 /**
- * Computes Patel et al. 2005 average-weight neonatal growth velocity
- * Velocity = (W2 - W1) / [((W1 + W2)/2000) * deltaDays] (g/kg/day)
+ * Computes Patel et al. 2005 2-point exponential weight velocity
+ * Formula: Velocity = 1000 * ln(W2 / W1) / deltaDays (g/kg/day)
+ * If deltaDays <= 0 or weights are invalid, returns 0.
  */
 export function calculateWeightVelocity(
   w1Grams: number,
@@ -563,25 +625,30 @@ export function calculateWeightVelocity(
   deltaDays: number
 ): number {
   if (deltaDays <= 0 || w1Grams <= 0 || w2Grams <= 0) return 0;
-  const avgWeightKg = (w1Grams + w2Grams) / 2000;
-  const velocity = (w2Grams - w1Grams) / (avgWeightKg * deltaDays);
+  // Exponential model: 1000 * ln(W2 / W1) / deltaDays
+  const velocity = (1000 * Math.log(w2Grams / w1Grams)) / deltaDays;
   return Math.round(velocity * 10) / 10;
 }
 
 /**
  * Evaluates serial measurements for longitudinal tracking and percentile crossing alerts
+ * Safely handles duplicate dates, chronologically reversed records, and weight loss.
  */
 export function evaluateLongitudinalRecords(
   records: Array<{ date: string; weightGrams: number; lengthCm?: number; headCircumferenceCm?: number }>,
   gaWeeks: number,
   gaDays: number,
-  dob: string | Date,
+  dob: unknown,
   sex: BiologicalSex
 ): LongitudinalRecord[] {
   if (!records || records.length === 0) return [];
 
-  // Sort chronologically
-  const sorted = [...records].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  // Sort chronologically by parsed UTC timestamp
+  const sorted = [...records].sort((a, b) => {
+    const pA = parseStrictCalendarDate(a.date);
+    const pB = parseStrictCalendarDate(b.date);
+    return (pA.utcTimestamp || 0) - (pB.utcTimestamp || 0);
+  });
 
   const evaluated: LongitudinalRecord[] = [];
 
@@ -597,23 +664,34 @@ export function evaluateLongitudinalRecords(
     let deltaWeightZScore: number | undefined = undefined;
     let weightVelocity: number | undefined = undefined;
     let trendAlert: string | undefined = undefined;
+    let isDuplicateDate = false;
 
     if (i > 0) {
       const prev = evaluated[i - 1];
-      const prevDate = new Date(sorted[i - 1].date);
-      const currDate = new Date(item.date);
-      const deltaDays = Math.max(1, Math.floor((currDate.getTime() - prevDate.getTime()) / (24 * 60 * 60 * 1000)));
+      const pPrev = parseStrictCalendarDate(sorted[i - 1].date);
+      const pCurr = parseStrictCalendarDate(item.date);
 
-      deltaWeightZScore = Math.round((wEval.zScore - prev.weightZScore) * 100) / 100;
-      weightVelocity = calculateWeightVelocity(sorted[i - 1].weightGrams, item.weightGrams, deltaDays);
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const deltaDays = Math.floor(
+        ((pCurr.utcTimestamp || 0) - (pPrev.utcTimestamp || 0)) / msPerDay
+      );
 
-      // Clinical alert for channel crossing
-      if (deltaWeightZScore < -0.67) {
-        trendAlert = `Warning: Weight Z-score dropped by ${Math.abs(deltaWeightZScore).toFixed(2)} SD (>0.67 SD indicates dropping a full percentile channel, risk of EUGR).`;
-      } else if (deltaWeightZScore > 0.67) {
-        trendAlert = `Rapid catch-up growth: Weight Z-score increased by +${deltaWeightZScore.toFixed(2)} SD (>0.67 SD channel crossing).`;
-      } else {
-        trendAlert = "Stable trajectory tracking along growth channel (ΔZ within ±0.67 SD).";
+      if (deltaDays === 0) {
+        isDuplicateDate = true;
+        trendAlert = "Duplicate date entry; velocity cannot be computed across zero days.";
+      } else if (deltaDays > 0) {
+        deltaWeightZScore = Math.round((wEval.zScore - prev.weightZScore) * 100) / 100;
+        weightVelocity = calculateWeightVelocity(sorted[i - 1].weightGrams, item.weightGrams, deltaDays);
+
+        if (item.weightGrams < sorted[i - 1].weightGrams) {
+          trendAlert = `Screening alert for clinician review—not a diagnosis. Patient demonstrated negative weight velocity (${weightVelocity.toFixed(1)} g/kg/d).`;
+        } else if (deltaWeightZScore < -0.67) {
+          trendAlert = `Screening alert for clinician review—not a diagnosis. Weight Z-score declined by ${Math.abs(deltaWeightZScore).toFixed(2)} SD (>0.67 SD indicates dropping a full percentile channel).`;
+        } else if (deltaWeightZScore > 0.67) {
+          trendAlert = `Screening alert for clinician review—not a diagnosis. Rapid upward channel crossing (+${deltaWeightZScore.toFixed(2)} SD); monitor body composition.`;
+        } else {
+          trendAlert = "Trajectory tracking within reference growth channel (ΔZ within ±0.67 SD).";
+        }
       }
     }
 
@@ -635,6 +713,7 @@ export function evaluateLongitudinalRecords(
       hcZScore: hcEval?.zScore,
       hcPercentile: hcEval?.percentile,
       trendAlert,
+      isDuplicateDate,
     });
   }
 

@@ -10,6 +10,8 @@ import {
   evaluateLongitudinalRecords,
   LongitudinalRecord,
   AgeCalculations,
+  TECHNICAL_METHODOLOGY,
+  CLINICAL_INTERPRETATION_FACTORS,
 } from "@/lib/growth-engine";
 import { ClinicalCard } from "./ui-primitives";
 import {
@@ -37,6 +39,9 @@ import {
   History,
   AlertTriangle,
   CheckCircle2,
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface GrowthPlotterProps {
@@ -78,19 +83,25 @@ export function GrowthPlotter({
 }: GrowthPlotterProps) {
   const [activeMetric, setActiveMetric] = useState<GrowthMetric>("weight");
   const [showDataTable, setShowDataTable] = useState(false);
+  const [showMethodology, setShowMethodology] = useState(false);
   const [activeViewMode, setActiveViewMode] = useState<"chart" | "longitudinal">("chart");
 
   // Serial longitudinal measurements state (pre-seeded with 3 clinical visits)
   const [serialRecords, setSerialRecords] = useState<
     Array<{ date: string; weightGrams: number; lengthCm?: number; headCircumferenceCm?: number }>
   >(() => {
-    // Generate dates relative to DOB
     const d1 = new Date(dob);
     const d2 = new Date(d1);
     d2.setDate(d2.getDate() + 7);
     const d3 = new Date(dom);
 
-    const fmt = (d: Date) => d.toISOString().split("T")[0];
+    const fmt = (d: Date) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     return [
       { date: fmt(d1), weightGrams: 1180, lengthCm: 38.0, headCircumferenceCm: 26.5 },
       { date: fmt(d2), weightGrams: 1250, lengthCm: 38.8, headCircumferenceCm: 26.8 },
@@ -102,8 +113,9 @@ export function GrowthPlotter({
   const [newEntryWeight, setNewEntryWeight] = useState("");
   const [newEntryLength, setNewEntryLength] = useState("");
   const [newEntryHc, setNewEntryHc] = useState("");
+  const [serialError, setSerialError] = useState<string | null>(null);
 
-  // Calculate ages with strict validation
+  // Calculate ages with strict calendar validation
   const ages: AgeCalculations = useMemo(() => {
     return calculateAges(gaWeeks, gaDays, dob, dom);
   }, [gaWeeks, gaDays, dob, dom]);
@@ -124,21 +136,29 @@ export function GrowthPlotter({
 
   // Evaluate percentile and exact continuous Z-score
   const percentileEval = useMemo(() => {
-    if (!dataset) return null;
+    if (!dataset || ages.isBlocked) return null;
     return evaluatePercentile(currentMetricValue, activeMetric, dataset);
-  }, [dataset, currentMetricValue, activeMetric]);
+  }, [dataset, currentMetricValue, activeMetric, ages.isBlocked]);
 
   // Longitudinal records evaluation
   const evaluatedSerialRecords = useMemo(() => {
-    if (!biologicalSex) return [];
+    if (!biologicalSex || ages.isBlocked) return [];
     return evaluateLongitudinalRecords(serialRecords, gaWeeks, gaDays, dob, biologicalSex);
-  }, [serialRecords, gaWeeks, gaDays, dob, biologicalSex]);
+  }, [serialRecords, gaWeeks, gaDays, dob, biologicalSex, ages.isBlocked]);
 
   const handleAddSerialRecord = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEntryDate || !newEntryWeight) return;
+    setSerialError(null);
+
+    if (!newEntryDate || !newEntryWeight) {
+      setSerialError("Date and weight are required.");
+      return;
+    }
     const wt = Number(newEntryWeight);
-    if (isNaN(wt) || wt < 400 || wt > 10000) return;
+    if (isNaN(wt) || wt < 400 || wt > 10000) {
+      setSerialError("Weight must be between 400g and 10,000g.");
+      return;
+    }
 
     setSerialRecords((prev) => [
       ...prev,
@@ -160,42 +180,33 @@ export function GrowthPlotter({
     setSerialRecords((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Format Recharts curve data
+  // Metric configurations
+  const metricConfig = useMemo(() => {
+    switch (activeMetric) {
+      case "weight":
+        return { label: "Weight", unit: "g", yMin: 300, yMax: 5000, step: 500 };
+      case "length":
+        return { label: "Crown-Heel Length", unit: "cm", yMin: 20, yMax: 60, step: 5 };
+      case "headCircumference":
+        return { label: "Head Circumference", unit: "cm", yMin: 15, yMax: 42, step: 5 };
+    }
+  }, [activeMetric]);
+
+  // Chart data points
   const chartData = useMemo(() => {
-    if (!dataset) return [];
-    return dataset.data.map((item) => {
-      const metricVals = item[activeMetric];
+    if (!dataset || ages.isBlocked) return [];
+    return dataset.data.map((pt) => {
+      const metricLms = pt[activeMetric];
       return {
-        age: item.age,
-        p3: metricVals.p3,
-        p10: metricVals.p10,
-        p50: metricVals.p50,
-        p90: metricVals.p90,
-        p97: metricVals.p97,
+        age: pt.age,
+        p3: metricLms.p3,
+        p10: metricLms.p10,
+        p50: metricLms.p50,
+        p90: metricLms.p90,
+        p97: metricLms.p97,
       };
     });
-  }, [dataset, activeMetric]);
-
-  const metricConfig = {
-    weight: {
-      label: "Weight",
-      unit: "g",
-      yDomain: dataset?.chartType === "fenton" ? [300, 7500] : [2000, 15000],
-      step: 50,
-    },
-    length: {
-      label: "Length",
-      unit: "cm",
-      yDomain: dataset?.chartType === "fenton" ? [24, 66] : [44, 96],
-      step: 0.5,
-    },
-    headCircumference: {
-      label: "Head Circumference",
-      unit: "cm",
-      yDomain: dataset?.chartType === "fenton" ? [16, 44] : [30, 52],
-      step: 0.5,
-    },
-  }[activeMetric];
+  }, [dataset, activeMetric, ages.isBlocked]);
 
   return (
     <div className="space-y-6">
@@ -220,7 +231,7 @@ export function GrowthPlotter({
           </h3>
           <p className="text-xs text-amber-800 max-w-lg mx-auto">
             Fenton 2013 and WHO 2006 growth standards exhibit sexual dimorphism.
-            Select biological sex below to activate LMS age correction and percentile curves.
+            Select biological sex below to activate linear LMS age correction and percentile curves.
           </p>
           <div className="flex justify-center gap-4 pt-2">
             <button
@@ -247,13 +258,17 @@ export function GrowthPlotter({
       {ages.isBlocked && (
         <div
           role="alert"
-          className="p-4 rounded-xl bg-rose-50 border-2 border-rose-400 text-rose-950 space-y-2"
+          aria-live="assertive"
+          className="p-5 rounded-xl bg-rose-50 border-2 border-rose-400 text-rose-950 space-y-3 shadow-sm"
         >
           <div className="flex items-center gap-2.5 font-bold text-rose-900 text-sm">
-            <ShieldAlert className="w-5 h-5 text-rose-600" />
-            <span>Growth Age Calculation Blocked</span>
+            <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" />
+            <span>Growth Age & Trajectory Calculation Blocked</span>
           </div>
-          <ul className="text-xs space-y-1 list-disc list-inside text-rose-800">
+          <p className="text-xs text-rose-800">
+            Anthropometric percentiles and curves cannot be computed because of invalid date or demographic parameters:
+          </p>
+          <ul className="text-xs space-y-1 list-disc list-inside text-rose-900 font-medium">
             {ages.validation.errors.map((err, i) => (
               <li key={i}>{err.message}</li>
             ))}
@@ -262,7 +277,7 @@ export function GrowthPlotter({
       )}
 
       {/* OUT OF RANGE CHART ALERT */}
-      {dataset?.isAgeOutOfRange && (
+      {dataset?.isAgeOutOfRange && !ages.isBlocked && (
         <div
           role="alert"
           className="p-3.5 rounded-xl bg-amber-50 border border-amber-300 text-amber-950 text-xs flex items-start gap-2.5"
@@ -369,14 +384,13 @@ export function GrowthPlotter({
                 </div>
               </div>
 
-              {/* Dates: DOB & DOM */}
+              {/* Clinical Dates: DOB & DOM */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
                 <div>
                   <label
                     htmlFor="dob-input"
-                    className="text-xs font-semibold text-slate-700 flex items-center gap-1 mb-1"
+                    className="text-xs font-semibold text-slate-700 block mb-1"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
                     Date of Birth (DOB)
                   </label>
                   <input
@@ -384,90 +398,62 @@ export function GrowthPlotter({
                     type="date"
                     value={dob}
                     onChange={(e) => onDobChange(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="dom-input"
-                    className="text-xs font-semibold text-slate-700 flex items-center gap-1 mb-1"
+                    className="text-xs font-semibold text-slate-700 block mb-1"
                   >
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    Measurement Date
+                    Date of Measurement
                   </label>
                   <input
                     id="dom-input"
                     type="date"
                     value={dom}
                     onChange={(e) => onDomChange(e.target.value)}
-                    className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white"
                   />
                 </div>
               </div>
-            </div>
-          </ClinicalCard>
 
-          {/* Age Diagnostic Card */}
-          <ClinicalCard
-            title="Chronological & Corrected Age Logic"
-            subtitle="Derived gestational timelines for growth trajectory"
-            icon={<Calendar className="w-4 h-4 text-clinical-navy-800" />}
-          >
-            <div className="space-y-3 text-xs">
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 border border-slate-200">
-                <span className="text-slate-600 font-medium">
-                  Chronological Age (CA):
-                </span>
-                <span className="font-bold text-slate-900 font-mono">
-                  {ages.caFormatted}
-                </span>
-              </div>
+              {/* Calculated Ages Output & Routing Details */}
+              {!ages.isBlocked && (
+                <div className="p-3 bg-slate-100/80 rounded-xl space-y-2 border border-slate-200 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-medium">Post-Menstrual Age:</span>
+                    <strong className="text-clinical-navy-950 font-mono text-sm">{ages.pmaFormatted}</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-medium">Chronological Age:</span>
+                    <strong className="text-slate-900 font-mono">{ages.caFormatted}</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-medium">Corrected Age:</span>
+                    <strong className="text-blue-900 font-mono">{ages.ccaFormatted}</strong>
+                  </div>
 
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-blue-50/70 border border-blue-200">
-                <span className="text-blue-900 font-semibold">
-                  Post-Menstrual Age (PMA):
-                </span>
-                <span className="font-bold text-blue-950 font-mono text-sm">
-                  {ages.pmaFormatted}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between p-2.5 rounded-lg bg-purple-50/70 border border-purple-200">
-                <span className="text-purple-900 font-semibold">
-                  Corrected Age (CCA):
-                </span>
-                <span className="font-bold text-purple-950 font-mono">
-                  {ages.ccaFormatted}
-                </span>
-              </div>
-
-              {/* Dynamic Routing Notification */}
-              <div className="p-3 rounded-lg bg-emerald-50/70 border border-emerald-300 text-emerald-950 text-[11.5px] leading-relaxed">
-                <div className="flex items-center gap-1.5 font-bold text-emerald-900 mb-1">
-                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                  Continuous Curve Standards:
+                  {dataset && (
+                    <div className="pt-2 border-t border-slate-200 text-[11px] text-slate-600 space-y-1">
+                      <div className="flex items-center justify-between font-semibold">
+                        <span>Selected Standard:</span>
+                        <span className="text-blue-900">{dataset.standardName}</span>
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 leading-tight">
+                        {dataset.routingRationale}
+                      </p>
+                    </div>
+                  )}
                 </div>
-                {ages.pmaWeeksDecimal <= 50 ? (
-                  <span>
-                    PMA ({ages.pmaWeeksDecimal}w) ≤ 50 weeks. Plotted on{" "}
-                    <strong>Fenton Preterm Growth Standards (2013)</strong> using
-                    continuous LMS spline interpolation.
-                  </span>
-                ) : (
-                  <span>
-                    PMA &gt; 50 weeks. Transitioned to{" "}
-                    <strong>WHO Child Growth Standards (2006)</strong> using
-                    Corrected Age ({ages.ccaMonthsDecimal} mo).
-                  </span>
-                )}
-              </div>
+              )}
             </div>
           </ClinicalCard>
 
           {/* Current Measurements Entry Card */}
           <ClinicalCard
-            title="Current Clinical Measurements"
-            subtitle="Anthropometric coordinates plotted on active growth curve"
+            title="Anthropometric Measurements"
+            subtitle="Parameters plotted on active growth curve"
             icon={<Ruler className="w-4 h-4 text-clinical-navy-800" />}
           >
             <div className="space-y-3.5">
@@ -559,13 +545,13 @@ export function GrowthPlotter({
             }
             subtitle={
               dataset
-                ? `Plotted at ${dataset.patientPlotAge} ${dataset.xAxisUnit} • Continuous LMS Math`
+                ? `Plotted at ${dataset.patientPlotAge} ${dataset.xAxisUnit} • Linear LMS math`
                 : "Select biological sex to render growth curves"
             }
             icon={<TrendingUp className="w-4 h-4 text-clinical-navy-800" />}
             action={
               <div className="flex items-center gap-2">
-                {/* View Mode Toggle: Cross-Sectional vs Longitudinal */}
+                {/* View Mode Toggle: Curve vs Longitudinal */}
                 <div
                   role="tablist"
                   aria-label="View Mode Selector"
@@ -641,7 +627,7 @@ export function GrowthPlotter({
               </div>
             }
           >
-            {dataset ? (
+            {dataset && !ages.isBlocked ? (
               activeViewMode === "chart" ? (
                 <div className="space-y-4">
                   {showDataTable ? (
@@ -678,120 +664,148 @@ export function GrowthPlotter({
                     </div>
                   ) : (
                     /* Graphical Curve */
-                    <div className="w-full h-80 pt-2">
+                    <div className="h-80 w-full pt-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart
                           data={chartData}
-                          margin={{ top: 10, right: 25, left: 10, bottom: 20 }}
+                          margin={{ top: 10, right: 20, left: 10, bottom: 20 }}
                         >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                          <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                           <XAxis
                             dataKey="age"
                             type="number"
-                            domain={["auto", "auto"]}
-                            unit={` ${dataset.xAxisUnit.includes("weeks") ? "w" : "m"}`}
-                            tick={{ fontSize: 11, fill: "#64748b" }}
+                            domain={["dataMin", "dataMax"]}
+                            stroke="#64748b"
+                            tick={{ fontSize: 11 }}
                             label={{
                               value: dataset.xAxisLabel,
                               position: "insideBottom",
-                              offset: -10,
-                              fontSize: 12,
-                              fill: "#334155",
-                              fontWeight: 600,
+                              offset: -12,
+                              fontSize: 11,
+                              fill: "#475569",
                             }}
                           />
                           <YAxis
-                            domain={metricConfig.yDomain}
-                            unit={` ${metricConfig.unit}`}
-                            tick={{ fontSize: 11, fill: "#64748b" }}
+                            stroke="#64748b"
+                            domain={[metricConfig.yMin, metricConfig.yMax]}
+                            tick={{ fontSize: 11 }}
                             label={{
                               value: `${metricConfig.label} (${metricConfig.unit})`,
                               angle: -90,
                               position: "insideLeft",
-                              offset: 0,
-                              fontSize: 12,
-                              fill: "#334155",
-                              fontWeight: 600,
+                              offset: 5,
+                              fontSize: 11,
+                              fill: "#475569",
                             }}
                           />
                           <Tooltip
-                            content={({ active, payload, label }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-white p-3 rounded-lg shadow-lg border border-slate-200 text-xs space-y-1">
-                                    <div className="font-bold text-slate-900 border-b pb-1">
-                                      Age: {label} {dataset.xAxisUnit}
-                                    </div>
-                                    <div className="text-purple-600">97th: {data.p97} {metricConfig.unit}</div>
-                                    <div className="text-amber-600">90th: {data.p90} {metricConfig.unit}</div>
-                                    <div className="text-emerald-700 font-bold">50th Median: {data.p50} {metricConfig.unit}</div>
-                                    <div className="text-amber-600">10th: {data.p10} {metricConfig.unit}</div>
-                                    <div className="text-rose-600">3rd: {data.p3} {metricConfig.unit}</div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
+                            formatter={(val: number, name: string) => [
+                              `${val} ${metricConfig.unit}`,
+                              name,
+                            ]}
+                            labelFormatter={(label) =>
+                              `${dataset.xAxisLabel}: ${label}`
+                            }
                           />
-                          <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11 }} />
+                          <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
 
-                          <Line type="monotone" dataKey="p97" stroke="#dc2626" strokeDasharray="4 4" strokeWidth={1.5} dot={false} name="97th %ile" />
-                          <Line type="monotone" dataKey="p90" stroke="#d97706" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="90th %ile" />
-                          <Line type="monotone" dataKey="p50" stroke="#0f294a" strokeWidth={2.5} dot={false} name="50th %ile (Median)" />
-                          <Line type="monotone" dataKey="p10" stroke="#d97706" strokeDasharray="3 3" strokeWidth={1.5} dot={false} name="10th %ile" />
-                          <Line type="monotone" dataKey="p3" stroke="#dc2626" strokeDasharray="4 4" strokeWidth={1.5} dot={false} name="3rd %ile" />
+                          {/* Percentile Curves */}
+                          <Line
+                            type="monotone"
+                            dataKey="p97"
+                            name="97th %ile"
+                            stroke="#dc2626"
+                            strokeWidth={1.5}
+                            strokeDasharray="4 4"
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="p90"
+                            name="90th %ile"
+                            stroke="#d97706"
+                            strokeWidth={1.5}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="p50"
+                            name="50th (Median)"
+                            stroke="#0f172a"
+                            strokeWidth={2.5}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="p10"
+                            name="10th %ile"
+                            stroke="#d97706"
+                            strokeWidth={1.5}
+                            dot={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="p3"
+                            name="3rd %ile"
+                            stroke="#dc2626"
+                            strokeWidth={1.5}
+                            strokeDasharray="4 4"
+                            dot={false}
+                          />
 
-                          {currentMetricValue > 0 && !ages.isBlocked && (
-                            <ReferenceDot
-                              x={dataset.patientPlotAge}
-                              y={currentMetricValue}
-                              r={7}
-                              fill="#2563eb"
-                              stroke="#ffffff"
-                              strokeWidth={3}
-                              isFront={true}
-                              label={{
-                                value: `Patient (${currentMetricValue}${metricConfig.unit})`,
-                                position: "top",
-                                fill: "#1e3a8a",
-                                fontSize: 11,
-                                fontWeight: "bold",
-                              }}
-                            />
-                          )}
+                          {/* Active Patient Plot Point */}
+                          <ReferenceDot
+                            x={dataset.patientPlotAge}
+                            y={currentMetricValue}
+                            r={6}
+                            fill="#2563eb"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                            isFront
+                            aria-label={`Patient measurement: ${currentMetricValue} ${metricConfig.unit} at ${dataset.patientPlotAge} ${dataset.xAxisUnit}`}
+                          />
                         </ComposedChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
-                  {/* Patient Diagnostic Box with Genuine Z-score and Percentile */}
+                  {/* Evaluation Summary Card */}
                   {percentileEval && (
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
+                        <div className="space-y-0.5">
+                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                            {metricConfig.label} Anthropometric Evaluation
+                          </span>
+                          <div className="text-base font-bold text-slate-900">
+                            {currentMetricValue} {metricConfig.unit} •{" "}
+                            <span className="text-blue-700">
+                              {percentileEval.percentileFormatted}
+                            </span>
+                          </div>
+                        </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-semibold text-slate-700">
-                            {metricConfig.label} Evaluation:
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-blue-100 text-blue-900 border border-blue-200">
+                            Z = {percentileEval.zScoreFormatted}
                           </span>
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded border ${percentileEval.badgeClass}`}>
-                            {percentileEval.percentileFormatted}
+                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${percentileEval.badgeClass}`}>
+                            {percentileEval.shortBadge}
                           </span>
-                          <span className="text-xs font-mono font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200">
-                            Z-Score: {percentileEval.zScoreFormatted}
-                          </span>
-                        </div>
-                        <div className="text-xs font-mono text-slate-600">
-                          50th Median Reference: <strong>{percentileEval.p50Value} {metricConfig.unit}</strong>
                         </div>
                       </div>
 
-                      <div className="text-xs text-slate-700 leading-relaxed">
-                        <strong>Classification: </strong>
-                        <span className="font-semibold text-slate-900">{percentileEval.percentileBracket}</span>. {percentileEval.clinicalNote}
+                      <div className="space-y-1.5 text-xs text-slate-700 leading-relaxed">
+                        <p className="font-medium text-slate-800">
+                          {percentileEval.clinicalNote}
+                        </p>
+                        <p className="text-[11px] text-slate-500 italic">
+                          {percentileEval.clinicalCaveat}
+                        </p>
                       </div>
 
-                      <div className="text-[10.5px] text-slate-400 font-mono pt-1 border-t border-slate-200/60">
-                        Methodology: {percentileEval.methodology}
+                      <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-slate-400 font-mono">
+                        <span>Methodology: {percentileEval.methodology}</span>
+                        <span>Median (P50): {percentileEval.p50Value} {metricConfig.unit}</span>
                       </div>
                     </div>
                   )}
@@ -805,7 +819,10 @@ export function GrowthPlotter({
                       <span>Longitudinal Somatic Velocity & Trajectory Analysis</span>
                     </div>
                     <p className="text-[11.5px] text-blue-900/80">
-                      Monitors serial weight velocity in g/kg/day (Patel et al. 2005 average-weight method) and detects percentile channel crossings (&gt;0.67 SD loss indicates risk of Extrauterine Growth Restriction).
+                      Calculates serial weight velocity using Patel et al. 2005 2-point exponential model:{" "}
+                      <code className="font-mono bg-white px-1 py-0.5 rounded border border-blue-200 text-[10.5px]">
+                        V = 1000 * ln(W2 / W1) / Δdays (g/kg/d)
+                      </code>. Flags major channel drops (&gt;0.67 SD loss indicates risk of Extrauterine Growth Restriction).
                     </p>
                   </div>
 
@@ -887,6 +904,11 @@ export function GrowthPlotter({
                       <Plus className="w-3.5 h-3.5 text-blue-600" />
                       <span>Add Clinical Follow-Up Assessment</span>
                     </div>
+
+                    {serialError && (
+                      <p className="text-xs text-rose-600 font-semibold">{serialError}</p>
+                    )}
+
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                       <div>
                         <label className="text-[11px] text-slate-500 block mb-0.5">Date</label>
@@ -949,10 +971,63 @@ export function GrowthPlotter({
             ) : (
               <div className="h-72 flex flex-col items-center justify-center text-slate-400 space-y-2">
                 <Lock className="w-8 h-8" />
-                <p className="text-sm">Please select biological sex to render growth curves.</p>
+                <p className="text-sm">
+                  {ages.isBlocked
+                    ? "Correct demographic errors above to render growth trajectory."
+                    : "Please select biological sex to render growth curves."}
+                </p>
               </div>
             )}
           </ClinicalCard>
+
+          {/* Technical Methodology & Clinical Interpretation Caveats Panel */}
+          <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowMethodology(!showMethodology)}
+                className="font-bold text-slate-900 flex items-center gap-2 hover:text-blue-900 transition-colors"
+              >
+                <BookOpen className="w-4 h-4 text-clinical-navy-800" />
+                <span>Technical Methodology & Clinical Interpretation Factors</span>
+                {showMethodology ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {showMethodology && (
+              <div className="space-y-4 pt-2 border-t border-slate-200">
+                <div className="space-y-2">
+                  <h4 className="font-bold text-clinical-navy-900 text-[11.5px] uppercase tracking-wider">
+                    LMS Mathematical Model
+                  </h4>
+                  <ul className="space-y-1 text-slate-700 text-[11px] list-disc list-inside">
+                    <li><strong>Interpolation:</strong> Linear interpolation between tabulated weekly LMS points based on completed fractional post-menstrual days.</li>
+                    <li><strong>Z-Score Formula:</strong> {TECHNICAL_METHODOLOGY.lmsFormula}.</li>
+                    <li><strong>Percentile Formula:</strong> {TECHNICAL_METHODOLOGY.percentileFormula}.</li>
+                    <li><strong>Extreme Z-Scores:</strong> {TECHNICAL_METHODOLOGY.extremeZHandling}.</li>
+                    <li><strong>Out-of-Range Handling:</strong> {TECHNICAL_METHODOLOGY.outOfRangeHandling}.</li>
+                  </ul>
+                </div>
+
+                <div className="space-y-2 pt-2 border-t border-slate-200">
+                  <h4 className="font-bold text-clinical-navy-900 text-[11.5px] uppercase tracking-wider">
+                    Factors Influencing Clinical Growth Interpretation
+                  </h4>
+                  <p className="text-[11px] text-slate-600">
+                    A single growth measurement is a screening data point and never a diagnostic conclusion. Growth trajectory must be interpreted in light of:
+                  </p>
+                  <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[11px] text-slate-700 list-disc list-inside">
+                    {CLINICAL_INTERPRETATION_FACTORS.map((factor, i) => (
+                      <li key={i}>{factor}</li>
+                    ))}
+                  </ul>
+                  <div className="p-2 bg-amber-50 rounded border border-amber-200 text-amber-900 text-[11px] font-medium mt-2">
+                    <strong>Notice:</strong> Screening assessment only; not an automatic treatment prescription or diagnosis.
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

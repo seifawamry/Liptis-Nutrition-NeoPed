@@ -6,8 +6,7 @@
 
 import {
   calculateLbwNutrition,
-  ESPGHAN_ENERGY_FRAMEWORK,
-  ESPGHAN_PE_RATIO_FRAMEWORK,
+  ESPGHAN_DIRECT_GUIDELINES,
 } from "../lib/lbw-nutrition";
 import {
   calculateAges,
@@ -30,11 +29,11 @@ console.log("| Metric | Standard Benchmark | NeoPed Engine Output | Diff | Statu
 console.log("--------------------------------------------------------------------------------");
 
 const esphanChecks = [
-  { metric: "Typical Energy Min", expected: 115, actual: ESPGHAN_ENERGY_FRAMEWORK.TYPICAL_MIN, unit: "kcal/kg/d" },
-  { metric: "Typical Energy Max", expected: 140, actual: ESPGHAN_ENERGY_FRAMEWORK.TYPICAL_MAX, unit: "kcal/kg/d" },
-  { metric: "Conditional Energy Max", expected: 160, actual: ESPGHAN_ENERGY_FRAMEWORK.CONDITIONAL_MAX, unit: "kcal/kg/d" },
-  { metric: "P:E Ratio Min", expected: 2.8, actual: ESPGHAN_PE_RATIO_FRAMEWORK.MIN_G_PER_100_KCAL, unit: "g/100 kcal" },
-  { metric: "P:E Ratio Max", expected: 3.6, actual: ESPGHAN_PE_RATIO_FRAMEWORK.MAX_G_PER_100_KCAL, unit: "g/100 kcal" },
+  { metric: "Typical Energy Min", expected: 115, actual: ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MIN, unit: "kcal/kg/d" },
+  { metric: "Typical Energy Max", expected: 140, actual: ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MAX, unit: "kcal/kg/d" },
+  { metric: "Conditional Energy Max", expected: 160, actual: ESPGHAN_DIRECT_GUIDELINES.ENERGY.CONDITIONAL_MAX, unit: "kcal/kg/d" },
+  { metric: "P:E Ratio Min", expected: 2.8, actual: ESPGHAN_DIRECT_GUIDELINES.PE_RATIO.MIN_G_PER_100_KCAL, unit: "g/100 kcal" },
+  { metric: "P:E Ratio Max", expected: 3.6, actual: ESPGHAN_DIRECT_GUIDELINES.PE_RATIO.MAX_G_PER_100_KCAL, unit: "g/100 kcal" },
 ];
 
 for (const c of esphanChecks) {

@@ -4,8 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import {
   NutritionCalculationResult,
-  ESPGHAN_ENERGY_FRAMEWORK,
-  ESPGHAN_PE_RATIO_FRAMEWORK,
+  ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
 import { ClinicalCard, RangeGauge, StatusBadge } from "./ui-primitives";
 import {
@@ -24,6 +23,8 @@ import {
   RotateCcw,
   ShieldAlert,
   BookOpen,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 interface NutritionEngineProps {
@@ -44,6 +45,7 @@ export function NutritionEngine({
   onResetPatient,
 }: NutritionEngineProps) {
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [showSourcePanel, setShowSourcePanel] = useState(false);
 
   const quickWeightPresets = [
     { label: "850g (ELBW)", value: 850 },
@@ -64,6 +66,7 @@ export function NutritionEngine({
         `[Liptis NeoPed Clinical Summary - ${result.auditMetadata.calculatedAtUtc}]\n` +
         `Patient Weight: ${weightGrams}g | Fluid Allowance: ${fluidAllowance} mL/kg/d\n` +
         `${result.clinicalSummary}\n` +
+        `Status: ${result.overallStatus}\n` +
         `Audit: ${result.auditMetadata.engineVersion} | ${result.auditMetadata.nonDeviceDisclaimer}`
       );
       setCopyFeedback(true);
@@ -75,7 +78,105 @@ export function NutritionEngine({
 
   return (
     <div className="space-y-6">
-      {/* Top Protocol Banner */}
+      {/* Prominent Clinical Decision Support & Supervised Reference Banner */}
+      <div className="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" aria-hidden="true" />
+          <div className="space-y-0.5">
+            <span className="font-bold text-amber-900 block uppercase tracking-wide">
+              Clinical Decision Support Utility • For Licensed Healthcare Professionals
+            </span>
+            <p className="text-[11.5px] text-amber-800 leading-tight">
+              Reference calculation only. Not a prescription, medical order, or substitute for local NICU protocol. Clinical judgment supersedes calculated values.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setShowSourcePanel(!showSourcePanel)}
+          className="px-3 py-1.5 rounded-lg bg-amber-200/80 hover:bg-amber-300 text-amber-900 font-semibold transition-colors flex items-center gap-1.5 shrink-0"
+        >
+          <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+          <span>{showSourcePanel ? "Hide Source Panel" : "View Clinical Sources"}</span>
+          {showSourcePanel ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        </button>
+      </div>
+
+      {/* Visible Source Panel Explaining Provenance (Section 3) */}
+      {showSourcePanel && (
+        <div className="p-4 bg-slate-50 border border-slate-300 rounded-xl space-y-4 text-xs">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+            <div className="font-bold text-clinical-navy-950 flex items-center gap-2">
+              <BookOpen className="w-4 h-4 text-clinical-navy-800" />
+              <span>Authoritative Clinical Sources & Provenance Mapping</span>
+            </div>
+            <span className="text-[11px] text-slate-500 font-mono">v2.1.0 Institutional</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+              <span className="font-bold text-emerald-900 block uppercase tracking-wider text-[11px]">
+                1. Direct ESPGHAN 2022 Guidelines
+              </span>
+              <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
+                <li>Energy: 115–140 kcal/kg/d (typical), 140–160 (conditional catch-up)</li>
+                <li>Protein: 3.5–4.0 g/kg/d, conditionally up to 4.5 g/kg/d for slow growth</li>
+                <li>Protein-to-Energy ratio: 2.8–3.6 g / 100 kcal</li>
+                <li>Fluid volume: 150–180 mL/kg/d typical for stable growing preterms</li>
+              </ul>
+              <p className="text-[10.5px] text-slate-400 italic mt-1">Source: J Pediatr Gastroenterol Nutr. 2022;76(2):248-268.</p>
+            </div>
+
+            <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+              <span className="font-bold text-blue-900 block uppercase tracking-wider text-[11px]">
+                2. Official Manufacturer Product Specifications
+              </span>
+              <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
+                <li>Pediamil® LBW: 79.7 kcal/100 mL, 2.42g protein/100 mL (15.0g powder/100 mL)</li>
+                <li>Pediamil® 1: 68.5 kcal/100 mL, 1.49g protein/100 mL (13.7g powder/100 mL)</li>
+                <li>Standard dilution: 3 level scoops in 90 mL water = 100 mL prepared feed</li>
+              </ul>
+              <p className="text-[10.5px] text-blue-700 font-semibold mt-1">
+                Verified against Liptis Nutrition Spec Sheet 2026-v1.0 (verified 2026-10-02).
+              </p>
+            </div>
+
+            <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+              <span className="font-bold text-purple-900 block uppercase tracking-wider text-[11px]">
+                3. Institutional Operational Protocols
+              </span>
+              <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
+                <li>ELBW bracket (&lt;1000g): 3.5–4.5 g/kg/d protein target</li>
+                <li>VLBW bracket (1000–1800g): 3.2–4.1 g/kg/d protein target</li>
+                <li>LBW step-down (1801–3500g): 2.8–3.6 g/kg/d protein target</li>
+                <li>Graduation ceiling: 3,500g (term-equivalent transition)</li>
+              </ul>
+              <p className="text-[10.5px] text-purple-800 italic mt-1">
+                Local protocol / institutional operational range—requires local clinical approval.
+              </p>
+            </div>
+
+            <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
+              <span className="font-bold text-amber-900 block uppercase tracking-wider text-[11px]">
+                4. Developer Alert Thresholds
+              </span>
+              <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
+                <li>Fluid restriction warning: &lt;135 mL/kg/day</li>
+                <li>High fluid risk warning: &gt;200 mL/kg/day</li>
+                <li>Safety stop (blocked input): Weight &lt;400g or &gt;10,000g</li>
+                <li>Date block: Date of measurement preceding Date of birth or future date</li>
+              </ul>
+              <p className="text-[10.5px] text-slate-400 italic mt-1">System safety guards to prevent calculation errors.</p>
+            </div>
+          </div>
+
+          <div className="p-2.5 bg-slate-100 rounded text-[11px] text-slate-600 border border-slate-200">
+            <strong>Product Data Disclaimer:</strong> {result.productDisclaimer}
+          </div>
+        </div>
+      )}
+
+      {/* Top Protocol Status Header */}
       <div className="bg-gradient-to-r from-blue-950 via-clinical-navy-900 to-slate-900 text-white rounded-xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-blue-900/50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center text-blue-200 shrink-0">
@@ -84,10 +185,10 @@ export function NutritionEngine({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold tracking-tight text-white">
-                ESPGHAN 2022 Enteral Nutrition Standard
+                Enteral Nutrition Engine
               </h2>
               <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-400/30">
-                Audited Protocol
+                ESPGHAN 2022 Reference Model
               </span>
             </div>
             <p className="text-xs text-blue-200/90 mt-0.5">
@@ -254,125 +355,87 @@ export function NutritionEngine({
                 </div>
               </div>
 
-              {/* Fluid Allowance Slider & Tuning */}
-              <div className="space-y-2.5 pt-3 border-t border-slate-100">
+              {/* Fluid Allowance Input */}
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label
-                    htmlFor="fluid-slider"
+                    htmlFor="fluid-allowance-input"
                     className="text-xs font-semibold text-slate-700 flex items-center gap-1.5"
                   >
-                    <Droplets className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
-                    Target Fluid Allowance
+                    Target Fluid Allowance (mL/kg/day)
+                    <span className="text-rose-500" aria-hidden="true">*</span>
                   </label>
-                  <span className="text-sm font-bold font-mono text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                    {fluidAllowance} mL/kg/day
+                  <span className="text-[11px] text-slate-500 font-mono">
+                    Typical: 150–180 mL/kg/d
                   </span>
                 </div>
 
-                <input
-                  id="fluid-slider"
-                  type="range"
-                  min={80}
-                  max={240}
-                  step={5}
-                  value={fluidAllowance}
-                  onChange={(e) => onFluidChange(Number(e.target.value))}
-                  aria-label="Target Fluid Allowance in milliliters per kilogram per day"
-                  aria-valuemin={80}
-                  aria-valuemax={240}
-                  aria-valuenow={fluidAllowance}
-                  aria-valuetext={`${fluidAllowance} milliliters per kilogram per day`}
-                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-clinical-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-                />
-
-                <div className="flex justify-between text-[11px] font-mono text-slate-400" aria-hidden="true">
-                  <span>80 mL/kg/d (Min)</span>
-                  <span className="text-slate-600 font-semibold">150–180 (ESPGHAN Typical)</span>
-                  <span>240 mL/kg/d (Max)</span>
+                <div className="relative">
+                  <input
+                    id="fluid-allowance-input"
+                    type="number"
+                    min={80}
+                    max={240}
+                    step={5}
+                    value={fluidAllowance}
+                    onChange={(e) => onFluidChange(Number(e.target.value))}
+                    aria-describedby="fluid-warnings fluid-presets-group"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-base font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 focus:border-transparent transition-all focus-visible:outline-none"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-xs font-semibold text-slate-400" aria-hidden="true">
+                    mL/kg/day
+                  </div>
                 </div>
 
-                {/* Fluid presets */}
-                <div role="group" aria-label="Target Fluid Allowance presets" className="flex items-center gap-1.5 pt-1">
-                  <span className="text-[11px] text-slate-400 mr-1">Tuning:</span>
+                {/* Fluid Presets */}
+                <div id="fluid-presets-group" role="group" aria-label="Quick Fluid Target Presets" className="flex items-center gap-1.5 pt-1">
+                  <span className="text-[11px] text-slate-400 mr-1">Presets:</span>
                   {quickFluidPresets.map((val) => (
                     <button
                       key={val}
                       type="button"
                       aria-pressed={fluidAllowance === val}
-                      aria-label={`Set fluid allowance to ${val} milliliters per kilogram per day`}
+                      aria-label={`Set fluid allowance to ${val} mL per kg per day`}
                       onClick={() => onFluidChange(val)}
-                      className={`text-[11px] px-2 py-0.5 rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+                      className={`text-[11px] px-2 py-0.5 rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinical-navy-800 ${
                         fluidAllowance === val
-                          ? "bg-blue-900 text-white border-blue-900 font-semibold"
+                          ? "bg-clinical-navy-900 text-white border-clinical-navy-900 font-semibold"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200"
                       }`}
                     >
-                      {val} mL/kg/d
+                      {val} mL
                     </button>
                   ))}
                 </div>
 
                 {/* Fluid Warnings */}
-                {result.validation.warnings.map((warn, i) => (
-                  <div key={i} className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-2">
-                    <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
-                    <span>{warn.message}</span>
-                  </div>
-                ))}
+                <div id="fluid-warnings">
+                  {result.validation.warnings.map((w, idx) => (
+                    <div
+                      key={idx}
+                      role="status"
+                      className="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2"
+                    >
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+                      <div>
+                        <span className="font-semibold block">{w.message}</span>
+                        <span className="text-amber-800">{w.remediation}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-
-              {/* Active Weight Classification Callout */}
-              {!result.isBlocked && result.isGraduated && (
-                <div className="p-3.5 rounded-lg bg-blue-50/90 border border-blue-200 space-y-1.5 text-xs text-blue-950">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-blue-900 flex items-center gap-1.5">
-                      <GraduationCap className="w-4 h-4 text-blue-700" aria-hidden="true" />
-                      ESPGHAN Status:
-                    </span>
-                    <span className="font-bold text-blue-900 px-2 py-0.5 rounded bg-white border border-blue-300 shadow-2xs">
-                      Graduation (&gt;3,500g)
-                    </span>
-                  </div>
-                  <div className="text-[11.5px] text-blue-800 leading-relaxed">
-                    Infant weight of {result.currentWeightGrams}g exceeds 3,500g. Preterm catch-up targets discontinued; standard term targets applied.
-                  </div>
-                </div>
-              )}
-
-              {!result.isBlocked && !result.isGraduated && result.proteinBracket && (
-                <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-slate-700">
-                      ESPGHAN Category:
-                    </span>
-                    <span className="font-bold text-clinical-navy-900 px-2 py-0.5 rounded bg-white border border-slate-200 shadow-2xs">
-                      {result.proteinBracket.classification}
-                    </span>
-                  </div>
-                  <div className="text-[11.5px] text-slate-600">
-                    Infant weight of {result.currentWeightGrams}g classifies as{" "}
-                    <strong>{result.proteinBracket.description}</strong>. Recommended enteral protein:{" "}
-                    <strong>
-                      {result.proteinBracket.targetMinGramsPerKg} to {result.proteinBracket.targetMaxGramsPerKg} g/kg/day
-                    </strong>
-                    .
-                  </div>
-                  <div className="text-[10px] text-slate-400 border-t border-slate-200/70 pt-1 font-mono">
-                    Citation: {result.proteinBracket.citationSource}
-                  </div>
-                </div>
-              )}
             </div>
           </ClinicalCard>
 
-          {/* Practical Feeding Schedule Card */}
+          {/* Feeding Schedules Card */}
           {!result.isBlocked && result.feedingSchedule && (
             <ClinicalCard
-              title="NICU Enteral Feeding Schedule"
-              subtitle="Hourly infusion rates and bolus feed breakdowns"
-              icon={<Clock className="w-4 h-4 text-clinical-navy-800" />}
+              title="Enteral Feeding Schedule"
+              subtitle="Reconciled intervals with explicit rounding disclosure"
+              icon={<Clock className="w-4 h-4 text-clinical-navy-800" aria-hidden="true" />}
             >
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-3 gap-2.5 text-center">
                 {/* q2h */}
                 <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                   <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -417,7 +480,7 @@ export function NutritionEngine({
                 </span>
               </div>
 
-              <p className="text-[10.5px] text-slate-400 mt-2 italic leading-tight">
+              <p className="text-[10.5px] text-slate-500 mt-2 italic leading-tight">
                 {result.feedingSchedule.roundingDisclosure}
               </p>
             </ClinicalCard>
@@ -433,7 +496,7 @@ export function NutritionEngine({
                 Awaiting Valid Patient Parameters
               </div>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Enter an authorized weight (400g to 10,000g) and physiological fluid allowance to activate ESPGHAN calculations.
+                Enter an authorized weight (400g to 10,000g) and physiological fluid allowance to activate nutritional calculations.
               </p>
             </div>
           ) : result.isGraduated ? (
@@ -478,35 +541,19 @@ export function NutritionEngine({
                       <Sparkles className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
                       <span>Standard Term-Infant Nutrition Targets</span>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                      <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200/80">
-                        <span className="text-slate-500 text-[10.5px] uppercase font-bold block">
-                          Standard Energy Target
-                        </span>
-                        <strong className="text-blue-950 font-mono text-sm">~100 kcal/kg/day</strong>
-                        <span className="text-[10.5px] text-slate-500 block mt-0.5">
-                          Normal physiological growth goal
-                        </span>
-                      </div>
-                      <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-200/80">
-                        <span className="text-slate-500 text-[10.5px] uppercase font-bold block">
-                          Standard Protein Target
-                        </span>
-                        <strong className="text-blue-950 font-mono text-sm">1.8 to 2.0 g/100 kcal</strong>
-                        <span className="text-[10.5px] text-slate-500 block mt-0.5">
-                          Standard Stage 1 formulation
-                        </span>
-                      </div>
-                    </div>
+                    <ul className="text-xs text-slate-700 space-y-1.5 pl-1">
+                      <li>• <strong>Energy:</strong> {result.standardTermTargets?.energyTarget}</li>
+                      <li>• <strong>Protein:</strong> {result.standardTermTargets?.proteinTarget}</li>
+                      <li>• <strong>Recommended Formulation:</strong> {result.standardTermTargets?.formulationBrand} ({result.standardTermTargets?.formulationStage})</li>
+                    </ul>
                   </div>
                 </div>
               </div>
 
-              {/* Detailed Clinical Guidance for HCP */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs pt-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                 <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
                   <div className="flex items-center gap-1.5 font-bold text-blue-900">
-                    <Info className="w-4 h-4 text-blue-600" aria-hidden="true" />
+                    <ShieldAlert className="w-4 h-4 text-blue-600" aria-hidden="true" />
                     <span>Clinical Rationale & Solute Load</span>
                   </div>
                   <p className="text-slate-700 leading-relaxed text-[11.5px]">
@@ -542,9 +589,9 @@ export function NutritionEngine({
                 <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
                   <RangeGauge
                     currentValue={result.deliveredEnergyKcalPerKgPerDay || 0}
-                    minTarget={ESPGHAN_ENERGY_FRAMEWORK.TYPICAL_MIN}
-                    maxTarget={ESPGHAN_ENERGY_FRAMEWORK.TYPICAL_MAX}
-                    conditionalMaxTarget={ESPGHAN_ENERGY_FRAMEWORK.CONDITIONAL_MAX}
+                    minTarget={ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MIN}
+                    maxTarget={ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MAX}
+                    conditionalMaxTarget={ESPGHAN_DIRECT_GUIDELINES.ENERGY.CONDITIONAL_MAX}
                     minScale={90}
                     maxScale={180}
                     unit="kcal/kg/day"
@@ -599,47 +646,62 @@ export function NutritionEngine({
                   </div>
                 )}
 
-                {/* Protein-to-Energy Ratio & Macro Breakdown Card */}
+                {/* Consistent Protein-to-Energy Ratio & Overall Status (Section 2 & 13) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-3.5 rounded-lg bg-purple-50/70 border border-purple-200">
+                  {/* P:E Ratio Card with Consistent Status Messages */}
+                  <div className="p-3.5 rounded-lg bg-purple-50/70 border border-purple-200 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
                         <Dna className="w-3.5 h-3.5 text-purple-700" />
                         Protein-to-Energy Ratio
                       </span>
-                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-purple-200 text-purple-950 font-mono">
-                        P:E
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                          result.peRatioCompliance?.status === "on_target"
+                            ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                            : "bg-amber-100 text-amber-900 border-amber-300"
+                        }`}
+                      >
+                        {result.peRatioCompliance?.status === "on_target" ? "Target 2.8–3.6" : "Non-Target"}
                       </span>
                     </div>
-                    <div className="text-lg font-bold text-purple-950 mt-1 font-mono">
+                    <div className="text-lg font-bold text-purple-950 font-mono">
                       {result.proteinToEnergyRatioGramsPer100Kcal}{" "}
                       <span className="text-xs font-normal text-purple-700">
                         g / 100 kcal
                       </span>
                     </div>
-                    <p className="text-[11px] text-purple-800 mt-1 leading-tight">
-                      ESPGHAN 2022 target: {ESPGHAN_PE_RATIO_FRAMEWORK.MIN_G_PER_100_KCAL} to {ESPGHAN_PE_RATIO_FRAMEWORK.MAX_G_PER_100_KCAL} g/100 kcal.
+                    <p className="text-[11px] text-purple-900 leading-snug font-medium">
+                      {result.peRatioCompliance?.interpretation}
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                  {/* Overall Compliance Status: Never calls 'Within Reference Target' if ANY metric is abnormal */}
+                  <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-300 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-emerald-900 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                        Clinical Reference Status
+                      <span className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-700" />
+                        Overall Clinical Compliance
                       </span>
-                      <span className="text-[11px] font-bold px-1.5 py-0.5 rounded bg-emerald-200 text-emerald-950">
-                        ESPGHAN 2022
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                          result.overallStatus === "Within reference range"
+                            ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                            : "bg-amber-100 text-amber-900 border-amber-300"
+                        }`}
+                      >
+                        {result.overallStatus === "Within reference range" ? "Reference Met" : "Review Flag"}
                       </span>
                     </div>
-                    <div className="text-sm font-semibold text-emerald-950 mt-1">
-                      {result.energyCompliance?.status === "on_target" &&
-                      result.proteinCompliance?.status === "on_target"
-                        ? "Within Reference Target"
-                        : "Requires Clinician Review"}
+                    <div className={`text-sm font-bold ${
+                      result.overallStatus === "Within reference range" ? "text-emerald-900" : "text-amber-900"
+                    }`}>
+                      {result.overallStatus}
                     </div>
-                    <p className="text-[11px] text-emerald-800 mt-1 leading-tight">
-                      Audited against gestational accretion and weight category targets.
+                    <p className="text-[10.5px] text-slate-500 leading-tight">
+                      {result.overallStatus === "Within reference range"
+                        ? "Energy, protein, and P:E ratio all satisfy recommended reference boundaries."
+                        : "One or more nutritional parameters fall outside standard targets. Review clinical plan."}
                     </p>
                   </div>
                 </div>
@@ -669,7 +731,7 @@ export function NutritionEngine({
                   <div className="space-y-2 flex-1 text-center sm:text-left">
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
                       <span className="px-2.5 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
-                        Nutritional Matrix: {result.formulaProfile.brand}
+                        Matrix: {result.formulaProfile.brand}
                       </span>
                       <span className="text-slate-500 font-mono text-[11px]">
                         {result.isGraduated ? "Term Infant" : `${result.proteinBracket?.classification} Bracket`} ({result.currentWeightGrams}g)
@@ -678,27 +740,44 @@ export function NutritionEngine({
                     <p className="text-xs font-semibold text-slate-900 leading-relaxed bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
                       {result.recommendationText}
                     </p>
-                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-left">
-                      <div className="p-2 rounded bg-white border border-slate-200">
-                        <span className="text-slate-400 uppercase text-[10px] block font-sans">Formula Energy</span>
-                        <strong className="text-slate-900">{result.formulaProfile.energyKcalPer100Ml} kcal / 100 mL</strong>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Energy Density</span>
+                        <strong>{result.formulaProfile.energyKcalPer100Ml} kcal/100mL</strong>
                       </div>
-                      <div className="p-2 rounded bg-white border border-slate-200">
-                        <span className="text-slate-400 uppercase text-[10px] block font-sans">Formula Protein</span>
-                        <strong className="text-slate-900">{result.formulaProfile.proteinGramsPer100Ml} g / 100 mL</strong>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Protein Content</span>
+                        <strong>{result.formulaProfile.proteinGramsPer100Ml} g/100mL</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Carbohydrates</span>
+                        <strong>{result.formulaProfile.carbsGramsPer100Ml ?? "—"} g/100mL</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Total Lipids</span>
+                        <strong>{result.formulaProfile.fatGramsPer100Ml ?? "—"} g/100mL</strong>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Comprehensive Summary Statement */}
-                <div className="p-3.5 rounded-lg bg-blue-50/70 border border-blue-200 text-blue-950 font-mono text-[11.5px] leading-normal">
-                  {result.clinicalSummary}
-                </div>
+                {/* Preparation & Reconstitution Note */}
+                {result.formulaProfile.productProfile && (
+                  <div className="p-3 bg-blue-50/60 rounded-lg border border-blue-200 text-[11px] text-blue-950 space-y-1">
+                    <div className="font-semibold flex items-center gap-1.5 text-blue-900">
+                      <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                      <span>Standard Reconstitution Instructions ({result.formulaProfile.productProfile.reconstitution.standardDilutionPercent}% w/v)</span>
+                    </div>
+                    <p className="text-blue-900/90 leading-relaxed">
+                      {result.formulaProfile.productProfile.reconstitution.scoopsPerStandardVolume}.{" "}
+                      Powder mass: {result.formulaProfile.productProfile.reconstitution.powderMassGramsPer100Ml} g per 100 mL prepared feed.
+                    </p>
+                  </div>
+                )}
 
-                <div className="text-[10.5px] text-slate-400 pt-1 border-t border-slate-100 flex items-center justify-between">
-                  <span>Engine: {result.auditMetadata.engineVersion}</span>
-                  <span>Non-cleared clinical decision support utility</span>
+                <div className="p-2.5 bg-slate-100 rounded text-[10.5px] text-slate-500 italic">
+                  {result.productDisclaimer}
                 </div>
               </div>
             </ClinicalCard>

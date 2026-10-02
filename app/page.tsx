@@ -242,12 +242,12 @@ export default function Home() {
               <div className="font-bold text-slate-900 flex items-center gap-2">
                 <span>Liptis Nutrition NeoPed™ LBW Clinical Suite</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200 font-mono">
-                  v2.0.0 Institutional
+                  v2.1.0 Institutional
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Grounded strictly in ESPGHAN 2022 Preterm Enteral Recommendations and
-                Fenton 2013 / WHO 2006 Continuous LMS Standards.
+                Uses selected ESPGHAN 2022 reference recommendations; local clinical validation required.
+                Fenton 2013 and WHO 2006 linear interpolation between tabulated LMS parameters.
               </p>
             </div>
 
