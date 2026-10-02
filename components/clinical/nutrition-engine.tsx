@@ -6,6 +6,7 @@ import {
   NutritionCalculationResult,
   ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
+import { PatientNutrientPayload } from "./patient-nutrient-payload";
 import { ClinicalCard, RangeGauge, StatusBadge } from "./ui-primitives";
 import {
   Scale,
@@ -507,8 +508,8 @@ export function NutritionEngine({
               className="p-6 rounded-2xl bg-blue-50 border-2 border-blue-400 shadow-sm space-y-5 text-blue-950"
             >
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                {/* Product Tin Visual (max-h-200px) */}
-                <div className="shrink-0 flex items-center justify-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm">
+                {/* Product Tin Visual (max-h-200px) with Quick Powder Niche */}
+                <div className="shrink-0 flex flex-col items-center justify-center p-3 bg-white rounded-xl border border-blue-200 shadow-sm gap-2 w-full sm:w-auto">
                   <Image
                     src={result.imageSrc || "/pediamil-1.png"}
                     alt="Pediamil 1 Standard Infant Formula Tin"
@@ -517,6 +518,20 @@ export function NutritionEngine({
                     className="max-h-[190px] sm:max-h-[200px] w-auto object-contain drop-shadow-sm"
                     unoptimized
                   />
+                  {result.deliveredNutrientPayload && (
+                    <div className="w-full p-2 bg-blue-50/90 rounded-lg border border-blue-200 text-center text-[10.5px] space-y-0.5 shadow-2xs">
+                      <span className="font-bold text-blue-950 uppercase tracking-wider block text-[9.5px]">
+                        Patient Daily Powder Need
+                      </span>
+                      <div className="font-mono font-bold text-blue-900 text-sm">
+                        {result.deliveredNutrientPayload.dailyPowderGrams}g{" "}
+                        <span className="text-[10px] font-normal text-blue-700">powder/day</span>
+                      </div>
+                      <div className="text-blue-800 text-[10px]">
+                        ≈ <strong>{result.deliveredNutrientPayload.dailyScoops}</strong> scoops/day
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-3 flex-1 text-center sm:text-left">
@@ -549,6 +564,14 @@ export function NutritionEngine({
                   </div>
                 </div>
               </div>
+
+              {/* Comprehensive Delivered Patient Nutrient Breakdown Niche */}
+              {result.deliveredNutrientPayload && (
+                <PatientNutrientPayload
+                  payload={result.deliveredNutrientPayload}
+                  isGraduated={true}
+                />
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                 <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
@@ -718,7 +741,7 @@ export function NutritionEngine({
             >
               <div className="space-y-4 text-xs leading-relaxed text-slate-700">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 p-3.5 rounded-xl bg-slate-50 border border-slate-200">
-                  <div className="shrink-0 flex items-center justify-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs">
+                  <div className="shrink-0 flex flex-col items-center justify-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-2xs gap-2 w-full sm:w-auto">
                     <Image
                       src={result.imageSrc || "/pediamil-lbw.png"}
                       alt={`${result.formulaProfile.brand} Product Pack`}
@@ -727,6 +750,20 @@ export function NutritionEngine({
                       className="max-h-[175px] sm:max-h-[190px] w-auto object-contain"
                       unoptimized
                     />
+                    {result.deliveredNutrientPayload && (
+                      <div className="w-full p-2 bg-emerald-50/90 rounded-lg border border-emerald-200 text-center text-[10.5px] space-y-0.5 shadow-2xs">
+                        <span className="font-bold text-emerald-950 uppercase tracking-wider block text-[9.5px]">
+                          Patient Daily Powder Need
+                        </span>
+                        <div className="font-mono font-bold text-emerald-900 text-sm">
+                          {result.deliveredNutrientPayload.dailyPowderGrams}g{" "}
+                          <span className="text-[10px] font-normal text-emerald-700">powder/day</span>
+                        </div>
+                        <div className="text-emerald-800 text-[10px]">
+                          ≈ <strong>{result.deliveredNutrientPayload.dailyScoops}</strong> scoops/day
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2 flex-1 text-center sm:text-left">
                     <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
@@ -774,6 +811,14 @@ export function NutritionEngine({
                       Powder mass: {result.formulaProfile.productProfile.reconstitution.powderMassGramsPer100Ml} g per 100 mL prepared feed.
                     </p>
                   </div>
+                )}
+
+                {/* Patient Delivered Daily Nutritional Payload Niche */}
+                {result.deliveredNutrientPayload && (
+                  <PatientNutrientPayload
+                    payload={result.deliveredNutrientPayload}
+                    isGraduated={false}
+                  />
                 )}
 
                 <div className="p-2.5 bg-slate-100 rounded text-[10.5px] text-slate-500 italic">

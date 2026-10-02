@@ -468,6 +468,35 @@ assert(
   "Missing optional measurements (length/HC) calculate weight velocity cleanly"
 );
 
+// =============================================================================
+// DOMAIN 9: PATIENT DELIVERED DAILY NUTRIENT PAYLOAD & DOCTOR RELATABILITY
+// =============================================================================
+console.log("\n--- Domain 9: Patient Delivered Daily Nutritional Payload ---");
+
+// Test 9.1: Preterm 1500g infant on 150 mL/kg/d Pediamil LBW (225 mL/day total volume)
+const pretermNutrition = calculateLbwNutrition(1500, 150);
+const pretermPayload = pretermNutrition.deliveredNutrientPayload;
+assert(pretermPayload !== undefined, "Preterm patient delivered nutrient payload is calculated");
+assert(pretermPayload?.totalDailyVolumeMl === 225, `Total daily volume is 225 mL (got: ${pretermPayload?.totalDailyVolumeMl})`);
+assert(pretermPayload?.dailyPowderGrams === 33.8, `Daily powder requirement is 33.8g (got: ${pretermPayload?.dailyPowderGrams})`);
+assert(pretermPayload?.dailyScoops === 6.8, `Daily scoop requirement is 6.8 scoops (got: ${pretermPayload?.dailyScoops})`);
+assert(pretermPayload?.calciumMgPerDay === 292.6, `Delivered Calcium is 292.6 mg/d (got: ${pretermPayload?.calciumMgPerDay})`);
+assert(pretermPayload?.calciumMgPerKgPerDay === 195.1, `Delivered Calcium is 195.1 mg/kg/d (got: ${pretermPayload?.calciumMgPerKgPerDay})`);
+assert(pretermPayload?.phosphorusMgPerDay === 146.5, `Delivered Phosphorus is 146.5 mg/d (got: ${pretermPayload?.phosphorusMgPerDay})`);
+assert(pretermPayload?.ironMgPerKgPerDay === 2.93, `Delivered Iron is 2.93 mg/kg/d within ESPGHAN 2-3 target (got: ${pretermPayload?.ironMgPerKgPerDay})`);
+assert(pretermPayload?.sodiumMmolPerKgPerDay === 2.26, `Delivered Sodium is 2.26 mmol/kg/d within ESPGHAN 2-3 target (got: ${pretermPayload?.sodiumMmolPerKgPerDay})`);
+assert(pretermPayload?.vitaminD3IuPerDay === 372, `Delivered Vitamin D3 is 372 IU/day (got: ${pretermPayload?.vitaminD3IuPerDay})`);
+assert(pretermPayload?.items.length !== undefined && pretermPayload.items.length >= 15, "Payload contains comprehensive categorized nutrient items");
+
+// Test 9.2: Graduated 4000g infant on 150 mL/kg/d Pediamil 1 (600 mL/day total volume)
+const termNutrition = calculateLbwNutrition(4000, 150);
+const termPayload = termNutrition.deliveredNutrientPayload;
+assert(termPayload !== undefined, "Term patient delivered nutrient payload is calculated");
+assert(termPayload?.productName === "Pediamil® 1", `Term product is Pediamil® 1 (got: ${termPayload?.productName})`);
+assert(termPayload?.totalDailyVolumeMl === 600, `Term total daily volume is 600 mL (got: ${termPayload?.totalDailyVolumeMl})`);
+assert(termPayload?.dailyPowderGrams === 82.2, `Term daily powder requirement is 82.2g (got: ${termPayload?.dailyPowderGrams})`);
+assert(termPayload?.proteinGramsPerDay === 8.94, `Term delivered protein is 8.94 g/d (got: ${termPayload?.proteinGramsPerDay})`);
+
 // Helper for 28w age calculation
 function age28w() {
   return calculateAges(28, 0, "2026-05-01", "2026-05-01");

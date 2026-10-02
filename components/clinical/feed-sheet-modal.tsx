@@ -526,11 +526,71 @@ export function FeedSheetModal({
                 )}
               </div>
 
-              {/* Section 4: Anthropometric Growth Interpretation (Omitted in Nutrition-Only Mode) */}
+              {/* Section 4: Delivered Micronutrient & Bone Mineral Accretion */}
+              {nut.deliveredNutrientPayload && (
+                <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-1.5">
+                    <span>4. Delivered Micronutrient & Bone Mineral Accretion (24h Payload)</span>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      Daily Powder: {nut.deliveredNutrientPayload.dailyPowderGrams}g (~{nut.deliveredNutrientPayload.dailyScoops} scp in {nut.deliveredNutrientPayload.waterVolumeMlPerDay} mL water)
+                    </span>
+                  </h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Calcium (Ca)</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.calciumMgPerDay} mg/d</strong>
+                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.calciumMgPerKgPerDay} mg/kg/d)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Phosphorus (P)</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.phosphorusMgPerDay} mg/d</strong>
+                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.phosphorusMgPerKgPerDay} mg/kg/d)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Vitamin D3</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.vitaminD3IuPerDay} IU/d</strong>
+                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.vitaminD3IuPerKgPerDay} IU/kg/d)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Elemental Iron (Fe)</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.ironMgPerDay} mg/d</strong>
+                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.ironMgPerKgPerDay} mg/kg/d)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Sodium (Na)</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.sodiumMgPerDay} mg/d</strong>
+                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.sodiumMmolPerKgPerDay} mmol/kg/d)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Potassium (K)</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.potassiumMgPerDay} mg/d</strong>
+                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.potassiumMmolPerKgPerDay} mmol/kg/d)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">DHA & ARA (1:1)</span>
+                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.dhaMgPerDay} mg/d</strong>
+                      <span className="text-[10px] text-slate-600 block">each (Brain/Retina)</span>
+                    </div>
+                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
+                      <span className="text-slate-500 block text-[10px]">Immune Bioactives</span>
+                      <strong className="font-mono text-slate-900">
+                        {nut.deliveredNutrientPayload.twoFlHmoGramsPerDay
+                          ? `${nut.deliveredNutrientPayload.twoFlHmoGramsPerDay}g HMO`
+                          : nut.deliveredNutrientPayload.alphaLactalbuminGramsPerDay
+                          ? `${nut.deliveredNutrientPayload.alphaLactalbuminGramsPerDay}g α-Lact`
+                          : "Bioactive Matrix"}
+                      </strong>
+                      <span className="text-[10px] text-emerald-700 block">Gut Mucosa & Flora</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Section 5: Anthropometric Growth Interpretation (Omitted in Nutrition-Only Mode) */}
               {!allowNutritionOnly && weightPercentile && (
                 <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
                   <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <span>4. Anthropometric Growth Trajectory Assessment</span>
+                    <span>5. Anthropometric Growth Trajectory Assessment</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">

@@ -223,6 +223,94 @@ export type OverallClinicalStatus =
   | "Invalid input"
   | "Out of supported range";
 
+export interface NutrientDeliveryItem {
+  id: string;
+  name: string;
+  category: "macronutrient" | "mineral" | "electrolyte" | "vitamin" | "specialty";
+  amountPerDay: number;
+  amountPerKgPerDay?: number;
+  unit: string;
+  concentrationPer100Ml: string | number;
+  clinicalTarget?: string;
+  clinicalInterpretation?: string;
+  status?: "target_met" | "within_target" | "below_target" | "above_target" | "info";
+}
+
+export interface DeliveredPatientNutrientPayload {
+  productName: string;
+  productClassification: string;
+  weightGrams: number;
+  weightKg: number;
+  fluidAllowanceMlPerKg: number;
+  totalDailyVolumeMl: number;
+
+  // Reconstitution & Preparation
+  dailyPowderGrams: number;
+  dailyScoops: number;
+  powderGramsPerScoop: number;
+  waterVolumeMlPerDay: number;
+  scoopsPerFeedQ3h: number;
+  scoopsPerFeedQ2h: number;
+  preparationInstructions: string;
+
+  // Core Numbers
+  energyKcalPerDay: number;
+  energyKcalPerKgPerDay: number;
+  proteinGramsPerDay: number;
+  proteinGramsPerKgPerDay: number;
+  wheyGramsPerDay: number;
+  caseinGramsPerDay: number;
+  wheyCaseinRatio: string;
+  carbsGramsPerDay: number;
+  carbsGramsPerKgPerDay: number;
+  lactoseGramsPerDay: number;
+  fatGramsPerDay: number;
+  fatGramsPerKgPerDay: number;
+
+  // Key Minerals
+  calciumMgPerDay: number;
+  calciumMgPerKgPerDay: number;
+  phosphorusMgPerDay: number;
+  phosphorusMgPerKgPerDay: number;
+  calciumPhosphorusRatio: string;
+  magnesiumMgPerDay: number;
+  magnesiumMgPerKgPerDay: number;
+  ironMgPerDay: number;
+  ironMgPerKgPerDay: number;
+  zincMgPerDay: number;
+  zincMgPerKgPerDay: number;
+  copperMcgPerDay: number;
+  iodineMcgPerDay: number;
+  seleniumMcgPerDay: number;
+
+  // Electrolytes
+  sodiumMgPerDay: number;
+  sodiumMmolPerKgPerDay: number;
+  potassiumMgPerDay: number;
+  potassiumMmolPerKgPerDay: number;
+  chlorideMgPerDay: number;
+
+  // Vitamins
+  vitaminD3McgPerDay: number;
+  vitaminD3IuPerDay: number;
+  vitaminD3IuPerKgPerDay: number;
+  vitaminAMcgPerDay: number;
+  vitaminAMcgPerKgPerDay: number;
+  vitaminCMgPerDay: number;
+  vitaminKMcgPerDay: number;
+  folicAcidMcgPerDay: number;
+
+  // Specialty & Functional
+  dhaMgPerDay: number;
+  araMgPerDay: number;
+  twoFlHmoGramsPerDay?: number;
+  prebioticsGosGramsPerDay?: number;
+  alphaLactalbuminGramsPerDay?: number;
+
+  // Categorized items array for clean rendering and filtering
+  items: NutrientDeliveryItem[];
+}
+
 export interface NutritionCalculationResult {
   // Input validation
   validation: ValidationReport;
@@ -265,6 +353,9 @@ export interface NutritionCalculationResult {
   recommendationText?: string;
   standardTermTargets?: StandardTermTargets;
   productDisclaimer: string;
+
+  // Comprehensive Delivered Patient Nutrient Breakdown
+  deliveredNutrientPayload?: DeliveredPatientNutrientPayload;
 
   // Clinical Summaries & Audit
   clinicalSummary?: string;
@@ -673,6 +764,14 @@ export function calculateLbwNutrition(
     ? `Patient weight (${weightGrams}g) exceeds 3,500g graduation ceiling. Term-equivalent targets active (~100 kcal/kg/d). Product routed: Pediamil® 1.`
     : `Preterm LBW pathway active (${proteinBracket.classification}). Prescribed ${fluidAllowanceMlPerKg} mL/kg/d delivers ${deliveredEnergyKcalPerKgPerDay} kcal/kg/d (${energyCompliance.badgeLabel}) and ${deliveredProteinGramsPerKgPerDay} g/kg/d protein (${proteinCompliance.badgeLabel}). P:E ratio: ${proteinToEnergyRatioGramsPer100Kcal} g/100 kcal (${peRatioCompliance.badgeLabel}). Product routed: Pediamil® LBW.`;
 
+  // 8. Comprehensive Patient Delivered Daily Nutritional Payload
+  const activeProductProfile = activeFormula.productProfile || (isGraduated ? PEDIAMIL_1_PRODUCT : PEDIAMIL_LBW_PRODUCT);
+  const deliveredNutrientPayload = calculatePatientDeliveredNutrientPayload(
+    weightGrams,
+    fluidAllowanceMlPerKg,
+    activeProductProfile
+  );
+
   return {
     validation,
     isBlocked: false,
@@ -698,7 +797,435 @@ export function calculateLbwNutrition(
     recommendationText,
     standardTermTargets,
     productDisclaimer: PRODUCT_DATA_DISCLAIMER,
+    deliveredNutrientPayload,
     clinicalSummary,
     auditMetadata,
+  };
+}
+
+/**
+ * Calculates the exact patient delivered nutritional payload from the prescribed formula
+ * Bridges entered fluid volume & patient weight to verified product composition
+ */
+export function calculatePatientDeliveredNutrientPayload(
+  weightGrams: number,
+  fluidAllowanceMlPerKg: number,
+  product: ProductProfile
+): DeliveredPatientNutrientPayload {
+  const weightKg = weightGrams / 1000;
+  const totalDailyVolumeMl = Math.round(weightKg * fluidAllowanceMlPerKg * 10) / 10;
+  const factor = totalDailyVolumeMl / 100;
+  const comp = product.composition;
+  const recon = product.reconstitution;
+  const isPreterm = weightGrams <= 3500;
+
+  // Reconstitution & logistics
+  const dailyPowderGrams = Math.round(recon.powderMassGramsPer100Ml * factor * 10) / 10;
+  const dailyScoops = Math.round((dailyPowderGrams / recon.powderGramsPerScoop) * 10) / 10;
+  const waterVolumeMlPerDay = Math.round(
+    (recon.waterVolumeMlPer3Scoops / recon.finalFeedVolumeMlPer3Scoops) * totalDailyVolumeMl * 10
+  ) / 10;
+  const scoopsPerFeedQ3h = Math.round((dailyScoops / 8) * 10) / 10;
+  const scoopsPerFeedQ2h = Math.round((dailyScoops / 12) * 10) / 10;
+
+  // Energy & Macros
+  const energyKcalPerDay = Math.round(comp.energyKcalPer100Ml * factor * 10) / 10;
+  const energyKcalPerKgPerDay = Math.round((energyKcalPerDay / weightKg) * 10) / 10;
+  const proteinGramsPerDay = Math.round(comp.proteinGramsPer100Ml * factor * 100) / 100;
+  const proteinGramsPerKgPerDay = Math.round((proteinGramsPerDay / weightKg) * 100) / 100;
+  const wheyGramsPerDay = Math.round((comp.wheyGramsPer100Ml || 0) * factor * 100) / 100;
+  const caseinGramsPerDay = Math.round((comp.caseinGramsPer100Ml || 0) * factor * 100) / 100;
+  const carbsGramsPerDay = Math.round(comp.carbsGramsPer100Ml * factor * 100) / 100;
+  const carbsGramsPerKgPerDay = Math.round((carbsGramsPerDay / weightKg) * 100) / 100;
+  const lactoseGramsPerDay = Math.round((comp.lactoseGramsPer100Ml || comp.carbsGramsPer100Ml) * factor * 100) / 100;
+  const fatGramsPerDay = Math.round(comp.fatGramsPer100Ml * factor * 100) / 100;
+  const fatGramsPerKgPerDay = Math.round((fatGramsPerDay / weightKg) * 100) / 100;
+
+  // Bone Minerals & Growth Elements
+  const calciumMgPerDay = Math.round(comp.calciumMgPer100Ml * factor * 10) / 10;
+  const calciumMgPerKgPerDay = Math.round((calciumMgPerDay / weightKg) * 10) / 10;
+  const phosphorusMgPerDay = Math.round(comp.phosphorusMgPer100Ml * factor * 10) / 10;
+  const phosphorusMgPerKgPerDay = Math.round((phosphorusMgPerDay / weightKg) * 10) / 10;
+  const magnesiumMgPerDay = Math.round(comp.magnesiumMgPer100Ml * factor * 10) / 10;
+  const magnesiumMgPerKgPerDay = Math.round((magnesiumMgPerDay / weightKg) * 10) / 10;
+  const ironMgPerDay = Math.round(comp.ironMgPer100Ml * factor * 100) / 100;
+  const ironMgPerKgPerDay = Math.round((ironMgPerDay / weightKg) * 100) / 100;
+  const zincMgPerDay = Math.round(comp.zincMgPer100Ml * factor * 100) / 100;
+  const zincMgPerKgPerDay = Math.round((zincMgPerDay / weightKg) * 100) / 100;
+  const copperMcgPerDay = Math.round(comp.copperMcgPer100Ml * factor * 10) / 10;
+  const iodineMcgPerDay = Math.round(comp.iodineMcgPer100Ml * factor * 10) / 10;
+  const seleniumMcgPerDay = Math.round(comp.seleniumMcgPer100Ml * factor * 100) / 100;
+
+  // Electrolytes
+  const sodiumMgPerDay = Math.round(comp.sodiumMgPer100Ml * factor * 10) / 10;
+  const sodiumMmolPerKgPerDay = Math.round(((sodiumMgPerDay / weightKg / 23) * 100)) / 100;
+  const potassiumMgPerDay = Math.round(comp.potassiumMgPer100Ml * factor * 10) / 10;
+  const potassiumMmolPerKgPerDay = Math.round(((potassiumMgPerDay / weightKg / 39.1) * 100)) / 100;
+  const chlorideMgPerDay = Math.round(comp.chlorideMgPer100Ml * factor * 10) / 10;
+
+  // Vitamins
+  const vitaminD3McgPerDay = Math.round(comp.vitaminD3McgPer100Ml * factor * 100) / 100;
+  const vitaminD3IuPerDay = Math.round(vitaminD3McgPerDay * 40);
+  const vitaminD3IuPerKgPerDay = Math.round(vitaminD3IuPerDay / weightKg);
+  const vitaminAMcgPerDay = Math.round(comp.vitaminAMcgPer100Ml * factor * 10) / 10;
+  const vitaminAMcgPerKgPerDay = Math.round((vitaminAMcgPerDay / weightKg) * 10) / 10;
+  const vitaminCMgPerDay = Math.round(comp.vitaminCMgPer100Ml * factor * 10) / 10;
+  const vitaminKMcgPerDay = Math.round(comp.vitaminKMcgPer100Ml * factor * 10) / 10;
+  const folicAcidMcgPerDay = Math.round(comp.folicAcidMcgPer100Ml * factor * 10) / 10;
+
+  // Specialty Functional Ingredients
+  const dhaMgPerDay = Math.round((comp.dhaMgPer100Ml || 0) * factor * 10) / 10;
+  const araMgPerDay = Math.round((comp.araMgPer100Ml || 0) * factor * 10) / 10;
+  const twoFlHmoGramsPerDay = comp.twoFlHmoGramsPer100Ml
+    ? Math.round(comp.twoFlHmoGramsPer100Ml * factor * 1000) / 1000
+    : undefined;
+  const prebioticsGosGramsPerDay = comp.prebioticsGosGramsPer100Ml
+    ? Math.round(comp.prebioticsGosGramsPer100Ml * factor * 100) / 100
+    : undefined;
+  const alphaLactalbuminGramsPerDay = comp.alphaLactalbuminGramsPer100G
+    ? Math.round(comp.alphaLactalbuminGramsPer100G * (dailyPowderGrams / 100) * 100) / 100
+    : undefined;
+
+  // Detailed items array for UI rendering and doctor interpretation
+  const items: NutrientDeliveryItem[] = [
+    {
+      id: "energy",
+      name: "Delivered Energy",
+      category: "macronutrient",
+      amountPerDay: energyKcalPerDay,
+      amountPerKgPerDay: energyKcalPerKgPerDay,
+      unit: "kcal",
+      concentrationPer100Ml: `${comp.energyKcalPer100Ml} kcal`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 115–140 kcal/kg/d" : "Standard Term: ~100 kcal/kg/d",
+      clinicalInterpretation: isPreterm
+        ? energyKcalPerKgPerDay >= 115 && energyKcalPerKgPerDay <= 140
+          ? "Within ESPGHAN 2022 recommended typical catch-up range"
+          : energyKcalPerKgPerDay > 140
+          ? "Conditional catch-up range (monitor growth & tolerance)"
+          : "Below ESPGHAN minimum (risk of slow growth)"
+        : "Standard energy density for mature infant somatic accretion",
+      status: isPreterm
+        ? energyKcalPerKgPerDay >= 115 && energyKcalPerKgPerDay <= 140
+          ? "within_target"
+          : energyKcalPerKgPerDay > 140
+          ? "above_target"
+          : "below_target"
+        : "within_target",
+    },
+    {
+      id: "protein",
+      name: `True Protein (${comp.wheyCaseinRatio || "60:40"} Whey/Casein)`,
+      category: "macronutrient",
+      amountPerDay: proteinGramsPerDay,
+      amountPerKgPerDay: proteinGramsPerKgPerDay,
+      unit: "g",
+      concentrationPer100Ml: `${comp.proteinGramsPer100Ml} g`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 3.5–4.0 g/kg/d" : "Term: 1.8–2.0 g/100 kcal (~1.5–2.5 g/kg/d)",
+      clinicalInterpretation: isPreterm
+        ? `Whey: ${wheyGramsPerDay}g/d, Casein: ${caseinGramsPerDay}g/d. Supports lean somatic tissue accretion.`
+        : "Standard milk protein ratio for mature renal solute tolerance.",
+      status: isPreterm
+        ? proteinGramsPerKgPerDay >= 3.2 && proteinGramsPerKgPerDay <= 4.1
+          ? "within_target"
+          : "info"
+        : "within_target",
+    },
+    {
+      id: "carbs",
+      name: "Carbohydrates (100% Lactose)",
+      category: "macronutrient",
+      amountPerDay: carbsGramsPerDay,
+      amountPerKgPerDay: carbsGramsPerKgPerDay,
+      unit: "g",
+      concentrationPer100Ml: `${comp.carbsGramsPer100Ml} g`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 10.5–12.0 g/kg/d" : "Term: 9.0–13.0 g/kg/d",
+      clinicalInterpretation: "Facilitates calcium absorption and healthy bifidogenic gut flora establishment.",
+      status: "within_target",
+    },
+    {
+      id: "lipids",
+      name: "Total Lipids / Fatty Acids",
+      category: "macronutrient",
+      amountPerDay: fatGramsPerDay,
+      amountPerKgPerDay: fatGramsPerKgPerDay,
+      unit: "g",
+      concentrationPer100Ml: `${comp.fatGramsPer100Ml} g`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 4.8–6.6 g/kg/d" : "Term: 4.0–6.0 g/kg/d",
+      clinicalInterpretation: "Provides ~50% of non-protein caloric density and essential fatty acid delivery.",
+      status: "within_target",
+    },
+    {
+      id: "calcium",
+      name: "Calcium (Ca)",
+      category: "mineral",
+      amountPerDay: calciumMgPerDay,
+      amountPerKgPerDay: calciumMgPerKgPerDay,
+      unit: "mg",
+      concentrationPer100Ml: `${comp.calciumMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 120–140 mg/kg/d" : "Term: 60–100 mg/kg/d",
+      clinicalInterpretation: isPreterm
+        ? calciumMgPerKgPerDay >= 120
+          ? "Achieves ESPGHAN intrauterine accretion rate to prevent osteopenia of prematurity"
+          : "Supplemental calcium may be evaluated"
+        : "Adequate for mature term infant bone mineral density",
+      status: isPreterm
+        ? calciumMgPerKgPerDay >= 120
+          ? "target_met"
+          : "below_target"
+        : "within_target",
+    },
+    {
+      id: "phosphorus",
+      name: "Phosphorus (P)",
+      category: "mineral",
+      amountPerDay: phosphorusMgPerDay,
+      amountPerKgPerDay: phosphorusMgPerKgPerDay,
+      unit: "mg",
+      concentrationPer100Ml: `${comp.phosphorusMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 65–90 mg/kg/d" : "Term: 30–60 mg/kg/d",
+      clinicalInterpretation: `Ca:P Molar Ratio = ${comp.calciumPhosphorusRatio}. Balances cellular phosphorylation and skeletal mineralization.`,
+      status: isPreterm
+        ? phosphorusMgPerKgPerDay >= 65
+          ? "target_met"
+          : "below_target"
+        : "within_target",
+    },
+    {
+      id: "iron",
+      name: "Elemental Iron (Fe)",
+      category: "mineral",
+      amountPerDay: ironMgPerDay,
+      amountPerKgPerDay: ironMgPerKgPerDay,
+      unit: "mg",
+      concentrationPer100Ml: `${comp.ironMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 2.0–3.0 mg/kg/d" : "Term: 0.9–1.3 mg/100 kcal",
+      clinicalInterpretation: isPreterm
+        ? ironMgPerKgPerDay >= 2.0 && ironMgPerKgPerDay <= 3.0
+          ? "Meets ESPGHAN enteral iron target for anemia of prematurity prophylaxis"
+          : ironMgPerKgPerDay > 3.0
+          ? "High iron delivery; avoid unnecessary additional iron supplements"
+          : "May require routine elemental iron drops if <2 mg/kg/d"
+        : "Standard formula iron prophylaxis for iron-deficiency anemia prevention",
+      status: isPreterm
+        ? ironMgPerKgPerDay >= 2.0 && ironMgPerKgPerDay <= 3.0
+          ? "within_target"
+          : "info"
+        : "within_target",
+    },
+    {
+      id: "zinc",
+      name: "Zinc (Zn)",
+      category: "mineral",
+      amountPerDay: zincMgPerDay,
+      amountPerKgPerDay: zincMgPerKgPerDay,
+      unit: "mg",
+      concentrationPer100Ml: `${comp.zincMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 1.0–2.0 mg/kg/d" : "Term: 0.5–1.0 mg/kg/d",
+      clinicalInterpretation: "Essential cofactor for somatic protein synthesis, immune response, and linear growth.",
+      status: "within_target",
+    },
+    {
+      id: "magnesium",
+      name: "Magnesium (Mg)",
+      category: "mineral",
+      amountPerDay: magnesiumMgPerDay,
+      amountPerKgPerDay: magnesiumMgPerKgPerDay,
+      unit: "mg",
+      concentrationPer100Ml: `${comp.magnesiumMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 8–15 mg/kg/d" : "Term: 5–8 mg/kg/d",
+      clinicalInterpretation: "Crucial neuromuscular and enzymatic cofactor; supports calcium homeostasis.",
+      status: "within_target",
+    },
+    {
+      id: "sodium",
+      name: "Sodium (Na)",
+      category: "electrolyte",
+      amountPerDay: sodiumMgPerDay,
+      amountPerKgPerDay: sodiumMmolPerKgPerDay,
+      unit: "mg (mmol/kg/d)",
+      concentrationPer100Ml: `${comp.sodiumMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 2.0–3.0 mmol/kg/d" : "Term: 1.0–2.0 mmol/kg/d",
+      clinicalInterpretation: isPreterm
+        ? `Delivers ${sodiumMmolPerKgPerDay} mmol/kg/d. Replaces high neonatal fractional excretion of sodium.`
+        : `Delivers ${sodiumMmolPerKgPerDay} mmol/kg/d. Normal low renal solute load for mature kidneys.`,
+      status: isPreterm
+        ? sodiumMmolPerKgPerDay >= 2.0 && sodiumMmolPerKgPerDay <= 3.0
+          ? "within_target"
+          : "info"
+        : "within_target",
+    },
+    {
+      id: "potassium",
+      name: "Potassium (K)",
+      category: "electrolyte",
+      amountPerDay: potassiumMgPerDay,
+      amountPerKgPerDay: potassiumMmolPerKgPerDay,
+      unit: "mg (mmol/kg/d)",
+      concentrationPer100Ml: `${comp.potassiumMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 2.0–3.0 mmol/kg/d" : "Term: 1.5–2.5 mmol/kg/d",
+      clinicalInterpretation: `Delivers ${potassiumMmolPerKgPerDay} mmol/kg/d. Major intracellular cation for muscle and myocardial tone.`,
+      status: "within_target",
+    },
+    {
+      id: "chloride",
+      name: "Chloride (Cl)",
+      category: "electrolyte",
+      amountPerDay: chlorideMgPerDay,
+      unit: "mg",
+      concentrationPer100Ml: `${comp.chlorideMgPer100Ml} mg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 2.0–3.0 mmol/kg/d" : "Term: 1.5–2.5 mmol/kg/d",
+      clinicalInterpretation: "Maintains serum electroneutrality and acid-base equilibrium.",
+      status: "within_target",
+    },
+    {
+      id: "vitaminD3",
+      name: "Vitamin D3 (Cholecalciferol)",
+      category: "vitamin",
+      amountPerDay: vitaminD3IuPerDay,
+      amountPerKgPerDay: vitaminD3IuPerKgPerDay,
+      unit: "IU",
+      concentrationPer100Ml: `${comp.vitaminD3McgPer100Ml} mcg (${Math.round(comp.vitaminD3McgPer100Ml * 40)} IU)`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 400–1000 IU/day" : "AAP/ESPGHAN: 400 IU/day",
+      clinicalInterpretation: isPreterm
+        ? `${vitaminD3IuPerDay} IU/day (${vitaminD3McgPerDay} mcg/d). ${vitaminD3IuPerDay >= 400 ? "Satisfies minimum ESPGHAN preterm requirement" : "Approaching 400 IU target; assess whether extra oral D3 drops are needed"}.`
+        : `${vitaminD3IuPerDay} IU/day. Meets standard pediatric guideline for rickets prevention.`,
+      status: isPreterm
+        ? vitaminD3IuPerDay >= 400 && vitaminD3IuPerDay <= 1000
+          ? "within_target"
+          : "info"
+        : "within_target",
+    },
+    {
+      id: "vitaminA",
+      name: "Vitamin A (Retinol)",
+      category: "vitamin",
+      amountPerDay: vitaminAMcgPerDay,
+      amountPerKgPerDay: vitaminAMcgPerKgPerDay,
+      unit: "mcg RE",
+      concentrationPer100Ml: `${comp.vitaminAMcgPer100Ml} mcg`,
+      clinicalTarget: isPreterm ? "ESPGHAN: 400–1000 mcg RE/kg/d" : "Term: 250–500 mcg/d",
+      clinicalInterpretation: "Protects respiratory epithelial integrity, surfactant production, and retinal development.",
+      status: "within_target",
+    },
+    {
+      id: "dhaAra",
+      name: "DHA & ARA (1:1 Balanced Ratio)",
+      category: "specialty",
+      amountPerDay: dhaMgPerDay,
+      unit: "mg each",
+      concentrationPer100Ml: `${comp.dhaMgPer100Ml || 0} mg DHA / ${comp.araMgPer100Ml || 0} mg ARA`,
+      clinicalTarget: "ESPGHAN 2022: DHA 12–30 mg/100 kcal (with ARA >= DHA)",
+      clinicalInterpretation: `Delivers ${dhaMgPerDay} mg DHA and ${araMgPerDay} mg ARA daily. Critical for retinal photoreceptors and cognitive maturation.`,
+      status: "target_met",
+    },
+  ];
+
+  if (twoFlHmoGramsPerDay !== undefined) {
+    items.push({
+      id: "hmo",
+      name: "2'-FL Human Milk Oligosaccharide (HMO)",
+      category: "specialty",
+      amountPerDay: twoFlHmoGramsPerDay,
+      unit: "g",
+      concentrationPer100Ml: `${comp.twoFlHmoGramsPer100Ml} g`,
+      clinicalTarget: "Human Milk Bio-Equivalent",
+      clinicalInterpretation: "Supports innate mucosal immunity, pathogen decoy binding, and beneficial bifidobacterial colonization.",
+      status: "target_met",
+    });
+  }
+
+  if (prebioticsGosGramsPerDay !== undefined) {
+    items.push({
+      id: "gos",
+      name: "Prebiotics (GOS)",
+      category: "specialty",
+      amountPerDay: prebioticsGosGramsPerDay,
+      unit: "g",
+      concentrationPer100Ml: `${comp.prebioticsGosGramsPer100Ml} g`,
+      clinicalTarget: "Gastrointestinal Motility Support",
+      clinicalInterpretation: "Promotes softer stools, prevents necrotizing enterocolitis dysbiosis, and enhances GI tolerance.",
+      status: "target_met",
+    });
+  }
+
+  if (alphaLactalbuminGramsPerDay !== undefined) {
+    items.push({
+      id: "alphaLactalbumin",
+      name: "Alpha-Lactalbumin Bioactive Protein",
+      category: "specialty",
+      amountPerDay: alphaLactalbuminGramsPerDay,
+      unit: "g",
+      concentrationPer100Ml: `${comp.alphaLactalbuminGramsPer100G} g / 100g powder`,
+      clinicalTarget: "Human Milk Bioactive Profile",
+      clinicalInterpretation: "High in essential amino acids (tryptophan, cysteine) with superior gastric digestibility and low renal solute load.",
+      status: "target_met",
+    });
+  }
+
+  return {
+    productName: product.brandName,
+    productClassification: product.genericClassification,
+    weightGrams,
+    weightKg,
+    fluidAllowanceMlPerKg,
+    totalDailyVolumeMl,
+    dailyPowderGrams,
+    dailyScoops,
+    powderGramsPerScoop: recon.powderGramsPerScoop,
+    waterVolumeMlPerDay,
+    scoopsPerFeedQ3h,
+    scoopsPerFeedQ2h,
+    preparationInstructions: recon.preparationInstructions,
+
+    energyKcalPerDay,
+    energyKcalPerKgPerDay,
+    proteinGramsPerDay,
+    proteinGramsPerKgPerDay,
+    wheyGramsPerDay,
+    caseinGramsPerDay,
+    wheyCaseinRatio: comp.wheyCaseinRatio,
+    carbsGramsPerDay,
+    carbsGramsPerKgPerDay,
+    lactoseGramsPerDay,
+    fatGramsPerDay,
+    fatGramsPerKgPerDay,
+
+    calciumMgPerDay,
+    calciumMgPerKgPerDay,
+    phosphorusMgPerDay,
+    phosphorusMgPerKgPerDay,
+    calciumPhosphorusRatio: comp.calciumPhosphorusRatio,
+    magnesiumMgPerDay,
+    magnesiumMgPerKgPerDay,
+    ironMgPerDay,
+    ironMgPerKgPerDay,
+    zincMgPerDay,
+    zincMgPerKgPerDay,
+    copperMcgPerDay,
+    iodineMcgPerDay,
+    seleniumMcgPerDay,
+
+    sodiumMgPerDay,
+    sodiumMmolPerKgPerDay,
+    potassiumMgPerDay,
+    potassiumMmolPerKgPerDay,
+    chlorideMgPerDay,
+
+    vitaminD3McgPerDay,
+    vitaminD3IuPerDay,
+    vitaminD3IuPerKgPerDay,
+    vitaminAMcgPerDay,
+    vitaminAMcgPerKgPerDay,
+    vitaminCMgPerDay,
+    vitaminKMcgPerDay,
+    folicAcidMcgPerDay,
+
+    dhaMgPerDay,
+    araMgPerDay,
+    twoFlHmoGramsPerDay,
+    prebioticsGosGramsPerDay,
+    alphaLactalbuminGramsPerDay,
+
+    items,
   };
 }
