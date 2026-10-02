@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { HcpGateModal } from "@/components/clinical/hcp-gate-modal";
 import { ClinicalHeader } from "@/components/clinical/clinical-header";
 import { NutritionEngine } from "@/components/clinical/nutrition-engine";
@@ -13,7 +13,7 @@ import {
   getGrowthDataset,
   evaluatePercentile,
 } from "@/lib/growth-engine";
-import { ShieldCheck, Info, Sparkles, BookOpen } from "lucide-react";
+import { ShieldCheck, Sparkles, BookOpen } from "lucide-react";
 
 export default function Home() {
   // HCP Gate state
@@ -22,15 +22,6 @@ export default function Home() {
   // Tab navigation: "nutrition" | "growth" | "split"
   const [activeTab, setActiveTab] = useState<"nutrition" | "growth" | "split">("nutrition");
   const [isFeedSheetOpen, setIsFeedSheetOpen] = useState(false);
-
-  // Clinical Case Defaults: Male infant born at 28w + 2d GA, current weight 1,350g, fluid 150 mL/kg/day
-  const [weightGrams, setWeightGrams] = useState<number>(1350);
-  const [fluidAllowance, setFluidAllowance] = useState<number>(150);
-
-  // Growth & Age Parameters
-  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex | null>("male");
-  const [gaWeeks, setGaWeeks] = useState<number>(28);
-  const [gaDays, setGaDays] = useState<number>(2);
 
   // Default dates: DOB 14 days ago, DOM today
   const defaultDates = useMemo(() => {
@@ -45,19 +36,36 @@ export default function Home() {
     };
   }, []);
 
+  // Clinical Case Baseline Defaults: Male infant born at 28w + 2d GA, current weight 1,350g, fluid 150 mL/kg/day
+  const [weightGrams, setWeightGrams] = useState<number>(1350);
+  const [fluidAllowance, setFluidAllowance] = useState<number>(150);
+  const [biologicalSex, setBiologicalSex] = useState<BiologicalSex | null>("male");
+  const [gaWeeks, setGaWeeks] = useState<number>(28);
+  const [gaDays, setGaDays] = useState<number>(2);
   const [dob, setDob] = useState<string>(defaultDates.dob);
   const [dom, setDom] = useState<string>(defaultDates.dom);
-
-  // Additional anthropometrics for growth plotting
   const [lengthCm, setLengthCm] = useState<number>(39.5);
   const [headCircumferenceCm, setHeadCircumferenceCm] = useState<number>(27.2);
 
-  // Deterministic nutrition calculation
+  // Patient reset callback
+  const handleResetPatient = useCallback(() => {
+    setWeightGrams(1350);
+    setFluidAllowance(150);
+    setBiologicalSex("male");
+    setGaWeeks(28);
+    setGaDays(2);
+    setDob(defaultDates.dob);
+    setDom(defaultDates.dom);
+    setLengthCm(39.5);
+    setHeadCircumferenceCm(27.2);
+  }, [defaultDates]);
+
+  // Deterministic nutrition calculation with strict validation
   const calculationResult = useMemo(() => {
     return calculateLbwNutrition(weightGrams, fluidAllowance);
   }, [weightGrams, fluidAllowance]);
 
-  // Derived ages
+  // Derived ages with strict validation
   const ages = useMemo(() => {
     return calculateAges(gaWeeks, gaDays, dob, dom);
   }, [gaWeeks, gaDays, dob, dom]);
@@ -119,6 +127,7 @@ export default function Home() {
               fluidAllowance={fluidAllowance}
               onFluidChange={setFluidAllowance}
               calculationResult={calculationResult}
+              onResetPatient={handleResetPatient}
             />
           </section>
         )}
@@ -173,6 +182,7 @@ export default function Home() {
                 fluidAllowance={fluidAllowance}
                 onFluidChange={setFluidAllowance}
                 calculationResult={calculationResult}
+                onResetPatient={handleResetPatient}
               />
             </div>
 
@@ -231,35 +241,32 @@ export default function Home() {
             <div>
               <div className="font-bold text-slate-900 flex items-center gap-2">
                 <span>Liptis Nutrition NeoPed™ LBW Clinical Suite</span>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200 font-mono">
-                  v1.0.0 Institutional
+                <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200 font-mono">
+                  v2.0.0 Institutional
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Formulated against ESPGHAN 2022 Preterm Enteral Recommendations and
-                Fenton 2013 / WHO 2006 Growth Standards.
+                Grounded strictly in ESPGHAN 2022 Preterm Enteral Recommendations and
+                Fenton 2013 / WHO 2006 Continuous LMS Standards.
               </p>
             </div>
 
             <div className="flex items-center gap-4 text-[11px] text-slate-500">
               <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
                 <ShieldCheck className="w-4 h-4" />
-                GDPR / HIPAA / GCC MOHAP Compliant
+                Zero Data Transmission • No PHI Stored
               </span>
               <span>•</span>
-              <span className="font-mono">100% Client-Side Computation</span>
+              <span className="font-mono">100% Client-Side Pure Math</span>
             </div>
           </div>
 
           <div className="border-t border-slate-100 pt-3 text-[10.5px] text-slate-400 leading-relaxed">
             <p>
-              <strong>Clinical Disclaimer:</strong> This application is a decision
-              support calculation matrix provided for licensed healthcare
-              professionals. Calculations are deterministic and executed strictly
-              within the local browser context. No patient information or clinical
-              metrics are logged, cached externally, or transmitted across any
-              network. Clinical judgement and individualized physiological monitoring
-              supersede standardized mathematical recommendations.
+              <strong>Clinical Decision Support Notice:</strong> This software is a deterministic mathematical reference
+              tool intended exclusively for licensed healthcare professionals. It does not constitute a medical order,
+              prescription, or automated diagnosis. Clinical judgment, fluid balance, diuresis, and metabolic monitoring
+              supersede all calculated values.
             </p>
           </div>
         </div>

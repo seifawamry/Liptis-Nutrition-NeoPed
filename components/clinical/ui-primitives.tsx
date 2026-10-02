@@ -58,13 +58,15 @@ export function StatusBadge({
   label,
   className,
 }: {
-  status: "suboptimal" | "on_target" | "exceeding" | "neutral";
+  status: "suboptimal" | "on_target" | "conditional" | "exceeding" | "neutral";
   label: string;
   className?: string;
 }) {
   const styles = {
     on_target:
       "bg-emerald-50 text-emerald-800 border-emerald-300 ring-1 ring-emerald-500/20",
+    conditional:
+      "bg-blue-50 text-blue-800 border-blue-300 ring-1 ring-blue-500/20",
     suboptimal:
       "bg-amber-50 text-amber-800 border-amber-300 ring-1 ring-amber-500/20",
     exceeding:
@@ -75,6 +77,7 @@ export function StatusBadge({
 
   const dotColors = {
     on_target: "bg-emerald-500",
+    conditional: "bg-blue-500",
     suboptimal: "bg-amber-500",
     exceeding: "bg-rose-500",
     neutral: "bg-slate-400",
@@ -89,7 +92,7 @@ export function StatusBadge({
       )}
     >
       <span
-        className={cn("w-2 h-2 rounded-full animate-pulse", dotColors[status])}
+        className={cn("w-2 h-2 rounded-full", dotColors[status])}
       />
       {label}
     </span>
@@ -100,6 +103,7 @@ export function RangeGauge({
   currentValue,
   minTarget,
   maxTarget,
+  conditionalMaxTarget,
   minScale,
   maxScale,
   unit,
@@ -109,11 +113,12 @@ export function RangeGauge({
   currentValue: number;
   minTarget: number;
   maxTarget: number;
+  conditionalMaxTarget?: number;
   minScale: number;
   maxScale: number;
   unit: string;
   metricName: string;
-  status: "suboptimal" | "on_target" | "exceeding";
+  status: "suboptimal" | "on_target" | "conditional" | "exceeding";
 }) {
   const scaleRange = maxScale - minScale;
   const currentClamped = Math.max(minScale, Math.min(maxScale, currentValue));
@@ -121,14 +126,28 @@ export function RangeGauge({
   const targetMinPercent = ((minTarget - minScale) / scaleRange) * 100;
   const targetWidthPercent = ((maxTarget - minTarget) / scaleRange) * 100;
 
+  // Optional conditional zone (e.g. 140 to 160 kcal/kg/d)
+  const conditionalWidthPercent = conditionalMaxTarget
+    ? ((conditionalMaxTarget - maxTarget) / scaleRange) * 100
+    : 0;
+
   const needleColor =
     status === "on_target"
       ? "bg-emerald-600 border-emerald-800"
+      : status === "conditional"
+      ? "bg-blue-600 border-blue-800"
       : status === "suboptimal"
       ? "bg-amber-500 border-amber-700"
       : "bg-rose-600 border-rose-800";
 
-  const accessibleText = `${metricName}: ${currentValue.toFixed(currentValue >= 10 ? 1 : 2)} ${unit}. Target range is ${minTarget} to ${maxTarget} ${unit}. Evaluation status is ${status === "on_target" ? "On Target" : status === "suboptimal" ? "Sub-optimal" : "Exceeding"}.`;
+  const accessibleText = `${metricName}: ${currentValue.toFixed(currentValue >= 10 ? 1 : 2)} ${unit}. Target range is ${minTarget} to ${maxTarget} ${unit}${conditionalMaxTarget ? ` (conditional up to ${conditionalMaxTarget} ${unit})` : ""}. Evaluation status is ${status}.`;
+
+  const badgeLabels = {
+    on_target: "Within Target",
+    conditional: "Conditional Upper",
+    suboptimal: "Below Target",
+    exceeding: "Exceeds Ceiling",
+  };
 
   return (
     <div
@@ -149,23 +168,17 @@ export function RangeGauge({
           </span>
           <StatusBadge
             status={status}
-            label={
-              status === "on_target"
-                ? "On Target"
-                : status === "suboptimal"
-                ? "Sub-optimal"
-                : "Exceeding"
-            }
+            label={badgeLabels[status] || "Evaluated"}
           />
         </div>
       </div>
 
-      {/* Visual Bar with Target Zone */}
+      {/* Visual Bar with Target and Conditional Zones */}
       <div
         aria-hidden="true"
         className="relative h-6 bg-slate-100 rounded-lg p-0.5 border border-slate-200 overflow-hidden flex items-center"
       >
-        {/* Target Window Background */}
+        {/* Typical Target Window */}
         <div
           className="absolute h-full bg-emerald-100/70 border-x border-emerald-400 flex items-center justify-center"
           style={{
@@ -174,9 +187,24 @@ export function RangeGauge({
           }}
         >
           <span className="text-[10px] font-semibold text-emerald-800 uppercase tracking-wider opacity-80 select-none">
-            Target Zone
+            Typical
           </span>
         </div>
+
+        {/* Conditional High Intake Window */}
+        {conditionalMaxTarget && (
+          <div
+            className="absolute h-full bg-blue-100/70 border-r border-blue-400 flex items-center justify-center"
+            style={{
+              left: `${targetMinPercent + targetWidthPercent}%`,
+              width: `${conditionalWidthPercent}%`,
+            }}
+          >
+            <span className="text-[10px] font-semibold text-blue-800 uppercase tracking-wider opacity-80 select-none">
+              Conditional
+            </span>
+          </div>
+        )}
 
         {/* Current Position Marker Indicator */}
         <div
@@ -196,11 +224,13 @@ export function RangeGauge({
       <div className="flex justify-between text-[11px] font-mono text-slate-400 px-1">
         <span>{minScale}</span>
         <span className="text-emerald-700 font-semibold">
-          Min Target: {minTarget} {unit}
+          Typical: {minTarget}–{maxTarget} {unit}
         </span>
-        <span className="text-emerald-700 font-semibold">
-          Max Target: {maxTarget} {unit}
-        </span>
+        {conditionalMaxTarget && (
+          <span className="text-blue-700 font-semibold">
+            Cond. Max: {conditionalMaxTarget} {unit}
+          </span>
+        )}
         <span>{maxScale}</span>
       </div>
     </div>
