@@ -19,8 +19,8 @@ export default function Home() {
   // HCP Gate state
   const [isHcpVerified, setIsHcpVerified] = useState(false);
 
-  // Tab navigation: "nutrition" | "growth" | "split"
-  const [activeTab, setActiveTab] = useState<"nutrition" | "growth" | "split">("nutrition");
+  // Tab navigation: "growth" | "nutrition" | "split"
+  const [activeTab, setActiveTab] = useState<"growth" | "nutrition" | "split">("growth");
   const [isFeedSheetOpen, setIsFeedSheetOpen] = useState(false);
 
   // Default dates: DOB 14 days ago, DOM today
@@ -114,26 +114,6 @@ export default function Home() {
       {/* Main Suite Content Area */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 focus:outline-none">
         {/* View Routing with Tabpanel Semantics */}
-        {activeTab === "nutrition" && (
-          <section
-            role="tabpanel"
-            id="panel-nutrition"
-            aria-labelledby="tab-nutrition"
-            tabIndex={0}
-            className="focus-visible:outline-none"
-          >
-            <NutritionEngine
-              weightGrams={weightGrams}
-              onWeightChange={setWeightGrams}
-              fluidAllowance={fluidAllowance}
-              onFluidChange={setFluidAllowance}
-              calculationResult={calculationResult}
-              onResetPatient={handleResetPatient}
-              ages={ages}
-            />
-          </section>
-        )}
-
         {activeTab === "growth" && (
           <section
             role="tabpanel"
@@ -163,6 +143,26 @@ export default function Home() {
           </section>
         )}
 
+        {activeTab === "nutrition" && (
+          <section
+            role="tabpanel"
+            id="panel-nutrition"
+            aria-labelledby="tab-nutrition"
+            tabIndex={0}
+            className="focus-visible:outline-none"
+          >
+            <NutritionEngine
+              weightGrams={weightGrams}
+              onWeightChange={setWeightGrams}
+              fluidAllowance={fluidAllowance}
+              onFluidChange={setFluidAllowance}
+              calculationResult={calculationResult}
+              onResetPatient={handleResetPatient}
+              ages={ages}
+            />
+          </section>
+        )}
+
         {activeTab === "split" && (
           <section
             role="tabpanel"
@@ -173,26 +173,9 @@ export default function Home() {
           >
             <div className="space-y-4">
               <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
-                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                  Module 1: Enteral Nutrition & Macro Engine
-                </h2>
-              </div>
-              <NutritionEngine
-                weightGrams={weightGrams}
-                onWeightChange={setWeightGrams}
-                fluidAllowance={fluidAllowance}
-                onFluidChange={setFluidAllowance}
-                calculationResult={calculationResult}
-                onResetPatient={handleResetPatient}
-              />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
                 <span className="w-2.5 h-2.5 rounded-full bg-blue-500" aria-hidden="true" />
                 <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                  Module 2: Fenton / WHO Growth Trajectory Plotter
+                  Module 1: Fenton / WHO Growth Trajectory Plotter
                 </h2>
               </div>
               <GrowthPlotter
@@ -212,6 +195,23 @@ export default function Home() {
                 onLengthChange={setLengthCm}
                 headCircumferenceCm={headCircumferenceCm}
                 onHcChange={setHeadCircumferenceCm}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" aria-hidden="true" />
+                <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                  Module 2: Enteral Nutrition & Macro Engine
+                </h2>
+              </div>
+              <NutritionEngine
+                weightGrams={weightGrams}
+                onWeightChange={setWeightGrams}
+                fluidAllowance={fluidAllowance}
+                onFluidChange={setFluidAllowance}
+                calculationResult={calculationResult}
+                onResetPatient={handleResetPatient}
               />
             </div>
           </section>

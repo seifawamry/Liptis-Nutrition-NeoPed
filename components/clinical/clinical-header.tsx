@@ -124,7 +124,7 @@ export function ClinicalHeader({
             aria-label="Clinical Calculation Modules"
             className="flex items-center gap-2"
             onKeyDown={(e) => {
-              const tabs: ("nutrition" | "growth" | "split")[] = ["nutrition", "growth", "split"];
+              const tabs: ("growth" | "nutrition" | "split")[] = ["growth", "nutrition", "split"];
               const currentIndex = tabs.indexOf(activeTab);
               if (e.key === "ArrowRight") {
                 const nextIndex = (currentIndex + 1) % tabs.length;
@@ -135,25 +135,6 @@ export function ClinicalHeader({
               }
             }}
           >
-            <button
-              id="tab-nutrition"
-              role="tab"
-              type="button"
-              aria-selected={activeTab === "nutrition"}
-              aria-controls="panel-nutrition"
-              tabIndex={activeTab === "nutrition" ? 0 : -1}
-              onClick={() => onTabChange("nutrition")}
-              className={cn(
-                "px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
-                activeTab === "nutrition"
-                  ? "bg-white text-clinical-navy-950 shadow"
-                  : "text-slate-300 hover:text-white hover:bg-clinical-navy-800/80"
-              )}
-            >
-              <Activity className="w-4 h-4 text-emerald-600" aria-hidden="true" />
-              <span>Nutritional Feeds & Macro Engine</span>
-            </button>
-
             <button
               id="tab-growth"
               role="tab"
@@ -171,6 +152,25 @@ export function ClinicalHeader({
             >
               <LineChart className="w-4 h-4 text-blue-600" aria-hidden="true" />
               <span>Fenton / WHO Growth Plotter</span>
+            </button>
+
+            <button
+              id="tab-nutrition"
+              role="tab"
+              type="button"
+              aria-selected={activeTab === "nutrition"}
+              aria-controls="panel-nutrition"
+              tabIndex={activeTab === "nutrition" ? 0 : -1}
+              onClick={() => onTabChange("nutrition")}
+              className={cn(
+                "px-3.5 py-2 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+                activeTab === "nutrition"
+                  ? "bg-white text-clinical-navy-950 shadow"
+                  : "text-slate-300 hover:text-white hover:bg-clinical-navy-800/80"
+              )}
+            >
+              <Activity className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+              <span>Nutritional Feeds & Macro Engine</span>
             </button>
 
             <button
