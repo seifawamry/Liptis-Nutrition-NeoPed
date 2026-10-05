@@ -24,8 +24,9 @@ import {
   Info,
   Calendar,
   Award,
-  TrendingUp,
   AlertCircle,
+  Calculator,
+  ArrowRight,
 } from "lucide-react";
 
 interface PatientNutrientPayloadProps {
@@ -42,9 +43,9 @@ export function PatientNutrientPayload({
   >("all");
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [copied, setCopied] = useState(false);
+  const [showMathBridge, setShowMathBridge] = useState(true);
 
   // Doctor interactive age stratification milestone switcher
-  // Defaults to patient's calculated age category or weight bracket
   const [selectedAgeMilestone, setSelectedAgeMilestone] = useState<AgeStratificationId>(
     payload.ageCategory || (payload.weightGrams > 3500 ? "term_equivalent" : "very_preterm")
   );
@@ -63,6 +64,10 @@ export function PatientNutrientPayload({
     return getAgeStratification(pma, payload.weightGrams);
   }, [selectedAgeMilestone, payload.weightGrams]);
 
+  // Factors that link doctor inputs to final calculations
+  const dailyVolumeFactor = (payload.totalDailyVolumeMl / 100).toFixed(2);
+  const normalizedFluidFactor = (payload.fluidAllowanceMlPerKg / 100).toFixed(2);
+
   // Dynamic coverage calculation helper based on active age stratification
   const getDynamicItemDetails = (item: NutrientDeliveryItem) => {
     let goalLabel = item.clinicalTarget || "Standard Reference";
@@ -72,7 +77,7 @@ export function PatientNutrientPayload({
     let deliveredDose = item.amountPerKgPerDay ?? item.amountPerDay;
     let ratio = item.coverageRatio ?? 100;
     let percent = item.coveragePercent ?? 100;
-    let badgeText = item.coverageBadge || "100% Target Met";
+    let badgeText = item.coverageBadge || "Target Met";
     let status: "target_met" | "within_target" | "below_target" | "above_target" = "within_target";
 
     if (item.id === "calcium" && activeAgeStrat.goals.calcium) {
@@ -83,7 +88,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.calciumMgPerKgPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = ratio >= 100 ? `${ratio}% Intrauterine Accretion Met` : `${ratio}% Accretion Goal Met`;
+      badgeText = ratio >= 100 ? `${ratio}% Intrauterine Accretion` : `${ratio}% Accretion Target`;
       status = deliveredDose >= goalMin ? "target_met" : "below_target";
     } else if (item.id === "phosphorus" && activeAgeStrat.goals.phosphorus) {
       goalMin = activeAgeStrat.goals.phosphorus.min;
@@ -93,7 +98,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.phosphorusMgPerKgPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = ratio >= 100 ? `${ratio}% Bone Mineralization Met` : `${ratio}% Mineralization Met`;
+      badgeText = ratio >= 100 ? `${ratio}% Bone Target Met` : `${ratio}% Target Met`;
       status = deliveredDose >= goalMin ? "target_met" : "below_target";
     } else if (item.id === "protein" && activeAgeStrat.goals.protein) {
       goalMin = activeAgeStrat.goals.protein.min;
@@ -103,7 +108,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.proteinGramsPerKgPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = ratio >= 100 ? `${ratio}% Protein Target Met` : `${ratio}% Protein Target Met`;
+      badgeText = ratio >= 100 ? `${ratio}% Protein Target Met` : `${ratio}% Target Met`;
       status =
         deliveredDose >= goalMin && deliveredDose <= goalMax
           ? "target_met"
@@ -118,7 +123,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.energyKcalPerKgPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = ratio >= 100 ? `${ratio}% Energy Goal Met` : `${ratio}% Energy Goal Met`;
+      badgeText = ratio >= 100 ? `${ratio}% Energy Goal Met` : `${ratio}% Goal Met`;
       status =
         deliveredDose >= goalMin && deliveredDose <= goalMax
           ? "target_met"
@@ -133,7 +138,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.ironMgPerKgPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = ratio >= 100 ? `${ratio}% Prophylactic Iron Met (No Extra Drops)` : `${ratio}% Iron Goal Met`;
+      badgeText = ratio >= 100 ? `${ratio}% Prophylactic Fe Met` : `${ratio}% Iron Goal Met`;
       status = deliveredDose >= goalMin ? "target_met" : "below_target";
     } else if (item.id === "vitaminD3" && activeAgeStrat.goals.vitaminD3) {
       goalMin = activeAgeStrat.goals.vitaminD3.min;
@@ -143,7 +148,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.vitaminD3IuPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = ratio >= 100 ? "100% Enteral D3 Met" : `${ratio}% Enteral D3 Base Met`;
+      badgeText = ratio >= 100 ? "100% Enteral D3 Met" : `${ratio}% Enteral D3 Met`;
       status = deliveredDose >= goalMin ? "target_met" : "within_target";
     } else if (item.id === "sodium" && activeAgeStrat.goals.sodium) {
       goalMin = activeAgeStrat.goals.sodium.min;
@@ -153,7 +158,7 @@ export function PatientNutrientPayload({
       deliveredDose = payload.sodiumMmolPerKgPerDay;
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
-      badgeText = `${ratio}% Electrolyte Replacement Met`;
+      badgeText = `${ratio}% Electrolyte Target`;
       status = deliveredDose >= goalMin ? "target_met" : "within_target";
     } else if (item.id === "dha") {
       const minDha = 30;
@@ -162,9 +167,9 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / minDha) * 100);
       percent = Math.min(100, ratio);
       status = deliveredDose >= minDha && deliveredDose <= maxDha ? "within_target" : deliveredDose < minDha ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minDha && deliveredDose <= maxDha ? "Within displayed reference range" : deliveredDose < minDha ? "Below displayed reference range" : "Above displayed reference range";
+      badgeText = deliveredDose >= minDha && deliveredDose <= maxDha ? "Within Target Range" : deliveredDose < minDha ? "Below Target Range" : "Above Target Range";
       goalLabel = "ESPGHAN 2022: 30–65 mg/kg/d (or 12–30 mg/100 kcal)";
-      goalRationale = `Delivers ${payload.dhaMgPerDay} mg/day (${payload.dhaMgPerKgPerDay} mg/kg/d). Structural polyunsaturated fatty acid essential for photoreceptor membrane differentiation and cognitive maturation.`;
+      goalRationale = `Delivers ${payload.dhaMgPerDay} mg/day (${payload.dhaMgPerKgPerDay} mg/kg/d). Structural LCPUFA for photoreceptor membrane differentiation and cognitive maturation.`;
     } else if (item.id === "ara") {
       const minAra = 30;
       const maxAra = 100;
@@ -172,14 +177,14 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / minAra) * 100);
       percent = Math.min(100, ratio);
       status = deliveredDose >= minAra && deliveredDose <= maxAra ? "within_target" : deliveredDose < minAra ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minAra && deliveredDose <= maxAra ? "Within displayed reference range" : deliveredDose < minAra ? "Below displayed reference range" : "Above displayed reference range";
+      badgeText = deliveredDose >= minAra && deliveredDose <= maxAra ? "Within Target Range" : deliveredDose < minAra ? "Below Target Range" : "Above Target Range";
       goalLabel = "ESPGHAN 2022: 30–100 mg/kg/d";
-      goalRationale = `Delivers ${payload.araMgPerDay} mg/day (${payload.araMgPerKgPerDay} mg/kg/d). Critical omega-6 structural constituent for neurogenesis and vascular tone.`;
+      goalRationale = `Delivers ${payload.araMgPerDay} mg/day (${payload.araMgPerKgPerDay} mg/kg/d). Critical omega-6 constituent for neurogenesis and vascular tone.`;
     } else if (item.id === "araDhaRatio") {
       ratio = 100;
       percent = 100;
       status = payload.araDhaRatio >= 0.5 && payload.araDhaRatio <= 2.0 ? "within_target" : "above_target";
-      badgeText = payload.araDhaRatio >= 0.5 && payload.araDhaRatio <= 2.0 ? "Within displayed reference range (0.5–2:1)" : "Outside displayed reference range";
+      badgeText = payload.araDhaRatio >= 0.5 && payload.araDhaRatio <= 2.0 ? "Within Reference (0.5–2:1)" : "Outside Reference";
       goalLabel = "ESPGHAN 2022: 0.5:1 to 2.0:1";
       goalRationale = `Calculated formula ratio is ${payload.araDhaRatioFormatted}. Balanced physiological ratio prevents competitive displacement in neural tissue.`;
     } else if (item.id === "carbs") {
@@ -189,10 +194,10 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / minCarbs) * 100);
       percent = Math.min(100, ratio);
       status = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "within_target" : deliveredDose < minCarbs ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "Within displayed reference range" : deliveredDose < minCarbs ? "Below displayed reference range" : "Above displayed reference range";
+      badgeText = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "Within Target Range" : deliveredDose < minCarbs ? "Below Target Range" : "Above Target Range";
       goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN 2022: 11.0–15.0 g/kg/d" : "Term: 9.0–13.0 g/kg/d";
       goalRationale = payload.weightGrams <= 3500
-        ? "ESPGHAN 2022 recommended range: 11–15 g/kg/day. 100% lactose matrix enhances intestinal calcium absorption and bifidogenic gut flora."
+        ? "ESPGHAN 2022 preterm recommended range: 11–15 g/kg/day. 100% lactose matrix enhances intestinal calcium absorption and bifidogenic flora."
         : "Standard infant carbohydrate intake for mature digestion.";
     } else if (item.id === "lipids") {
       const minLipids = payload.weightGrams <= 3500 ? 4.8 : 4.0;
@@ -201,11 +206,11 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / minLipids) * 100);
       percent = Math.min(100, ratio);
       status = deliveredDose >= minLipids && deliveredDose <= maxLipids ? "within_target" : deliveredDose < minLipids ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minLipids && deliveredDose <= maxLipids ? "Within displayed reference range" : deliveredDose < minLipids ? "Below displayed reference range" : "Above displayed reference range";
+      badgeText = deliveredDose >= minLipids && deliveredDose <= maxLipids ? "Within Target Range" : deliveredDose < minLipids ? "Below Target Range" : "Above Target Range";
       goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN 2022: 4.8–8.1 g/kg/d" : "Term: 4.0–6.0 g/kg/d";
       goalRationale = payload.weightGrams <= 3500
         ? "ESPGHAN 2022 recommended range: 4.8–8.1 g/kg/day total fat providing ~50% non-protein calories and essential fatty acids."
-        : "Standard term lipid intake supporting growth and fat-soluble vitamin absorption.";
+        : "Standard term lipid intake supporting somatic growth and fat-soluble vitamin absorption.";
     }
 
     return {
@@ -249,7 +254,7 @@ export function PatientNutrientPayload({
         ratio: caRatio,
         percent: Math.min(100, caRatio),
         isMet: payload.calciumMgPerKgPerDay >= activeAgeStrat.goals.calcium.min,
-        subtitle: caRatio >= 100 ? "Intrauterine Accretion Reference Met" : `${caRatio}% of Target`,
+        subtitle: caRatio >= 100 ? "Accretion Target Met" : `${caRatio}% of Target`,
       },
       phosphorus: {
         value: payload.phosphorusMgPerKgPerDay,
@@ -276,7 +281,7 @@ export function PatientNutrientPayload({
         ratio: nrgRatio,
         percent: Math.min(100, nrgRatio),
         isMet: payload.energyKcalPerKgPerDay >= activeAgeStrat.goals.energy.min,
-        subtitle: `Caloric Density ~0.80 kcal/mL`,
+        subtitle: `~0.80 kcal/mL`,
       },
       iron: {
         value: payload.ironMgPerKgPerDay,
@@ -294,7 +299,7 @@ export function PatientNutrientPayload({
         ratio: vitDRatio,
         percent: Math.min(100, vitDRatio),
         isMet: payload.vitaminD3IuPerDay >= activeAgeStrat.goals.vitaminD3.min,
-        subtitle: payload.vitaminD3IuPerDay >= 400 ? "Enteral D3 Reference Met" : `${vitDRatio}% Enteral D3`,
+        subtitle: payload.vitaminD3IuPerDay >= 400 ? "Enteral D3 Target Met" : `${vitDRatio}% Enteral D3`,
       },
       dhaAra: {
         value: `${payload.dhaMgPerKgPerDay} / ${payload.araMgPerKgPerDay}`,
@@ -327,11 +332,11 @@ export function PatientNutrientPayload({
       `--- CORE ACCRETION & COVERAGE SUMMARY ---`,
       `• Energy: ${payload.energyKcalPerDay} kcal/day (${payload.energyKcalPerKgPerDay} kcal/kg/d) | Goal: ${activeAgeStrat.goals.energy.label}`,
       `• True Protein: ${payload.proteinGramsPerDay} g/day (${payload.proteinGramsPerKgPerDay} g/kg/d) | Goal: ${activeAgeStrat.goals.protein.label} (${payload.wheyCaseinRatio} Whey/Casein)`,
-      `• Calcium: ${payload.calciumMgPerDay} mg/day (${payload.calciumMgPerKgPerDay} mg/kg/d) | Goal: ${activeAgeStrat.goals.calcium.label} (100% Intrauterine Met)`,
+      `• Calcium: ${payload.calciumMgPerDay} mg/day (${payload.calciumMgPerKgPerDay} mg/kg/d) | Goal: ${activeAgeStrat.goals.calcium.label}`,
       `• Phosphorus: ${payload.phosphorusMgPerDay} mg/day (${payload.phosphorusMgPerKgPerDay} mg/kg/d) | Goal: ${activeAgeStrat.goals.phosphorus.label}`,
-      `• Elemental Iron: ${payload.ironMgPerDay} mg/day (${payload.ironMgPerKgPerDay} mg/kg/d) | Goal: ${activeAgeStrat.goals.iron.label} (Full Enteral Prophylaxis)`,
+      `• Elemental Iron: ${payload.ironMgPerDay} mg/day (${payload.ironMgPerKgPerDay} mg/kg/d) | Goal: ${activeAgeStrat.goals.iron.label}`,
       `• Vitamin D3: ${payload.vitaminD3IuPerDay} IU/day | Goal: ${activeAgeStrat.goals.vitaminD3.label}`,
-      `• DHA & ARA: ${payload.dhaMgPerDay} mg DHA + ${payload.araMgPerDay} mg ARA per day (1:1 Ratio)`,
+      `• DHA & ARA: ${payload.dhaMgPerDay} mg DHA + ${payload.araMgPerDay} mg ARA per day (${payload.araDhaRatioFormatted} Ratio)`,
       ``,
       `Clinical Note: Reconstituted at standard label dilution. Verify against local batch label.`,
     ];
@@ -360,24 +365,24 @@ export function PatientNutrientPayload({
   const getCardBorderClass = (category: NutrientDeliveryItem["category"]) => {
     switch (category) {
       case "mineral":
-        return "border-l-[6px] border-l-emerald-600";
+        return "border-l-4 border-l-emerald-600";
       case "macronutrient":
-        return "border-l-[6px] border-l-blue-600";
+        return "border-l-4 border-l-blue-600";
       case "vitamin":
-        return "border-l-[6px] border-l-purple-600";
+        return "border-l-4 border-l-purple-600";
       case "electrolyte":
-        return "border-l-[6px] border-l-amber-500";
+        return "border-l-4 border-l-amber-500";
       case "specialty":
-        return "border-l-[6px] border-l-indigo-600";
+        return "border-l-4 border-l-indigo-600";
       default:
-        return "border-l-[6px] border-l-slate-400";
+        return "border-l-4 border-l-slate-400";
     }
   };
 
   const getStatusBadge = (status: string) => {
     if (status === "target_met") {
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-md bg-emerald-100 text-emerald-950 border-2 border-emerald-400 shrink-0">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-950 border border-emerald-400 shrink-0">
           <CheckCircle2 className="w-3 h-3 text-emerald-700" />
           Target Met
         </span>
@@ -385,20 +390,20 @@ export function PatientNutrientPayload({
     }
     if (status === "within_target") {
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-md bg-blue-100 text-blue-950 border-2 border-blue-400 shrink-0">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-950 border border-blue-400 shrink-0">
           Target Range
         </span>
       );
     }
     if (status === "above_target") {
       return (
-        <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-md bg-purple-100 text-purple-950 border-2 border-purple-400 shrink-0">
+        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-950 border border-purple-400 shrink-0">
           Conditional High
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 text-xs font-black px-2.5 py-1 rounded-md bg-amber-100 text-amber-950 border-2 border-amber-400 shrink-0">
+      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 border border-amber-400 shrink-0">
         <AlertCircle className="w-3 h-3 text-amber-700" />
         Clinical Review
       </span>
@@ -407,20 +412,20 @@ export function PatientNutrientPayload({
 
   return (
     <div
-      className="mt-6 rounded-2xl bg-white border-2 border-slate-300 shadow-md ring-1 ring-slate-900/5 overflow-hidden text-slate-900"
+      className="rounded-2xl bg-white border-2 border-slate-300 shadow-md ring-1 ring-slate-900/5 overflow-hidden text-slate-900"
       aria-label="Patient Delivered Daily Nutritional Payload & Product Coverage"
     >
       {/* 1. Header with Clinical Navy Gradient and High-Contrast Typography */}
       <div className="bg-gradient-to-r from-slate-950 via-clinical-navy-950 to-blue-950 text-white p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b-2 border-slate-800">
         <div className="flex items-start sm:items-center gap-3.5">
-          <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-white shrink-0 border-2 border-white/20 shadow-inner">
+          <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center text-white shrink-0 border border-white/20 shadow-inner">
             <Baby className="w-6 h-6 text-emerald-300" aria-hidden="true" />
           </div>
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h4 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
+              <h3 className="text-base sm:text-lg font-black tracking-tight text-white flex items-center gap-2">
                 <span>Patient Daily Delivered Nutrient Payload</span>
-              </h4>
+              </h3>
               <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/30 text-emerald-200 border border-emerald-400/50 font-mono">
                 {payload.productName}
               </span>
@@ -429,18 +434,18 @@ export function PatientNutrientPayload({
               </span>
             </div>
             <p className="text-xs text-slate-200 leading-normal">
-              Exact 24-hour nutritional payload at <strong>{payload.fluidAllowanceMlPerKg} mL/kg/d</strong> ({payload.totalDailyVolumeMl} mL/day). Evaluated against active ESPGHAN clinical goals.
+              Calculated 24-hour enteral accretion at <strong>{payload.fluidAllowanceMlPerKg} mL/kg/d</strong> ({payload.totalDailyVolumeMl} mL/day). Evaluated against authoritative ESPGHAN 2022 clinical goals.
             </p>
           </div>
         </div>
 
-        {/* View Switcher & Copy Action */}
-        <div className="flex items-center gap-2.5 shrink-0 self-end lg:self-auto">
-          <div className="inline-flex rounded-xl border-2 border-white/30 p-1 bg-white/10 text-xs shadow-inner">
+        {/* View Switcher & Actions */}
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="inline-flex rounded-xl border border-white/30 p-1 bg-white/10 text-xs shadow-inner">
             <button
               type="button"
               onClick={() => setViewMode("cards")}
-              className={`px-3 py-1.5 rounded-lg font-black transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                 viewMode === "cards"
                   ? "bg-white text-slate-950 shadow-sm"
                   : "text-white hover:bg-white/20"
@@ -452,7 +457,7 @@ export function PatientNutrientPayload({
             <button
               type="button"
               onClick={() => setViewMode("table")}
-              className={`px-3 py-1.5 rounded-lg font-black transition-all ${
+              className={`px-3 py-1.5 rounded-lg font-bold transition-all ${
                 viewMode === "table"
                   ? "bg-white text-slate-950 shadow-sm"
                   : "text-white hover:bg-white/20"
@@ -466,263 +471,329 @@ export function PatientNutrientPayload({
           <button
             type="button"
             onClick={handleCopy}
-            className={`text-xs px-3.5 py-2 rounded-xl font-black transition-all flex items-center gap-2 shadow-sm ${
+            className={`text-xs px-3.5 py-2 rounded-xl font-bold transition-all flex items-center gap-2 shadow-sm ${
               copied
                 ? "bg-emerald-600 text-white ring-2 ring-emerald-300"
-                : "bg-white/15 hover:bg-white/25 text-white border-2 border-white/30"
+                : "bg-white/15 hover:bg-white/25 text-white border border-white/30"
             }`}
             aria-label="Copy delivered nutrient calculations to clipboard"
           >
             {copied ? (
               <>
                 <Check className="w-4 h-4 text-white" aria-hidden="true" />
-                <span>Copied to Clipboard</span>
+                <span>Copied</span>
               </>
             ) : (
               <>
                 <Copy className="w-4 h-4 text-blue-200" aria-hidden="true" />
-                <span>Copy Payload</span>
+                <span>Copy Summary</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      {/* 2. PEDIAMIL® PRODUCT COVERAGE ASSURANCE COMMAND CENTER */}
+      {/* 2. DOCTOR CALCULATION FORMULA & INPUT RESONATION BRIDGE */}
       <div className="bg-slate-50 border-b-2 border-slate-300 p-4 sm:p-5 space-y-4">
-        {/* Banner Top Row: Score Badge + Headline Box */}
-        <div className="p-4 rounded-xl bg-white border-2 border-slate-300 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xl shadow-md border-2 border-emerald-400 shrink-0">
-              <Award className="w-7 h-7 text-white" aria-hidden="true" />
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-wider text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded border-2 border-emerald-400">
-                  Calculated Product-to-Reference Comparison
-                </span>
-                <span className="text-sm font-black font-mono text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
-                  {corePillars.overallScore}% Reference Alignment
-                </span>
+        {/* Input Bridge Card */}
+        <div className="p-4 rounded-xl bg-white border border-slate-300 shadow-sm space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-900 flex items-center justify-center border border-blue-300 shrink-0">
+                <Calculator className="w-5 h-5" aria-hidden="true" />
               </div>
-              <h5 className="text-sm sm:text-base font-black text-slate-950">
-                {payload.productName} Target Fulfillment for {payload.weightGrams}g Patient ({activeAgeStrat.label})
-              </h5>
-              <p className="text-xs text-slate-700 leading-normal font-medium">
-                Calculated enteral nutrient delivery compared against ESPGHAN 2022 preterm reference ranges and institutional operational targets at the entered fluid intake.
-              </p>
+              <div>
+                <h4 className="text-sm font-black text-slate-950 flex items-center gap-2">
+                  <span>Doctor Calculation Formula & Input Resonation Bridge</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300">
+                    Deterministic Math
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-600">
+                  Every delivered nutrient is calculated directly from your entered patient parameters and the verified product specification.
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowMathBridge(!showMathBridge)}
+              className="text-xs font-bold text-blue-700 hover:text-blue-900 self-start md:self-auto"
+            >
+              {showMathBridge ? "Hide Formula Derivatives" : "Show Formula Derivatives"}
+            </button>
           </div>
 
-          <div className="shrink-0 bg-slate-50 px-4 py-2.5 rounded-xl border-2 border-slate-300 text-right space-y-0.5 shadow-2xs">
-            <span className="text-xs text-slate-700 font-black uppercase tracking-wider block">
-              Daily Reconstitution
-            </span>
-            <div className="text-base font-black font-mono text-slate-950">
-              {payload.dailyPowderGrams}g <span className="text-xs font-semibold text-slate-700">powder</span>
+          {showMathBridge && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              {/* Step 1: Volume Calculation */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">
+                  1. Prescribed 24h Feed Volume
+                </span>
+                <div className="font-mono text-xs text-slate-900 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span>Patient Weight:</span>
+                    <strong>{payload.weightGrams}g ({payload.weightKg.toFixed(3)} kg)</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Fluid Allowance:</span>
+                    <strong>{payload.fluidAllowanceMlPerKg} mL/kg/day</strong>
+                  </div>
+                  <div className="pt-1 border-t border-slate-200 flex items-center justify-between text-blue-950 font-black">
+                    <span>Total Daily Volume:</span>
+                    <span className="text-sm">{payload.totalDailyVolumeMl} mL/day</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2: Product Multipliers */}
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 block">
+                  2. Exact Concentration Multipliers
+                </span>
+                <div className="font-mono text-xs text-slate-900 space-y-0.5">
+                  <div className="flex items-center justify-between">
+                    <span>24h Absolute Multiplier:</span>
+                    <strong className="text-emerald-800">{dailyVolumeFactor}× per 100 mL</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Dose /kg/day Multiplier:</span>
+                    <strong className="text-blue-800">{normalizedFluidFactor}× per 100 mL</strong>
+                  </div>
+                  <div className="pt-1 border-t border-slate-200 flex items-center justify-between text-slate-950 font-black">
+                    <span>Powder Density (15%):</span>
+                    <span className="text-sm">{payload.dailyPowderGrams}g (~{payload.dailyScoops} scp)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3: Clinician Verification Formula */}
+              <div className="p-3 bg-blue-50/70 rounded-xl border border-blue-200 space-y-1">
+                <span className="text-[10.5px] font-bold uppercase tracking-wider text-blue-900 block">
+                  3. Verified Clinical Derivative
+                </span>
+                <p className="text-[11px] text-slate-700 leading-relaxed font-sans">
+                  • <strong>Delivered 24h:</strong> <span className="font-mono">({payload.totalDailyVolumeMl} ÷ 100) × Conc. /100mL</span>
+                  <br />
+                  • <strong>Delivered /kg/d:</strong> <span className="font-mono">({payload.fluidAllowanceMlPerKg} ÷ 100) × Conc. /100mL</span>
+                </p>
+                <div className="pt-1 border-t border-blue-200 flex items-center justify-between text-[11px] font-mono text-blue-950 font-bold">
+                  <span>Pediamil® LBW Matrix:</span>
+                  <span>79.7 kcal & 2.42g Prot / 100mL</span>
+                </div>
+              </div>
             </div>
-            <div className="text-xs font-mono text-emerald-900 font-bold">
-              ~{payload.dailyScoops} scoops in {payload.waterVolumeMlPerDay} mL water
-            </div>
-          </div>
+          )}
         </div>
 
         {/* 6-Pillar Core Coverage Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-          {/* Pillar 1: Calcium */}
-          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between hover:border-slate-500 transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-slate-950 flex items-center gap-1.5">
-                  <Bone className="w-4 h-4 text-emerald-700" /> Ca Accretion
-                </span>
-                <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded font-mono border border-emerald-400">
-                  {corePillars.calcium.ratio}%
-                </span>
-              </div>
-              <div className="text-base font-black font-mono text-slate-950">
-                {corePillars.calcium.value}{" "}
-                <span className="text-xs font-semibold text-slate-700">{corePillars.calcium.unit}</span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
-                <div
-                  className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${corePillars.calcium.percent}%` }}
-                />
-              </div>
-              <div className="text-xs font-bold text-slate-800 leading-tight">
-                Goal: {corePillars.calcium.goal}
-              </div>
-              <div className="text-xs font-bold text-emerald-800">
-                {corePillars.calcium.subtitle}
-              </div>
-            </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-emerald-700" />
+              6 Core Clinical Accretion Pillars ({activeAgeStrat.label})
+            </span>
+            <span className="text-xs font-bold text-emerald-900 bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300 font-mono">
+              {corePillars.overallScore}% Overall Alignment
+            </span>
           </div>
 
-          {/* Pillar 2: Phosphorus */}
-          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between hover:border-slate-500 transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-slate-950 flex items-center gap-1.5">
-                  <Bone className="w-4 h-4 text-emerald-700" /> Phosphorus
-                </span>
-                <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded font-mono border border-emerald-400">
-                  {corePillars.phosphorus.ratio}%
-                </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+            {/* Pillar 1: Calcium */}
+            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-slate-900 flex items-center gap-1">
+                    <Bone className="w-3.5 h-3.5 text-emerald-700" /> Calcium
+                  </span>
+                  <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-1.5 py-0.5 rounded font-mono border border-emerald-300">
+                    {corePillars.calcium.ratio}%
+                  </span>
+                </div>
+                <div className="text-base font-black font-mono text-slate-950">
+                  {corePillars.calcium.value}{" "}
+                  <span className="text-xs font-normal text-slate-600">{corePillars.calcium.unit}</span>
+                </div>
               </div>
-              <div className="text-base font-black font-mono text-slate-950">
-                {corePillars.phosphorus.value}{" "}
-                <span className="text-xs font-semibold text-slate-700">{corePillars.phosphorus.unit}</span>
+
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${corePillars.calcium.percent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-bold text-slate-700 leading-tight">
+                  Goal: {corePillars.calcium.goal}
+                </div>
+                <div className="text-[10px] font-semibold text-emerald-800">
+                  {corePillars.calcium.subtitle}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
-                <div
-                  className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${corePillars.phosphorus.percent}%` }}
-                />
+            {/* Pillar 2: Phosphorus */}
+            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-slate-900 flex items-center gap-1">
+                    <Bone className="w-3.5 h-3.5 text-emerald-700" /> Phosphorus
+                  </span>
+                  <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-1.5 py-0.5 rounded font-mono border border-emerald-300">
+                    {corePillars.phosphorus.ratio}%
+                  </span>
+                </div>
+                <div className="text-base font-black font-mono text-slate-950">
+                  {corePillars.phosphorus.value}{" "}
+                  <span className="text-xs font-normal text-slate-600">{corePillars.phosphorus.unit}</span>
+                </div>
               </div>
-              <div className="text-xs font-bold text-slate-800 leading-tight">
-                Goal: {corePillars.phosphorus.goal}
-              </div>
-              <div className="text-xs font-bold text-emerald-800">
-                {corePillars.phosphorus.subtitle}
-              </div>
-            </div>
-          </div>
 
-          {/* Pillar 3: True Protein */}
-          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between hover:border-slate-500 transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-slate-950 flex items-center gap-1.5">
-                  <Activity className="w-4 h-4 text-blue-700" /> True Protein
-                </span>
-                <span className="text-xs font-black text-blue-950 bg-blue-100 px-2 py-0.5 rounded font-mono border border-blue-400">
-                  {corePillars.protein.ratio}%
-                </span>
-              </div>
-              <div className="text-base font-black font-mono text-slate-950">
-                {corePillars.protein.value}{" "}
-                <span className="text-xs font-semibold text-slate-700">{corePillars.protein.unit}</span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
-                <div
-                  className="bg-blue-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${corePillars.protein.percent}%` }}
-                />
-              </div>
-              <div className="text-xs font-bold text-slate-800 leading-tight">
-                Goal: {corePillars.protein.goal}
-              </div>
-              <div className="text-xs font-bold text-blue-800">
-                {corePillars.protein.subtitle}
-              </div>
-            </div>
-          </div>
-
-          {/* Pillar 4: Elemental Iron */}
-          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between hover:border-slate-500 transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-slate-950 flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-emerald-700" /> Prophylactic Fe
-                </span>
-                <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded font-mono border border-emerald-400">
-                  {corePillars.iron.ratio}%
-                </span>
-              </div>
-              <div className="text-base font-black font-mono text-slate-950">
-                {corePillars.iron.value}{" "}
-                <span className="text-xs font-semibold text-slate-700">{corePillars.iron.unit}</span>
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${corePillars.phosphorus.percent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-bold text-slate-700 leading-tight">
+                  Goal: {corePillars.phosphorus.goal}
+                </div>
+                <div className="text-[10px] font-semibold text-emerald-800">
+                  {corePillars.phosphorus.subtitle}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
-                <div
-                  className="bg-emerald-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${corePillars.iron.percent}%` }}
-                />
+            {/* Pillar 3: True Protein */}
+            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-slate-900 flex items-center gap-1">
+                    <Activity className="w-3.5 h-3.5 text-blue-700" /> Protein
+                  </span>
+                  <span className="text-xs font-black text-blue-950 bg-blue-100 px-1.5 py-0.5 rounded font-mono border border-blue-300">
+                    {corePillars.protein.ratio}%
+                  </span>
+                </div>
+                <div className="text-base font-black font-mono text-slate-950">
+                  {corePillars.protein.value}{" "}
+                  <span className="text-xs font-normal text-slate-600">{corePillars.protein.unit}</span>
+                </div>
               </div>
-              <div className="text-xs font-bold text-slate-800 leading-tight">
-                Goal: {corePillars.iron.goal}
-              </div>
-              <div className="text-xs font-bold text-emerald-800">
-                {corePillars.iron.subtitle}
-              </div>
-            </div>
-          </div>
 
-          {/* Pillar 5: Vitamin D3 */}
-          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between hover:border-slate-500 transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-slate-950 flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4 text-purple-700" /> Vitamin D3
-                </span>
-                <span className="text-xs font-black text-purple-950 bg-purple-100 px-2 py-0.5 rounded font-mono border border-purple-400">
-                  {corePillars.vitaminD3.ratio}%
-                </span>
-              </div>
-              <div className="text-base font-black font-mono text-slate-950">
-                {corePillars.vitaminD3.value}{" "}
-                <span className="text-xs font-semibold text-slate-700">{corePillars.vitaminD3.unit}</span>
-              </div>
-            </div>
-
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
-                <div
-                  className="bg-purple-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${corePillars.vitaminD3.percent}%` }}
-                />
-              </div>
-              <div className="text-xs font-bold text-slate-800 leading-tight">
-                Goal: {corePillars.vitaminD3.goal}
-              </div>
-              <div className="text-xs font-bold text-purple-800">
-                {corePillars.vitaminD3.subtitle}
-              </div>
-            </div>
-          </div>
-
-          {/* Pillar 6: DHA & ARA */}
-          <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between hover:border-slate-500 transition-colors">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-black text-slate-950 flex items-center gap-1.5">
-                  <Brain className="w-4 h-4 text-indigo-700" /> DHA & ARA
-                </span>
-                <span className="text-xs font-black text-indigo-950 bg-indigo-100 px-2 py-0.5 rounded font-mono border border-indigo-400">
-                  {corePillars.dhaAra.ratio}%
-                </span>
-              </div>
-              <div className="text-base font-black font-mono text-slate-950">
-                {corePillars.dhaAra.value}{" "}
-                <span className="text-xs font-semibold text-slate-700">{corePillars.dhaAra.unit}</span>
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-blue-600 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${corePillars.protein.percent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-bold text-slate-700 leading-tight">
+                  Goal: {corePillars.protein.goal}
+                </div>
+                <div className="text-[10px] font-semibold text-blue-800">
+                  {corePillars.protein.subtitle}
+                </div>
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-1">
-              <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
-                <div
-                  className="bg-indigo-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: `${corePillars.dhaAra.percent}%` }}
-                />
+            {/* Pillar 4: Energy */}
+            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-slate-900 flex items-center gap-1">
+                    <Activity className="w-3.5 h-3.5 text-amber-700" /> Energy
+                  </span>
+                  <span className="text-xs font-black text-amber-950 bg-amber-100 px-1.5 py-0.5 rounded font-mono border border-amber-300">
+                    {corePillars.energy.ratio}%
+                  </span>
+                </div>
+                <div className="text-base font-black font-mono text-slate-950">
+                  {corePillars.energy.value}{" "}
+                  <span className="text-xs font-normal text-slate-600">{corePillars.energy.unit}</span>
+                </div>
               </div>
-              <div className="text-xs font-bold text-slate-800 leading-tight">
-                Goal: {corePillars.dhaAra.goal}
+
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-amber-600 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${corePillars.energy.percent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-bold text-slate-700 leading-tight">
+                  Goal: {corePillars.energy.goal}
+                </div>
+                <div className="text-[10px] font-semibold text-slate-600">
+                  {corePillars.energy.subtitle}
+                </div>
               </div>
-              <div className="text-xs font-bold text-indigo-800">
-                {corePillars.dhaAra.subtitle}
+            </div>
+
+            {/* Pillar 5: Elemental Iron */}
+            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-slate-900 flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5 text-emerald-700" /> Iron (Fe)
+                  </span>
+                  <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-1.5 py-0.5 rounded font-mono border border-emerald-300">
+                    {corePillars.iron.ratio}%
+                  </span>
+                </div>
+                <div className="text-base font-black font-mono text-slate-950">
+                  {corePillars.iron.value}{" "}
+                  <span className="text-xs font-normal text-slate-600">{corePillars.iron.unit}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-600 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${corePillars.iron.percent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-bold text-slate-700 leading-tight">
+                  Goal: {corePillars.iron.goal}
+                </div>
+                <div className="text-[10px] font-semibold text-emerald-800">
+                  {corePillars.iron.subtitle}
+                </div>
+              </div>
+            </div>
+
+            {/* Pillar 6: Vitamin D3 */}
+            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+              <div className="space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-black text-slate-900 flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-purple-700" /> Vit D3
+                  </span>
+                  <span className="text-xs font-black text-purple-950 bg-purple-100 px-1.5 py-0.5 rounded font-mono border border-purple-300">
+                    {corePillars.vitaminD3.ratio}%
+                  </span>
+                </div>
+                <div className="text-base font-black font-mono text-slate-950">
+                  {corePillars.vitaminD3.value}{" "}
+                  <span className="text-xs font-normal text-slate-600">{corePillars.vitaminD3.unit}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1 pt-1 border-t border-slate-100">
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="bg-purple-600 h-full rounded-full transition-all duration-300"
+                    style={{ width: `${corePillars.vitaminD3.percent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] font-bold text-slate-700 leading-tight">
+                  Goal: {corePillars.vitaminD3.goal}
+                </div>
+                <div className="text-[10px] font-semibold text-purple-800">
+                  {corePillars.vitaminD3.subtitle}
+                </div>
               </div>
             </div>
           </div>
@@ -736,7 +807,7 @@ export function PatientNutrientPayload({
           <div>
             <div className="text-xs font-black text-slate-950 flex items-center gap-2">
               <span>Clinical Age Goal Stratification:</span>
-              <span className="font-mono text-blue-950 bg-white px-2.5 py-0.5 rounded border-2 border-blue-300 font-bold">
+              <span className="font-mono text-blue-950 bg-white px-2.5 py-0.5 rounded border border-blue-300 font-bold">
                 {activeAgeStrat.label}
               </span>
             </div>
@@ -746,7 +817,7 @@ export function PatientNutrientPayload({
           </div>
         </div>
 
-        {/* Milestone Switcher Buttons with Bold Borders */}
+        {/* Milestone Switcher Buttons */}
         <div className="flex items-center gap-1.5 shrink-0 overflow-x-auto pb-1 md:pb-0">
           <span className="text-xs font-black text-slate-700 uppercase tracking-wider mr-1 hidden sm:inline">
             Milestone:
@@ -761,7 +832,7 @@ export function PatientNutrientPayload({
               key={mile.id}
               type="button"
               onClick={() => setSelectedAgeMilestone(mile.id as AgeStratificationId)}
-              className={`text-xs px-3 py-1.5 rounded-lg font-black transition-all border-2 ${
+              className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${
                 selectedAgeMilestone === mile.id
                   ? "bg-slate-950 text-white border-slate-950 shadow-md ring-2 ring-blue-500/40"
                   : "bg-white text-slate-800 border-slate-300 hover:border-slate-500 hover:bg-slate-50"
@@ -776,15 +847,15 @@ export function PatientNutrientPayload({
       {/* 4. Practical Feeding & Feed-Sheet Schedule Strip */}
       <div className="bg-white border-b-2 border-slate-300 px-4 py-2.5 sm:px-5 text-xs text-slate-800 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <span className="font-black text-slate-950 flex items-center gap-1.5">
+          <span className="font-bold text-slate-950 flex items-center gap-1.5">
             <Droplets className="w-4 h-4 text-blue-600" aria-hidden="true" />
-            24h Feed Volume: <strong className="font-mono text-blue-950 font-bold">{payload.totalDailyVolumeMl} mL</strong>
+            24h Feed Volume: <strong className="font-mono text-blue-950">{payload.totalDailyVolumeMl} mL</strong>
           </span>
           <span className="text-slate-300" aria-hidden="true">|</span>
           <span className="text-slate-950 flex items-center gap-1.5">
             <Scale className="w-4 h-4 text-emerald-600" aria-hidden="true" />
-            Daily Powder: <strong className="font-mono text-emerald-950 font-bold">{payload.dailyPowderGrams}g</strong>
-            <span className="text-slate-700 font-mono">(~{payload.dailyScoops} scoops/d)</span>
+            Daily Powder: <strong className="font-mono text-emerald-950">{payload.dailyPowderGrams}g</strong>
+            <span className="text-slate-600 font-mono">(~{payload.dailyScoops} scoops/d in {payload.waterVolumeMlPerDay} mL water)</span>
           </span>
         </div>
 
@@ -809,7 +880,7 @@ export function PatientNutrientPayload({
             key={tab.id}
             type="button"
             onClick={() => setActiveCategory(tab.id as any)}
-            className={`text-xs px-3.5 py-1.5 rounded-lg transition-all font-black border-2 ${
+            className={`text-xs px-3 py-1.5 rounded-lg transition-all font-bold border ${
               activeCategory === tab.id
                 ? "bg-slate-950 text-white border-slate-950 shadow-sm"
                 : "bg-white hover:bg-slate-100 text-slate-800 border-slate-300"
@@ -823,7 +894,7 @@ export function PatientNutrientPayload({
       {/* 6. Content Area: Vivid Cards View or Pharmacopoeia Table View */}
       <div className="p-4 sm:p-5">
         {viewMode === "cards" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
             {filteredItems.map((item) => {
               const details = getDynamicItemDetails(item);
               const cardBorder = getCardBorderClass(item.category);
@@ -831,80 +902,94 @@ export function PatientNutrientPayload({
               return (
                 <div
                   key={item.id}
-                  className={`p-4 rounded-xl bg-white border-2 border-slate-300 hover:border-slate-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-3.5 ${cardBorder}`}
+                  className={`p-4 rounded-xl bg-white border border-slate-300 hover:border-slate-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-3 ${cardBorder}`}
                 >
                   <div className="space-y-3">
-                    {/* Top Row: Icon + Name + Saturated Status Badge */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 font-black text-xs text-slate-950">
-                        {getCategoryIcon(item.category)}
-                        <span className="leading-snug">{item.name}</span>
+                    {/* Top Row: Category Icon + Nutrient Name + Status Badge (Cleanly decoupled, no collision) */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2 font-bold text-sm text-slate-950 leading-tight">
+                          {getCategoryIcon(item.category)}
+                          <span>{item.name}</span>
+                        </div>
+                        {getStatusBadge(details.status)}
                       </div>
-                      {getStatusBadge(details.status)}
+                      <div className="text-[11px] font-mono text-slate-500">
+                        Formula Concentration: <strong className="text-slate-800">{item.concentrationPer100Ml} / 100mL</strong>
+                      </div>
                     </div>
 
-                    {/* Primary Number Box: Distinct Bounded Frame */}
-                    <div className="p-3 bg-slate-50 border-2 border-slate-200 rounded-xl flex items-baseline justify-between shadow-2xs">
-                      <div>
-                        <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                          Delivered / 24h
-                        </span>
-                        <div className="text-lg font-black text-slate-950 font-mono mt-0.5">
-                          {item.amountPerDay}{" "}
-                          <span className="text-xs font-bold text-slate-700">{item.unit}/day</span>
+                    {/* Primary Number Box: Clean 2-column or 3-column subgrid */}
+                    <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                            Delivered / 24h
+                          </span>
+                          <div className="text-base font-black text-slate-950 font-mono mt-0.5">
+                            {item.amountPerDay}{" "}
+                            <span className="text-xs font-semibold text-slate-600">{item.unit}/d</span>
+                          </div>
                         </div>
+
+                        {item.amountPerKgPerDay !== undefined && (
+                          <div className="text-right">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
+                              Dose / kg / day
+                            </span>
+                            <div className="text-base font-black text-blue-950 font-mono mt-0.5">
+                              {item.amountPerKgPerDay}{" "}
+                              <span className="text-xs font-semibold text-blue-800">
+                                {item.unit.replace(" (mmol/kg/d)", "")}/kg/d
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
-                      {item.amountPerKgPerDay !== undefined && (
-                        <div className="text-right">
-                          <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                            Dose / kg / day
-                          </span>
-                          <div className="text-sm font-black text-blue-950 font-mono mt-0.5">
-                            {item.amountPerKgPerDay}{" "}
-                            <span className="text-xs font-bold text-blue-800">
-                              {item.unit.replace(" (mmol/kg/d)", "")}/kg/d
-                            </span>
-                          </div>
+                      {/* For electrolytes & minerals with molar units */}
+                      {(item.mmolPerDay !== undefined || item.mmolPerKgPerDay !== undefined) && (
+                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs font-mono text-purple-950">
+                          <span className="font-semibold text-slate-600">Molar Rate:</span>
+                          <strong>
+                            {item.mmolPerDay} mmol/d ({item.mmolPerKgPerDay} mmol/kg/d)
+                          </strong>
                         </div>
                       )}
                     </div>
 
                     {/* Product Coverage Progress Bar */}
-                    <div className="space-y-1.5 pt-0.5">
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-slate-800">Pediamil® Goal Coverage:</span>
-                        <span className="font-mono text-emerald-900 font-black">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs font-semibold">
+                        <span className="text-slate-700">Target Coverage:</span>
+                        <span className="font-mono text-emerald-900 font-bold text-xs">
                           {details.badgeText}
                         </span>
                       </div>
-                      <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
+                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
                         <div
-                          className="bg-gradient-to-r from-emerald-600 to-teal-500 h-full rounded-full transition-all duration-300"
+                          className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                           style={{ width: `${details.percent}%` }}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Age Target Range & Clinical Biological Rationale Box */}
-                  <div className="pt-2 border-t-2 border-slate-200 space-y-2">
-                    <div className="p-2.5 rounded-lg bg-blue-50 border-2 border-blue-200 space-y-1">
-                      <div className="flex items-center justify-between text-xs font-black text-blue-950">
-                        <span>Target ({activeAgeStrat.pmaWeeksRange}):</span>
-                        <span className="font-mono text-blue-900 font-bold">{details.goalLabel}</span>
+                  {/* Clinical Target Range & Biological Rationale (Cleanly Stacked, Zero Overlap) */}
+                  <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-200/80 space-y-1.5 text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 block">
+                        Clinical Target Range ({activeAgeStrat.pmaWeeksRange}):
+                      </span>
+                      <div className="font-mono font-bold text-blue-950 text-xs mt-0.5">
+                        {details.goalLabel}
                       </div>
-                      {details.goalRationale && (
-                        <p className="text-xs text-slate-800 font-medium leading-normal italic">
-                          {details.goalRationale}
-                        </p>
-                      )}
                     </div>
-
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
-                      <span>Formula Spec:</span>
-                      <strong className="text-slate-950 font-mono">{item.concentrationPer100Ml} / 100mL</strong>
-                    </div>
+                    {details.goalRationale && (
+                      <p className="text-[11px] text-slate-700 leading-relaxed pt-1.5 border-t border-blue-200/60 font-sans">
+                        {details.goalRationale}
+                      </p>
+                    )}
                   </div>
                 </div>
               );
@@ -912,67 +997,58 @@ export function PatientNutrientPayload({
           </div>
         ) : (
           /* Table View: High Density Clinical Pharmacopoeia */
-          <div className="overflow-x-auto rounded-xl border-2 border-slate-300 shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-slate-300 shadow-sm">
             <table className="w-full text-left text-xs">
-              <thead className="bg-slate-100 text-slate-950 font-black uppercase tracking-wider text-xs border-b-2 border-slate-300">
+              <thead className="bg-slate-100 text-slate-950 font-bold uppercase tracking-wider text-xs border-b border-slate-300">
                 <tr>
                   <th scope="col" className="p-3.5">Nutrient & Biological Role</th>
+                  <th scope="col" className="p-3.5">Formula Spec</th>
                   <th scope="col" className="p-3.5">Delivered / 24h</th>
                   <th scope="col" className="p-3.5">Delivered / kg / d</th>
-                  <th scope="col" className="p-3.5">Age Clinical Target Range</th>
-                  <th scope="col" className="p-3.5">Pediamil® Coverage %</th>
-                  <th scope="col" className="p-3.5">Formula Spec</th>
+                  <th scope="col" className="p-3.5">Molar Rate</th>
+                  <th scope="col" className="p-3.5">ESPGHAN 2022 Target</th>
                   <th scope="col" className="p-3.5 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y-2 divide-slate-200 bg-white">
+              <tbody className="divide-y divide-slate-200 bg-white">
                 {filteredItems.map((item) => {
                   const details = getDynamicItemDetails(item);
 
                   return (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="p-3.5 font-bold text-slate-950">
-                        <div className="flex items-center gap-2">
+                      <td className="p-3.5 font-bold text-slate-950 max-w-xs">
+                        <div className="flex items-start gap-2">
                           {getCategoryIcon(item.category)}
                           <div>
-                            <span className="font-black text-slate-950">{item.name}</span>
+                            <span className="font-bold text-slate-950 block">{item.name}</span>
                             {details.goalRationale && (
-                              <div className="text-xs text-slate-700 font-medium italic mt-0.5">
+                              <div className="text-[11px] text-slate-600 font-normal leading-tight mt-0.5">
                                 {details.goalRationale}
                               </div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="p-3.5 font-black font-mono text-slate-950 text-sm">
-                        {item.amountPerDay} {item.unit}
-                      </td>
-                      <td className="p-3.5 font-mono text-blue-950 font-black text-xs">
-                        {item.amountPerKgPerDay !== undefined
-                          ? `${item.amountPerKgPerDay} ${item.unit.replace(" (mmol/kg/d)", "")}/kg`
-                          : "—"}
-                      </td>
-                      <td className="p-3.5 font-mono text-slate-950 text-xs font-bold">
-                        {details.goalLabel}
-                      </td>
-                      <td className="p-3.5">
-                        <div className="space-y-1 min-w-[140px]">
-                          <div className="flex items-center justify-between text-xs font-black text-emerald-950 font-mono">
-                            <span>{details.ratio}%</span>
-                            <span>{details.ratio >= 100 ? "Goal Met" : "Target Met"}</span>
-                          </div>
-                          <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden border border-slate-300">
-                            <div
-                              className="bg-emerald-600 h-full rounded-full"
-                              style={{ width: `${details.percent}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3.5 font-mono text-slate-900 font-bold text-xs">
+                      <td className="p-3.5 font-mono text-slate-700 text-xs whitespace-nowrap">
                         {item.concentrationPer100Ml} / 100mL
                       </td>
-                      <td className="p-3.5 text-center">
+                      <td className="p-3.5 font-bold font-mono text-slate-950 text-xs whitespace-nowrap">
+                        {item.amountPerDay} {item.unit}/d
+                      </td>
+                      <td className="p-3.5 font-mono text-blue-950 font-bold text-xs whitespace-nowrap">
+                        {item.amountPerKgPerDay !== undefined
+                          ? `${item.amountPerKgPerDay} ${item.unit.replace(" (mmol/kg/d)", "")}/kg/d`
+                          : "—"}
+                      </td>
+                      <td className="p-3.5 font-mono text-purple-950 text-xs whitespace-nowrap">
+                        {item.mmolPerKgPerDay !== undefined
+                          ? `${item.mmolPerKgPerDay} mmol/kg/d`
+                          : "—"}
+                      </td>
+                      <td className="p-3.5 font-mono text-slate-900 text-xs max-w-xs">
+                        {details.goalLabel}
+                      </td>
+                      <td className="p-3.5 text-center whitespace-nowrap">
                         {getStatusBadge(details.status)}
                       </td>
                     </tr>
@@ -984,14 +1060,14 @@ export function PatientNutrientPayload({
         )}
 
         {/* Doctor Context Footer Callout */}
-        <div className="mt-5 p-4 rounded-xl bg-blue-50 border-2 border-blue-300 text-blue-950 text-xs flex items-start gap-3 shadow-xs">
+        <div className="mt-5 p-4 rounded-xl bg-blue-50 border border-blue-300 text-blue-950 text-xs flex items-start gap-3 shadow-xs">
           <Shield className="w-5 h-5 text-blue-800 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="space-y-1 text-xs leading-relaxed">
-            <span className="font-black text-blue-950 block text-sm">
+            <span className="font-bold text-blue-950 block text-sm">
               Physician Clinical Decision Support & Reference Comparison Note:
             </span>
             <p className="text-slate-800 font-medium">
-              The delivered payload shows that <strong>Pediamil® LBW</strong> at the entered volume delivers bone minerals (195.1 mg/kg/d Ca & 97.7 mg/kg/d P), enteral iron (2.93 mg/kg/d), and 60:40 whey:casein protein within ESPGHAN 2022 preterm enteral recommendation horizons. Product nutrient values are manufacturer-specific and must be verified against the current product label. Total nutrient intake, individual clinical tolerance, and laboratory monitoring must guide clinical care.
+              The delivered payload demonstrates that <strong>Pediamil® LBW</strong> at the entered volume delivers bone minerals ({payload.calciumMgPerKgPerDay} mg/kg/d Ca & {payload.phosphorusMgPerKgPerDay} mg/kg/d P), enteral iron ({payload.ironMgPerKgPerDay} mg/kg/d), and 60:40 whey:casein protein within ESPGHAN 2022 preterm enteral recommendation horizons. Product nutrient values are manufacturer-specific and must be verified against current batch labeling. Total nutrient intake, individual clinical tolerance, and laboratory monitoring must guide bedside clinical care.
             </p>
           </div>
         </div>

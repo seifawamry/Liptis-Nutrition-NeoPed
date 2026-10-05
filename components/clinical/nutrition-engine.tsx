@@ -627,14 +627,6 @@ export function NutritionEngine({
                 </div>
               </div>
 
-              {/* Comprehensive Delivered Patient Nutrient Breakdown Niche */}
-              {result.deliveredNutrientPayload && (
-                <PatientNutrientPayload
-                  payload={result.deliveredNutrientPayload}
-                  isGraduated={true}
-                />
-              )}
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                 <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
                   <div className="flex items-center gap-1.5 font-bold text-blue-900">
@@ -875,14 +867,6 @@ export function NutritionEngine({
                   </div>
                 )}
 
-                {/* Patient Delivered Daily Nutritional Payload Niche */}
-                {result.deliveredNutrientPayload && (
-                  <PatientNutrientPayload
-                    payload={result.deliveredNutrientPayload}
-                    isGraduated={false}
-                  />
-                )}
-
                 <div className="p-2.5 bg-slate-100 rounded text-[10.5px] text-slate-500 italic">
                   {result.productDisclaimer}
                 </div>
@@ -891,6 +875,14 @@ export function NutritionEngine({
           )}
         </div>
       </div>
+
+      {/* Patient Delivered Daily Nutritional Payload Section (Full Width for Maximum Legibility & Doctor Workflow) */}
+      {!result.isBlocked && result.deliveredNutrientPayload && (
+        <PatientNutrientPayload
+          payload={result.deliveredNutrientPayload}
+          isGraduated={result.isGraduated}
+        />
+      )}
 
       {/* Section 9: Developer / Clinician Calculation Audit Panel & JSON Export */}
       <div className="rounded-xl border border-slate-300 bg-slate-900 text-slate-100 p-4 shadow-sm space-y-3">
