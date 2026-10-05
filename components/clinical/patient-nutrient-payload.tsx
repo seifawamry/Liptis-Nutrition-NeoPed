@@ -380,32 +380,26 @@ export function PatientNutrientPayload({
   };
 
   const getStatusBadge = (status: string) => {
-    if (status === "target_met") {
+    if (status === "target_met" || status === "within_target") {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-950 border border-emerald-400 shrink-0">
-          <CheckCircle2 className="w-3 h-3 text-emerald-700" />
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400 shrink-0">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
           Target Met
-        </span>
-      );
-    }
-    if (status === "within_target") {
-      return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-100 text-blue-950 border border-blue-400 shrink-0">
-          Target Range
         </span>
       );
     }
     if (status === "above_target") {
       return (
-        <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-purple-100 text-purple-950 border border-purple-400 shrink-0">
-          Conditional High
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400 shrink-0">
+          <AlertCircle className="w-3.5 h-3.5 text-purple-700 shrink-0" />
+          Above Range
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 border border-amber-400 shrink-0">
-        <AlertCircle className="w-3 h-3 text-amber-700" />
-        Clinical Review
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400 shrink-0">
+        <AlertCircle className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+        Below Range
       </span>
     );
   };
@@ -600,10 +594,10 @@ export function PatientNutrientPayload({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
             {/* Pillar 1: Calcium */}
-            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+            <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2.5 flex flex-col justify-between">
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900 flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Bone className="w-3.5 h-3.5 text-emerald-700" /> Calcium
                   </span>
                   <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-1.5 py-0.5 rounded font-mono border border-emerald-300">
@@ -612,31 +606,32 @@ export function PatientNutrientPayload({
                 </div>
                 <div className="text-base font-black font-mono text-slate-950">
                   {corePillars.calcium.value}{" "}
-                  <span className="text-xs font-normal text-slate-600">{corePillars.calcium.unit}</span>
+                  <span className="text-xs font-medium text-slate-600">{corePillars.calcium.unit}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 pt-1 border-t border-slate-100">
+              <div className="space-y-1.5 pt-2 border-t border-slate-200">
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${corePillars.calcium.percent}%` }}
                   />
                 </div>
-                <div className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Goal: {corePillars.calcium.goal}
+                <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 block">Target Range:</span>
+                  <span className="font-mono text-slate-950 font-bold">{corePillars.calcium.goal}</span>
                 </div>
-                <div className="text-[10px] font-semibold text-emerald-800">
+                <div className="text-[10px] font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300 text-center">
                   {corePillars.calcium.subtitle}
                 </div>
               </div>
             </div>
 
             {/* Pillar 2: Phosphorus */}
-            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+            <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2.5 flex flex-col justify-between">
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900 flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Bone className="w-3.5 h-3.5 text-emerald-700" /> Phosphorus
                   </span>
                   <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-1.5 py-0.5 rounded font-mono border border-emerald-300">
@@ -645,31 +640,32 @@ export function PatientNutrientPayload({
                 </div>
                 <div className="text-base font-black font-mono text-slate-950">
                   {corePillars.phosphorus.value}{" "}
-                  <span className="text-xs font-normal text-slate-600">{corePillars.phosphorus.unit}</span>
+                  <span className="text-xs font-medium text-slate-600">{corePillars.phosphorus.unit}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 pt-1 border-t border-slate-100">
+              <div className="space-y-1.5 pt-2 border-t border-slate-200">
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${corePillars.phosphorus.percent}%` }}
                   />
                 </div>
-                <div className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Goal: {corePillars.phosphorus.goal}
+                <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 block">Target Range:</span>
+                  <span className="font-mono text-slate-950 font-bold">{corePillars.phosphorus.goal}</span>
                 </div>
-                <div className="text-[10px] font-semibold text-emerald-800">
+                <div className="text-[10px] font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300 text-center">
                   {corePillars.phosphorus.subtitle}
                 </div>
               </div>
             </div>
 
             {/* Pillar 3: True Protein */}
-            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+            <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2.5 flex flex-col justify-between">
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900 flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Activity className="w-3.5 h-3.5 text-blue-700" /> Protein
                   </span>
                   <span className="text-xs font-black text-blue-950 bg-blue-100 px-1.5 py-0.5 rounded font-mono border border-blue-300">
@@ -678,31 +674,32 @@ export function PatientNutrientPayload({
                 </div>
                 <div className="text-base font-black font-mono text-slate-950">
                   {corePillars.protein.value}{" "}
-                  <span className="text-xs font-normal text-slate-600">{corePillars.protein.unit}</span>
+                  <span className="text-xs font-medium text-slate-600">{corePillars.protein.unit}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 pt-1 border-t border-slate-100">
+              <div className="space-y-1.5 pt-2 border-t border-slate-200">
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-blue-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${corePillars.protein.percent}%` }}
                   />
                 </div>
-                <div className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Goal: {corePillars.protein.goal}
+                <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 block">Target Range:</span>
+                  <span className="font-mono text-slate-950 font-bold">{corePillars.protein.goal}</span>
                 </div>
-                <div className="text-[10px] font-semibold text-blue-800">
+                <div className="text-[10px] font-bold text-blue-950 bg-blue-50 px-2 py-0.5 rounded border border-blue-300 text-center">
                   {corePillars.protein.subtitle}
                 </div>
               </div>
             </div>
 
             {/* Pillar 4: Energy */}
-            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+            <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2.5 flex flex-col justify-between">
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900 flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Activity className="w-3.5 h-3.5 text-amber-700" /> Energy
                   </span>
                   <span className="text-xs font-black text-amber-950 bg-amber-100 px-1.5 py-0.5 rounded font-mono border border-amber-300">
@@ -711,31 +708,32 @@ export function PatientNutrientPayload({
                 </div>
                 <div className="text-base font-black font-mono text-slate-950">
                   {corePillars.energy.value}{" "}
-                  <span className="text-xs font-normal text-slate-600">{corePillars.energy.unit}</span>
+                  <span className="text-xs font-medium text-slate-600">{corePillars.energy.unit}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 pt-1 border-t border-slate-100">
+              <div className="space-y-1.5 pt-2 border-t border-slate-200">
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-amber-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${corePillars.energy.percent}%` }}
                   />
                 </div>
-                <div className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Goal: {corePillars.energy.goal}
+                <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 block">Target Range:</span>
+                  <span className="font-mono text-slate-950 font-bold">{corePillars.energy.goal}</span>
                 </div>
-                <div className="text-[10px] font-semibold text-slate-600">
+                <div className="text-[10px] font-bold text-amber-950 bg-amber-50 px-2 py-0.5 rounded border border-amber-300 text-center">
                   {corePillars.energy.subtitle}
                 </div>
               </div>
             </div>
 
             {/* Pillar 5: Elemental Iron */}
-            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+            <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2.5 flex flex-col justify-between">
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900 flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Shield className="w-3.5 h-3.5 text-emerald-700" /> Iron (Fe)
                   </span>
                   <span className="text-xs font-black text-emerald-950 bg-emerald-100 px-1.5 py-0.5 rounded font-mono border border-emerald-300">
@@ -744,31 +742,32 @@ export function PatientNutrientPayload({
                 </div>
                 <div className="text-base font-black font-mono text-slate-950">
                   {corePillars.iron.value}{" "}
-                  <span className="text-xs font-normal text-slate-600">{corePillars.iron.unit}</span>
+                  <span className="text-xs font-medium text-slate-600">{corePillars.iron.unit}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 pt-1 border-t border-slate-100">
+              <div className="space-y-1.5 pt-2 border-t border-slate-200">
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${corePillars.iron.percent}%` }}
                   />
                 </div>
-                <div className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Goal: {corePillars.iron.goal}
+                <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 block">Target Range:</span>
+                  <span className="font-mono text-slate-950 font-bold">{corePillars.iron.goal}</span>
                 </div>
-                <div className="text-[10px] font-semibold text-emerald-800">
+                <div className="text-[10px] font-bold text-emerald-950 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300 text-center">
                   {corePillars.iron.subtitle}
                 </div>
               </div>
             </div>
 
             {/* Pillar 6: Vitamin D3 */}
-            <div className="bg-white p-3 rounded-xl border-2 border-slate-300 shadow-sm space-y-2 flex flex-col justify-between">
+            <div className="bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm space-y-2.5 flex flex-col justify-between">
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-black text-slate-900 flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-purple-700" /> Vit D3
                   </span>
                   <span className="text-xs font-black text-purple-950 bg-purple-100 px-1.5 py-0.5 rounded font-mono border border-purple-300">
@@ -777,21 +776,22 @@ export function PatientNutrientPayload({
                 </div>
                 <div className="text-base font-black font-mono text-slate-950">
                   {corePillars.vitaminD3.value}{" "}
-                  <span className="text-xs font-normal text-slate-600">{corePillars.vitaminD3.unit}</span>
+                  <span className="text-xs font-medium text-slate-600">{corePillars.vitaminD3.unit}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 pt-1 border-t border-slate-100">
+              <div className="space-y-1.5 pt-2 border-t border-slate-200">
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                   <div
                     className="bg-purple-600 h-full rounded-full transition-all duration-300"
                     style={{ width: `${corePillars.vitaminD3.percent}%` }}
                   />
                 </div>
-                <div className="text-[11px] font-bold text-slate-700 leading-tight">
-                  Goal: {corePillars.vitaminD3.goal}
+                <div className="text-[11px] font-bold text-slate-800 leading-tight">
+                  <span className="text-[9.5px] font-extrabold uppercase tracking-wider text-slate-500 block">Target Range:</span>
+                  <span className="font-mono text-slate-950 font-bold">{corePillars.vitaminD3.goal}</span>
                 </div>
-                <div className="text-[10px] font-semibold text-purple-800">
+                <div className="text-[10px] font-bold text-purple-950 bg-purple-100 px-2 py-0.5 rounded border border-purple-300 text-center">
                   {corePillars.vitaminD3.subtitle}
                 </div>
               </div>
@@ -902,40 +902,47 @@ export function PatientNutrientPayload({
               return (
                 <div
                   key={item.id}
-                  className={`p-4 rounded-xl bg-white border border-slate-300 hover:border-slate-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-3 ${cardBorder}`}
+                  className={`p-4 rounded-xl bg-white border border-slate-300 hover:border-slate-500 transition-all shadow-sm hover:shadow-md flex flex-col justify-between space-y-3.5 ${cardBorder}`}
                 >
                   <div className="space-y-3">
-                    {/* Top Row: Category Icon + Nutrient Name + Status Badge (Cleanly decoupled, no collision) */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2 font-bold text-sm text-slate-950 leading-tight">
-                          {getCategoryIcon(item.category)}
-                          <span>{item.name}</span>
-                        </div>
-                        {getStatusBadge(details.status)}
+                    {/* Top Row: Category Bar & Status Badge */}
+                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-200">
+                      <div className="flex items-center gap-1.5 text-[10.5px] font-black uppercase tracking-wider text-slate-500">
+                        {getCategoryIcon(item.category)}
+                        <span className="capitalize">{item.category}</span>
                       </div>
-                      <div className="text-[11px] font-mono text-slate-500">
-                        Formula Concentration: <strong className="text-slate-800">{item.concentrationPer100Ml} / 100mL</strong>
+                      <div className="shrink-0">
+                        {getStatusBadge(details.status)}
                       </div>
                     </div>
 
-                    {/* Primary Number Box: Clean 2-column or 3-column subgrid */}
+                    {/* Nutrient Title & Concentration Spec (Full Width, Zero Collision) */}
+                    <div>
+                      <h4 className="text-sm font-black text-slate-950 tracking-tight leading-snug">
+                        {item.name}
+                      </h4>
+                      <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+                        Product Concentration: <strong className="text-slate-800 font-semibold">{item.concentrationPer100Ml} / 100mL</strong>
+                      </div>
+                    </div>
+
+                    {/* Primary Number Box: Clean 2-column subgrid */}
                     <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                            Delivered / 24h
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                            24h Delivered Dose
                           </span>
                           <div className="text-base font-black text-slate-950 font-mono mt-0.5">
                             {item.amountPerDay}{" "}
-                            <span className="text-xs font-semibold text-slate-600">{item.unit}/d</span>
+                            <span className="text-xs font-semibold text-slate-600">{item.unit}/day</span>
                           </div>
                         </div>
 
                         {item.amountPerKgPerDay !== undefined && (
                           <div className="text-right">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">
-                              Dose / kg / day
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block">
+                              Normalized Dose
                             </span>
                             <div className="text-base font-black text-blue-950 font-mono mt-0.5">
                               {item.amountPerKgPerDay}{" "}
@@ -949,9 +956,9 @@ export function PatientNutrientPayload({
 
                       {/* For electrolytes & minerals with molar units */}
                       {(item.mmolPerDay !== undefined || item.mmolPerKgPerDay !== undefined) && (
-                        <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-xs font-mono text-purple-950">
-                          <span className="font-semibold text-slate-600">Molar Rate:</span>
-                          <strong>
+                        <div className="pt-2 border-t border-slate-200 flex flex-wrap items-center justify-between text-xs font-mono text-purple-950 gap-1">
+                          <span className="font-semibold text-slate-600">Electrolyte Molar Rate:</span>
+                          <strong className="bg-purple-50 px-2 py-0.5 rounded border border-purple-200">
                             {item.mmolPerDay} mmol/d ({item.mmolPerKgPerDay} mmol/kg/d)
                           </strong>
                         </div>
@@ -959,14 +966,14 @@ export function PatientNutrientPayload({
                     </div>
 
                     {/* Product Coverage Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs font-semibold">
-                        <span className="text-slate-700">Target Coverage:</span>
-                        <span className="font-mono text-emerald-900 font-bold text-xs">
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex flex-wrap items-center justify-between text-xs font-semibold gap-1">
+                        <span className="text-slate-600 text-[11px] font-medium">Coverage Evaluation:</span>
+                        <span className="font-mono text-emerald-950 font-bold text-xs bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
                           {details.badgeText}
                         </span>
                       </div>
-                      <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200">
+                      <div className="w-full bg-slate-200/80 h-2 rounded-full overflow-hidden border border-slate-300/60">
                         <div
                           className="bg-emerald-600 h-full rounded-full transition-all duration-300"
                           style={{ width: `${details.percent}%` }}
@@ -975,20 +982,26 @@ export function PatientNutrientPayload({
                     </div>
                   </div>
 
-                  {/* Clinical Target Range & Biological Rationale (Cleanly Stacked, Zero Overlap) */}
-                  <div className="p-3 rounded-lg bg-blue-50/70 border border-blue-200/80 space-y-1.5 text-xs">
+                  {/* Clinical Target Range Box (Isolated White Card inside Blue Enclosure, Zero Overlap) */}
+                  <div className="p-3.5 rounded-xl bg-blue-50/70 border-2 border-blue-200/90 space-y-2 text-xs">
                     <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-blue-900 block">
-                        Clinical Target Range ({activeAgeStrat.pmaWeeksRange}):
-                      </span>
-                      <div className="font-mono font-bold text-blue-950 text-xs mt-0.5">
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-blue-900">
+                          Target Range ({activeAgeStrat.pmaWeeksRange})
+                        </span>
+                        <span className="text-[9.5px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300 font-mono">
+                          ESPGHAN
+                        </span>
+                      </div>
+                      <div className="font-mono font-bold text-blue-950 text-xs bg-white p-2 rounded-lg border border-blue-200 shadow-2xs leading-relaxed">
                         {details.goalLabel}
                       </div>
                     </div>
                     {details.goalRationale && (
-                      <p className="text-[11px] text-slate-700 leading-relaxed pt-1.5 border-t border-blue-200/60 font-sans">
+                      <div className="pt-2 border-t border-blue-200/70 text-[11px] text-slate-700 leading-relaxed font-sans">
+                        <strong className="text-slate-900 font-bold block mb-0.5">Clinical Rationale:</strong>
                         {details.goalRationale}
-                      </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1006,8 +1019,8 @@ export function PatientNutrientPayload({
                   <th scope="col" className="p-3.5">Delivered / 24h</th>
                   <th scope="col" className="p-3.5">Delivered / kg / d</th>
                   <th scope="col" className="p-3.5">Molar Rate</th>
-                  <th scope="col" className="p-3.5">ESPGHAN 2022 Target</th>
-                  <th scope="col" className="p-3.5 text-center">Status</th>
+                  <th scope="col" className="p-3.5">ESPGHAN Target Range</th>
+                  <th scope="col" className="p-3.5 text-center">Clinical Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 bg-white">

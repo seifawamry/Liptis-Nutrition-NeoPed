@@ -675,17 +675,17 @@ export function NutritionEngine({
                     metricName="Delivered Energy (ESPGHAN 2022: 115–140 kcal/kg/d, Cond: 140–160)"
                     status={result.energyCompliance?.status || "on_target"}
                   />
-                  <div className="flex items-center justify-between text-xs text-slate-600 border-t border-slate-200/80 pt-2 font-mono">
-                    <span>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
+                    <div>
                       Total Daily Energy:{" "}
-                      <strong>{result.deliveredEnergyKcalPerDay} kcal/day</strong>
-                    </span>
-                    <span>
-                      Status:{" "}
-                      <strong className="text-slate-900">
+                      <strong className="text-slate-950 font-bold">{result.deliveredEnergyKcalPerDay} kcal/day</strong>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
+                      <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
                         {result.energyCompliance?.badgeLabel}
                       </strong>
-                    </span>
+                    </div>
                   </div>
                   <p className="text-[11px] text-slate-500 leading-tight">
                     {result.energyCompliance?.interpretation}
@@ -705,17 +705,17 @@ export function NutritionEngine({
                       metricName={`Delivered Protein (${result.proteinBracket.classification}: ${result.proteinBracket.targetMinGramsPerKg}–${result.proteinBracket.targetMaxGramsPerKg} g/kg/d)`}
                       status={result.proteinCompliance?.status || "on_target"}
                     />
-                    <div className="flex items-center justify-between text-xs text-slate-600 border-t border-slate-200/80 pt-2 font-mono">
-                      <span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
+                      <div>
                         Total Daily Protein:{" "}
-                        <strong>{result.deliveredProteinGramsPerDay} g/day</strong>
-                      </span>
-                      <span>
-                        Status:{" "}
-                        <strong className="text-slate-900">
+                        <strong className="text-slate-950 font-bold">{result.deliveredProteinGramsPerDay} g/day</strong>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
+                        <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
                           {result.proteinCompliance?.badgeLabel}
                         </strong>
-                      </span>
+                      </div>
                     </div>
                     <p className="text-[11px] text-slate-500 leading-tight">
                       {result.proteinCompliance?.interpretation}

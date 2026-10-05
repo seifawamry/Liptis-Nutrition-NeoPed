@@ -159,12 +159,12 @@ export function RangeGauge({
       aria-valuemax={maxScale}
       aria-valuetext={accessibleText}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-700">{metricName}</span>
-        <div className="flex items-center gap-2">
-          <span className="text-base font-bold text-slate-900 tracking-tight">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1">
+        <span className="text-xs font-bold text-slate-800 leading-snug">{metricName}</span>
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <span className="text-base font-extrabold text-slate-950 font-mono tracking-tight">
             {currentValue.toFixed(currentValue >= 10 ? 1 : 2)}{" "}
-            <span className="text-xs font-normal text-slate-500">{unit}</span>
+            <span className="text-xs font-medium text-slate-600">{unit}</span>
           </span>
           <StatusBadge
             status={status}
@@ -220,18 +220,22 @@ export function RangeGauge({
         </div>
       </div>
 
-      {/* Axis Scale Labels */}
-      <div className="flex justify-between text-[11px] font-mono text-slate-400 px-1">
-        <span>{minScale}</span>
-        <span className="text-emerald-700 font-semibold">
-          Typical: {minTarget}–{maxTarget} {unit}
-        </span>
-        {conditionalMaxTarget && (
-          <span className="text-blue-700 font-semibold">
-            Cond. Max: {conditionalMaxTarget} {unit}
+      {/* Axis Scale & Target Range Labels (Non-overlapping layout) */}
+      <div className="flex flex-wrap items-center justify-between text-[11px] font-mono gap-1.5 pt-0.5 px-0.5">
+        <span className="text-slate-500 font-semibold">{minScale}</span>
+        <div className="flex flex-wrap items-center gap-1.5 justify-center">
+          <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            Target Range: {minTarget}–{maxTarget} {unit}
           </span>
-        )}
-        <span>{maxScale}</span>
+          {conditionalMaxTarget && (
+            <span className="inline-flex items-center gap-1 text-[10.5px] font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+              Cond. Max: ≤{conditionalMaxTarget} {unit}
+            </span>
+          )}
+        </div>
+        <span className="text-slate-500 font-semibold">{maxScale}</span>
       </div>
     </div>
   );
