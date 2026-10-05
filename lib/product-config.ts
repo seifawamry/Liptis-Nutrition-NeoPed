@@ -89,6 +89,34 @@ export const PRODUCT_DATA_DISCLAIMER =
   "Product nutrient values are manufacturer-specific and must be verified against the current product label and preparation instructions before clinical use. Commercial nutrient specifications are independent of ESPGHAN clinical guidelines and are not validated or endorsed by clinical societies.";
 
 /**
+ * Authoritative Product Specification schema (Prompt Section 3)
+ */
+export interface ProductSpecification {
+  productName: string;
+  formulation: string;
+  preparationMethod: string;
+  preparedVolumeBasis: string;
+  powderGramsPer100mL: number;
+  energyKcalPer100mL: number;
+  proteinGramsPer100mL: number;
+  carbohydrateGramsPer100mL: number;
+  fatGramsPer100mL: number;
+  calciumMgPer100mL: number;
+  phosphorusMgPer100mL: number;
+  sodiumMgPer100mL: number;
+  potassiumMgPer100mL: number;
+  chlorideMgPer100mL: number;
+  ironMgPer100mL: number;
+  vitaminD3McgPer100mL: number;
+  dhaMgPer100mL: number;
+  araMgPer100mL: number;
+  sourceDocument: string;
+  sourceVersion: string;
+  verifiedDate: string;
+  verificationStatus: "verified" | "unverified";
+}
+
+/**
  * Pediamil® LBW Official Manufacturer Specification
  * High-protein, high-energy preterm matrix for Low Birth Weight infants <= 3500g.
  */
@@ -228,3 +256,34 @@ export const PRODUCT_CATALOG: Record<string, ProductProfile> = {
   "pediamil-lbw": PEDIAMIL_LBW_PRODUCT,
   "pediamil-1": PEDIAMIL_1_PRODUCT,
 };
+
+export function toProductSpecification(profile: ProductProfile): ProductSpecification {
+  return {
+    productName: profile.brandName,
+    formulation: profile.genericClassification,
+    preparationMethod: profile.reconstitution.preparationInstructions,
+    preparedVolumeBasis: profile.reconstitution.scoopsPerStandardVolume,
+    powderGramsPer100mL: profile.reconstitution.powderMassGramsPer100Ml,
+    energyKcalPer100mL: profile.composition.energyKcalPer100Ml,
+    proteinGramsPer100mL: profile.composition.proteinGramsPer100Ml,
+    carbohydrateGramsPer100mL: profile.composition.carbsGramsPer100Ml,
+    fatGramsPer100mL: profile.composition.fatGramsPer100Ml,
+    calciumMgPer100mL: profile.composition.calciumMgPer100Ml,
+    phosphorusMgPer100mL: profile.composition.phosphorusMgPer100Ml,
+    sodiumMgPer100mL: profile.composition.sodiumMgPer100Ml,
+    potassiumMgPer100mL: profile.composition.potassiumMgPer100Ml,
+    chlorideMgPer100mL: profile.composition.chlorideMgPer100Ml,
+    ironMgPer100mL: profile.composition.ironMgPer100Ml,
+    vitaminD3McgPer100mL: profile.composition.vitaminD3McgPer100Ml,
+    dhaMgPer100mL: profile.composition.dhaMgPer100Ml ?? 0,
+    araMgPer100mL: profile.composition.araMgPer100Ml ?? 0,
+    sourceDocument: profile.sourceDocumentName,
+    sourceVersion: profile.sourceDocumentVersion,
+    verifiedDate: profile.verificationDate,
+    verificationStatus: profile.verificationStatus,
+  };
+}
+
+export const PEDIAMIL_LBW_SPEC: ProductSpecification = toProductSpecification(PEDIAMIL_LBW_PRODUCT);
+export const PEDIAMIL_1_SPEC: ProductSpecification = toProductSpecification(PEDIAMIL_1_PRODUCT);
+

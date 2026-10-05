@@ -28,6 +28,8 @@ import {
   ChevronDown,
   ChevronUp,
   Calendar,
+  FileCode,
+  Download,
 } from "lucide-react";
 
 interface NutritionEngineProps {
@@ -51,6 +53,7 @@ export function NutritionEngine({
 }: NutritionEngineProps) {
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
+  const [showAuditPanel, setShowAuditPanel] = useState(false);
 
   const quickWeightPresets = [
     { label: "850g (ELBW)", value: 850 },
@@ -79,6 +82,45 @@ export function NutritionEngine({
     } catch {
       // Fallback if clipboard API restricted
     }
+  };
+
+  const handleDownloadAuditJson = () => {
+    if (!result) return;
+    const auditData = {
+      calculationSession: {
+        timestampUtc: result.auditMetadata.calculatedAtUtc,
+        engineVersion: result.auditMetadata.engineVersion,
+        runtimeEnvironment: "Client-side isolated execution (zero cloud telemetry)",
+        inputs: {
+          patientWeightGrams: weightGrams,
+          patientWeightKg: result.currentWeightKg,
+          fluidAllowanceMlPerKgPerDay: fluidAllowance,
+        },
+        outputs: {
+          totalDailyVolumeMl: result.totalDailyVolumeMl,
+          deliveredEnergyKcalPerKgPerDay: result.deliveredEnergyKcalPerKgPerDay,
+          deliveredProteinGramsPerKgPerDay: result.deliveredProteinGramsPerKgPerDay,
+          proteinToEnergyRatioGramsPer100Kcal: result.proteinToEnergyRatioGramsPer100Kcal,
+          overallStatus: result.overallStatus,
+          feedingSchedule: result.feedingSchedule,
+          deliveredNutrientPayload: result.deliveredNutrientPayload,
+        },
+        clinicalReferences: result.auditMetadata.guidelinesUsed,
+        nonDeviceDisclaimer: result.auditMetadata.nonDeviceDisclaimer,
+        productDisclaimer: result.productDisclaimer,
+      },
+    };
+    const auditBlob = new Blob([JSON.stringify(auditData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(auditBlob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `liptis-audit-${weightGrams}g-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -848,6 +890,114 @@ export function NutritionEngine({
             </ClinicalCard>
           )}
         </div>
+      </div>
+
+      {/* Section 9: Developer / Clinician Calculation Audit Panel & JSON Export */}
+      <div className="rounded-xl border border-slate-300 bg-slate-900 text-slate-100 p-4 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+              <FileCode className="w-4 h-4" aria-hidden="true" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+                  Developer & Clinician Calculation Audit Panel
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
+                  {result.auditMetadata.engineVersion}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Auditable deterministic trace, atomic conversions, and clinical reference alignment
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleDownloadAuditJson}
+              disabled={result.isBlocked}
+              aria-label="Download calculation audit session as JSON"
+              className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Download className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Download Audit JSON</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAuditPanel(!showAuditPanel)}
+              aria-expanded={showAuditPanel}
+              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-colors border border-slate-700"
+            >
+              <span>{showAuditPanel ? "Hide Details" : "View Audit Trace"}</span>
+              {showAuditPanel ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+        </div>
+
+        {showAuditPanel && (
+          <div className="p-4 bg-slate-950 rounded-lg border border-slate-800 text-xs font-mono space-y-3 text-slate-300 overflow-x-auto">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-slate-500 text-[10px] uppercase block font-sans font-bold">Calculation Timestamp (UTC):</span>
+                <span className="text-slate-200">{result.auditMetadata.calculatedAtUtc}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 text-[10px] uppercase block font-sans font-bold">Execution Environment:</span>
+                <span className="text-slate-200">Client-side runtime (zero server transit)</span>
+              </div>
+              <div>
+                <span className="text-slate-500 text-[10px] uppercase block font-sans font-bold">Overall Clinical Status:</span>
+                <span className="text-emerald-400 font-bold">{result.overallStatus}</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-800 pb-3 font-sans">
+              <div className="space-y-1 text-[11px]">
+                <strong className="text-slate-200 font-mono text-xs block">Mathematical Inputs & Formula Derivatives:</strong>
+                <p className="text-slate-400">
+                  • Weight (kg) = {weightGrams}g ÷ 1000 = <span className="text-slate-200 font-mono">{result.currentWeightKg?.toFixed(3)} kg</span>
+                </p>
+                <p className="text-slate-400">
+                  • Total Volume = {result.currentWeightKg?.toFixed(3)} kg × {fluidAllowance} mL/kg/d = <span className="text-slate-200 font-mono">{result.totalDailyVolumeMl} mL/day</span>
+                </p>
+                <p className="text-slate-400">
+                  • Delivered Energy = ({result.totalDailyVolumeMl} mL × {result.formulaProfile?.energyKcalPer100Ml} kcal/100mL) ÷ {result.currentWeightKg?.toFixed(3)} kg = <span className="text-slate-200 font-mono">{result.deliveredEnergyKcalPerKgPerDay} kcal/kg/d</span>
+                </p>
+                <p className="text-slate-400">
+                  • Delivered Protein = ({result.totalDailyVolumeMl} mL × {result.formulaProfile?.proteinGramsPer100Ml}g/100mL) ÷ {result.currentWeightKg?.toFixed(3)} kg = <span className="text-slate-200 font-mono">{result.deliveredProteinGramsPerKgPerDay} g/kg/d</span>
+                </p>
+                <p className="text-slate-400">
+                  • P:E Ratio = ({result.deliveredProteinGramsPerKgPerDay}g ÷ {result.deliveredEnergyKcalPerKgPerDay} kcal) × 100 = <span className="text-slate-200 font-mono">{result.proteinToEnergyRatioGramsPer100Kcal} g/100 kcal</span>
+                </p>
+              </div>
+
+              <div className="space-y-1 text-[11px]">
+                <strong className="text-slate-200 font-mono text-xs block">Atomic Molecular Weight Conversions:</strong>
+                <p className="text-slate-400">• Sodium: Na = 22.99 g/mol (1 mmol = 22.99 mg)</p>
+                <p className="text-slate-400">• Potassium: K = 39.10 g/mol (1 mmol = 39.10 mg)</p>
+                <p className="text-slate-400">• Chloride: Cl = 35.45 g/mol (1 mmol = 35.45 mg)</p>
+                <p className="text-slate-400">• Calcium: Ca = 40.08 g/mol (1 mmol = 40.08 mg)</p>
+                <p className="text-slate-400">• Phosphorus: P = 30.97 g/mol (1 mmol = 30.97 mg)</p>
+              </div>
+            </div>
+
+            <div className="space-y-1 text-[11px] font-sans">
+              <strong className="text-slate-200 font-mono text-xs block">Active Clinical Reference Documents:</strong>
+              <ul className="list-disc list-inside text-slate-400 space-y-0.5">
+                {(result.auditMetadata.guidelinesUsed || []).map((g, i) => (
+                  <li key={i}>{g}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="pt-2 text-[10.5px] text-slate-500 border-t border-slate-800/80 font-sans italic">
+              {result.auditMetadata.nonDeviceDisclaimer}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

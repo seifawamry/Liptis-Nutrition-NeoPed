@@ -119,10 +119,10 @@ export function FeedSheetModal({
             <FileText className="w-5 h-5 text-clinical-gold" aria-hidden="true" />
             <div>
               <h2 id="feed-sheet-title" className="text-sm font-bold text-white tracking-tight">
-                Institutional Clinical Feed Sheet Preview
+                Clinical Calculation Worksheet Preview
               </h2>
-              <p className="text-[11px] text-slate-300">
-                Auditable medical record sheet formatted for bedside verification & clinical charting
+              <p className="text-[11px] text-amber-300 font-medium">
+                Clinical calculation worksheet — requires independent clinician verification before use
               </p>
             </div>
           </div>
@@ -136,7 +136,7 @@ export function FeedSheetModal({
               className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-2 transition-all border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-50"
             >
               <Printer className="w-4 h-4" aria-hidden="true" />
-              <span>Print Hospital Sheet / Save PDF</span>
+              <span>Print Worksheet / Save PDF</span>
             </button>
             <button
               type="button"
@@ -156,10 +156,10 @@ export function FeedSheetModal({
             <div className="p-8 bg-rose-50 border-2 border-rose-400 rounded-xl text-center space-y-3">
               <ShieldAlert className="w-10 h-10 text-rose-600 mx-auto" />
               <h3 className="text-base font-bold text-rose-900">
-                Feed Sheet Generation Blocked: Invalid Nutritional Inputs
+                Worksheet Generation Blocked: Invalid Nutritional Inputs
               </h3>
               <p className="text-xs text-rose-800 max-w-md mx-auto">
-                Patient weight or fluid allowance violates clinical safety boundaries. Correct invalid entries (e.g. weight &lt; 400g) in the primary module before printing enteral feed sheets.
+                Patient weight or fluid allowance violates clinical safety boundaries. Correct invalid entries (e.g. weight &lt; 400g) in the primary module before printing enteral worksheets.
               </p>
             </div>
           ) : isGrowthBlocked && !allowNutritionOnly ? (
@@ -168,7 +168,7 @@ export function FeedSheetModal({
               <AlertTriangle className="w-10 h-10 text-amber-600 mx-auto" />
               <div className="space-y-1">
                 <h3 className="text-base font-bold text-amber-950">
-                  Feed sheet generation is unavailable until the growth-demographic validation errors are corrected.
+                  Worksheet generation is unavailable until the growth-demographic validation errors are corrected.
                 </h3>
                 <p className="text-xs text-amber-800 max-w-md mx-auto">
                   The clinical sheet cannot be generated with invalid or malformed dates (e.g. measurement date preceding birth date, invalid calendar day, or future assessment date).
@@ -227,19 +227,17 @@ export function FeedSheetModal({
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <h1 className="text-base font-extrabold tracking-tight text-clinical-navy-950 uppercase">
-                    Neonatal Enteral Feed Sheet
-                    {allowNutritionOnly && (
-                      <span className="block text-xs font-bold text-amber-700">
-                        (Nutrition-Only Calculation)
-                      </span>
-                    )}
+                <div className="text-right max-w-md">
+                  <h1 className="text-sm sm:text-base font-extrabold tracking-tight text-clinical-navy-950 uppercase leading-snug">
+                    Clinical Calculation Worksheet
                   </h1>
-                  <p className="text-xs font-semibold text-slate-600">
-                    ESPGHAN 2022 Preterm Nutrition Protocol
+                  <p className="text-[11px] font-bold text-rose-700 tracking-tight">
+                    Requires independent clinician verification before use
                   </p>
-                  <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  <p className="text-xs font-semibold text-slate-600">
+                    ESPGHAN 2022 Enteral Reference Model
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-mono mt-0.5">
                     Printed: {currentDateStr} • Ephemeral ID: {patientId}
                   </p>
                 </div>
@@ -526,112 +524,216 @@ export function FeedSheetModal({
                 )}
               </div>
 
-              {/* Section 4: Delivered Micronutrient & Bone Mineral Accretion */}
+              {/* Section 4: Delivered Micronutrient, Electrolyte & Fatty Acid Accretion */}
               {nut.deliveredNutrientPayload && (
-                <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
+                <div className="border border-slate-200 rounded-lg p-3.5 space-y-3">
                   <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-1.5">
-                    <span>4. Delivered Micronutrient & Bone Mineral Accretion (24h Payload)</span>
+                    <span>4. Delivered Micronutrient, Electrolyte & Fatty Acid Accretion (24h Payload)</span>
                     <span className="text-[10px] text-slate-500 font-mono">
                       Daily Powder: {nut.deliveredNutrientPayload.dailyPowderGrams}g (~{nut.deliveredNutrientPayload.dailyScoops} scp in {nut.deliveredNutrientPayload.waterVolumeMlPerDay} mL water)
                     </span>
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Calcium (Ca)</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.calciumMgPerDay} mg/d</strong>
-                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.calciumMgPerKgPerDay} mg/kg/d)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Phosphorus (P)</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.phosphorusMgPerDay} mg/d</strong>
-                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.phosphorusMgPerKgPerDay} mg/kg/d)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Vitamin D3</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.vitaminD3IuPerDay} IU/d</strong>
-                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.vitaminD3IuPerKgPerDay} IU/kg/d)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Elemental Iron (Fe)</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.ironMgPerDay} mg/d</strong>
-                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.ironMgPerKgPerDay} mg/kg/d)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Sodium (Na)</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.sodiumMgPerDay} mg/d</strong>
-                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.sodiumMmolPerKgPerDay} mmol/kg/d)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Potassium (K)</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.potassiumMgPerDay} mg/d</strong>
-                      <span className="text-[10px] text-blue-700 block font-mono">({nut.deliveredNutrientPayload.potassiumMmolPerKgPerDay} mmol/kg/d)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">DHA & ARA (1:1)</span>
-                      <strong className="font-mono text-slate-900">{nut.deliveredNutrientPayload.dhaMgPerDay} mg/d</strong>
-                      <span className="text-[10px] text-slate-600 block">each (Brain/Retina)</span>
-                    </div>
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                      <span className="text-slate-500 block text-[10px]">Immune Bioactives</span>
-                      <strong className="font-mono text-slate-900">
-                        {nut.deliveredNutrientPayload.twoFlHmoGramsPerDay
-                          ? `${nut.deliveredNutrientPayload.twoFlHmoGramsPerDay}g HMO`
-                          : nut.deliveredNutrientPayload.alphaLactalbuminGramsPerDay
-                          ? `${nut.deliveredNutrientPayload.alphaLactalbuminGramsPerDay}g α-Lact`
-                          : "Bioactive Matrix"}
-                      </strong>
-                      <span className="text-[10px] text-emerald-700 block">Gut Mucosa & Flora</span>
-                    </div>
+
+                  {/* Comprehensive Nutritional Breakdown Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs text-left border border-slate-200">
+                      <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
+                        <tr>
+                          <th className="p-2 border-r border-slate-200">Nutrient</th>
+                          <th className="p-2 border-r border-slate-200">Delivered (24h Total)</th>
+                          <th className="p-2 border-r border-slate-200">Normalized (/kg/day)</th>
+                          <th className="p-2 border-r border-slate-200">Molar Units (Atomic Weight)</th>
+                          <th className="p-2">ESPGHAN 2022 Reference Target</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 font-mono text-[11px]">
+                        <tr>
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            Sodium (Na⁺)
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            {nut.deliveredNutrientPayload.sodiumMgPerDay} mg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            {nut.deliveredNutrientPayload.sodiumMgPerKgPerDay} mg/kg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-blue-900 font-bold">
+                            {nut.deliveredNutrientPayload.sodiumMmolPerDay} mmol/d ({nut.deliveredNutrientPayload.sodiumMmolPerKgPerDay} mmol/kg/d)
+                            <span className="text-[9.5px] text-slate-400 block font-normal font-sans">Na = 22.99 g/mol</span>
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            3.0–5.0 mmol/kg/day (69–115 mg/kg/d)
+                          </td>
+                        </tr>
+                        <tr className="bg-slate-50/70">
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            Potassium (K⁺)
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            {nut.deliveredNutrientPayload.potassiumMgPerDay} mg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            {nut.deliveredNutrientPayload.potassiumMgPerKgPerDay} mg/kg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-blue-900 font-bold">
+                            {nut.deliveredNutrientPayload.potassiumMmolPerDay} mmol/d ({nut.deliveredNutrientPayload.potassiumMmolPerKgPerDay} mmol/kg/d)
+                            <span className="text-[9.5px] text-slate-400 block font-normal font-sans">K = 39.10 g/mol</span>
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            2.0–3.0 mmol/kg/day (78–117 mg/kg/d)
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            Chloride (Cl⁻)
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            {nut.deliveredNutrientPayload.chlorideMgPerDay} mg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            {nut.deliveredNutrientPayload.chlorideMgPerKgPerDay} mg/kg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-blue-900 font-bold">
+                            {nut.deliveredNutrientPayload.chlorideMmolPerDay} mmol/d ({nut.deliveredNutrientPayload.chlorideMmolPerKgPerDay} mmol/kg/d)
+                            <span className="text-[9.5px] text-slate-400 block font-normal font-sans">Cl = 35.45 g/mol</span>
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            2.0–3.0 mmol/kg/day (71–106 mg/kg/d)
+                          </td>
+                        </tr>
+                        <tr className="bg-slate-50/70">
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            Calcium (Ca²⁺)
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            {nut.deliveredNutrientPayload.calciumMgPerDay} mg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            {nut.deliveredNutrientPayload.calciumMgPerKgPerDay} mg/kg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-blue-900 font-bold">
+                            {nut.deliveredNutrientPayload.calciumMmolPerDay} mmol/d ({nut.deliveredNutrientPayload.calciumMmolPerKgPerDay} mmol/kg/d)
+                            <span className="text-[9.5px] text-slate-400 block font-normal font-sans">Ca = 40.08 g/mol</span>
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            120–140 mg/kg/day (3.0–3.5 mmol/kg/d)
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            Phosphorus (P)
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            {nut.deliveredNutrientPayload.phosphorusMgPerDay} mg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            {nut.deliveredNutrientPayload.phosphorusMgPerKgPerDay} mg/kg/day
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-blue-900 font-bold">
+                            {nut.deliveredNutrientPayload.phosphorusMmolPerDay} mmol/d ({nut.deliveredNutrientPayload.phosphorusMmolPerKgPerDay} mmol/kg/d)
+                            <span className="text-[9.5px] text-slate-400 block font-normal font-sans">P = 30.97 g/mol • Ca:P ~{nut.deliveredNutrientPayload.calciumPhosphorusRatio} (wt)</span>
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            65–90 mg/kg/day (2.1–2.9 mmol/kg/d)
+                          </td>
+                        </tr>
+                        <tr className="bg-slate-50/70">
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            DHA & ARA
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            DHA {nut.deliveredNutrientPayload.dhaMgPerDay} mg/d • ARA {nut.deliveredNutrientPayload.araMgPerDay} mg/d
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            DHA {nut.deliveredNutrientPayload.dhaMgPerKgPerDay} • ARA {nut.deliveredNutrientPayload.araMgPerKgPerDay} mg/kg/d
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-purple-900 font-bold">
+                            ARA:DHA Ratio: {nut.deliveredNutrientPayload.araDhaRatioFormatted}
+                            <span className="text-[9.5px] text-slate-500 block font-normal font-sans">Balanced structural LCPUFA</span>
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            DHA 30–65 mg/kg/d • ARA 30–100 mg/kg/d (ARA:DHA 0.5–2:1)
+                          </td>
+                        </tr>
+                        <tr>
+                          <td className="p-2 border-r border-slate-200 font-sans font-medium text-slate-900">
+                            Vitamin D3 & Iron
+                          </td>
+                          <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                            Vit D {nut.deliveredNutrientPayload.vitaminD3IuPerDay} IU/d • Fe {nut.deliveredNutrientPayload.ironMgPerDay} mg/d
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-800">
+                            Vit D {nut.deliveredNutrientPayload.vitaminD3IuPerKgPerDay} IU/kg/d • Fe {nut.deliveredNutrientPayload.ironMgPerKgPerDay} mg/kg/d
+                          </td>
+                          <td className="p-2 border-r border-slate-200 text-slate-700">
+                            Bioactive Whey / HMO: {nut.deliveredNutrientPayload.twoFlHmoGramsPerDay ? `${nut.deliveredNutrientPayload.twoFlHmoGramsPerDay}g HMO/d` : "Formula Matrix"}
+                          </td>
+                          <td className="p-2 font-sans text-slate-600">
+                            Vit D 400–1000 IU/d • Fe 2–3 mg/kg/d
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
 
-              {/* Section 5: Anthropometric Growth Interpretation (Omitted in Nutrition-Only Mode) */}
-              {!allowNutritionOnly && weightPercentile && (
-                <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
-                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                    <span>5. Anthropometric Growth Trajectory Assessment</span>
-                  </h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
-                      <span className="text-slate-500 block text-[10px] uppercase font-semibold">Weight for Age:</span>
-                      <div className="font-bold text-slate-900 font-mono">
-                        {weightPercentile.percentileFormatted} ({weightPercentile.zScoreFormatted})
-                      </div>
-                      <p className="text-[10.5px] text-slate-600 leading-tight">{weightPercentile.clinicalNote}</p>
-                    </div>
-
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
-                      <span className="text-slate-500 block text-[10px] uppercase font-semibold">Length for Age:</span>
-                      <div className="font-bold text-slate-900 font-mono">
-                        {lengthPercentile ? `${lengthPercentile.percentileFormatted} (${lengthPercentile.zScoreFormatted})` : "Not recorded"}
-                      </div>
-                      <p className="text-[10.5px] text-slate-600 leading-tight">
-                        {lengthPercentile ? lengthPercentile.clinicalNote : "Optional measurement not entered."}
-                      </p>
-                    </div>
-
-                    <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
-                      <span className="text-slate-500 block text-[10px] uppercase font-semibold">Head Circumference:</span>
-                      <div className="font-bold text-slate-900 font-mono">
-                        {hcPercentile ? `${hcPercentile.percentileFormatted} (${hcPercentile.zScoreFormatted})` : "Not recorded"}
-                      </div>
-                      <p className="text-[10.5px] text-slate-600 leading-tight">
-                        {hcPercentile ? hcPercentile.clinicalNote : "Optional measurement not entered."}
-                      </p>
-                    </div>
+              {/* Section 5: Anthropometric Growth Interpretation */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
+                <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
+                  <span>5. Anthropometric Growth Trajectory Assessment</span>
+                </h3>
+                {allowNutritionOnly ? (
+                  <div className="p-3 bg-amber-50 rounded border border-amber-200 text-amber-900 text-xs">
+                    <strong>Growth Assessment Omitted:</strong> Growth trajectory was not evaluated due to incomplete or uncorrected demographics. This document is a nutrition calculation worksheet only.
                   </div>
-                  <p className="text-[10px] text-slate-400 italic">
-                    Methodology: Linear interpolation between tabulated LMS parameters. Screening assessment only; not an automatic treatment recommendation.
-                  </p>
-                </div>
-              )}
+                ) : weightPercentile ? (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
+                        <span className="text-slate-500 block text-[10px] uppercase font-semibold">Weight for Age:</span>
+                        <div className="font-bold text-slate-900 font-mono">
+                          {weightPercentile.percentileFormatted} ({weightPercentile.zScoreFormatted})
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 leading-tight">{weightPercentile.clinicalNote}</p>
+                      </div>
+
+                      <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
+                        <span className="text-slate-500 block text-[10px] uppercase font-semibold">Length for Age:</span>
+                        <div className="font-bold text-slate-900 font-mono">
+                          {lengthPercentile ? `${lengthPercentile.percentileFormatted} (${lengthPercentile.zScoreFormatted})` : "Not recorded"}
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 leading-tight">
+                          {lengthPercentile ? lengthPercentile.clinicalNote : "Optional measurement not entered."}
+                        </p>
+                      </div>
+
+                      <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
+                        <span className="text-slate-500 block text-[10px] uppercase font-semibold">Head Circumference:</span>
+                        <div className="font-bold text-slate-900 font-mono">
+                          {hcPercentile ? `${hcPercentile.percentileFormatted} (${hcPercentile.zScoreFormatted})` : "Not recorded"}
+                        </div>
+                        <p className="text-[10.5px] text-slate-600 leading-tight">
+                          {hcPercentile ? hcPercentile.clinicalNote : "Optional measurement not entered."}
+                        </p>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-slate-400 italic">
+                      Methodology: Linear interpolation between tabulated LMS parameters. Screening assessment only; not an automatic treatment recommendation.
+                    </p>
+                  </>
+                ) : (
+                  <div className="p-3 bg-slate-50 rounded border border-slate-200 text-slate-600 text-xs">
+                    Growth parameters were not recorded for this calculation session.
+                  </div>
+                )}
+              </div>
 
               {/* Institutional Sign-Off Block */}
               <div className="border-t-2 border-slate-900 pt-4 grid grid-cols-2 gap-8 text-xs">
                 <div className="space-y-4">
                   <span className="font-bold text-slate-900 block uppercase tracking-wider text-[11px]">
-                    Prescribing Attending Neonatologist / Pediatrician:
+                    Attending Neonatologist / Pediatrician Verification & Order Transcribing:
                   </span>
                   <div className="h-10 border-b border-dashed border-slate-400" />
                   <div className="text-[10px] text-slate-500 flex justify-between font-mono">
@@ -642,7 +744,7 @@ export function FeedSheetModal({
 
                 <div className="space-y-4">
                   <span className="font-bold text-slate-900 block uppercase tracking-wider text-[11px]">
-                    Registered Clinical Dietitian / NICU Nurse Verification:
+                    NICU Nurse / Clinical Dietitian Verification:
                   </span>
                   <div className="h-10 border-b border-dashed border-slate-400" />
                   <div className="text-[10px] text-slate-500 flex justify-between font-mono">

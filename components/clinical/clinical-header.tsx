@@ -21,18 +21,18 @@ export function ClinicalHeader({
       {/* Top Clinical & Regulatory Status Bar */}
       <div className="bg-clinical-navy-900/90 px-4 py-1 border-b border-clinical-navy-800 text-[11px] text-slate-300 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            100% Client-Side Engine (HIPAA / GDPR / GCC MOHAP Compliant)
+          <span className="flex items-center gap-1.5 text-slate-300 font-medium">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            Client-side calculation design; institutional privacy and regulatory review required before clinical deployment.
           </span>
           <span className="hidden md:inline text-slate-600">|</span>
           <span className="hidden md:inline text-slate-400 font-mono">
-            Zero External Logging • Ephemeral Clinical Session
+            Zero External Logging • Ephemeral Session • v2.2.0 Reference
           </span>
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="bg-blue-900/60 text-blue-200 px-2 py-0.5 rounded border border-blue-700/50 font-medium">
-            ESPGHAN 2022 Validated
+            ESPGHAN 2022 Reference Model
           </span>
           <span className="bg-emerald-900/60 text-emerald-200 px-2 py-0.5 rounded border border-emerald-700/50 font-medium">
             Fenton 2013 / WHO 2006
@@ -107,14 +107,13 @@ export function ClinicalHeader({
         <div
           role="note"
           aria-label="Clinical regulatory notice"
-          className="mt-2.5 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-[11.5px] text-slate-300 flex items-center justify-between gap-2"
+          className="mt-2.5 px-3 py-1.5 rounded-lg bg-slate-900/80 border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between gap-2"
         >
           <p className="leading-snug">
             <strong className="text-amber-300 font-semibold uppercase tracking-wide mr-1.5">
               Notice:
             </strong>
-            For HCP reference only. Supported by Liptis Nutrition. Formulated
-            against ESPGHAN 2022 guidelines and Fenton/WHO growth standards.
+            For licensed healthcare professionals. Reference calculation only. Not a prescription, medical order, diagnosis, or substitute for local NICU/pediatric protocol. Clinical judgment, fluid balance, illness severity, laboratory monitoring, parenteral nutrition, and total nutrient intake supersede calculated values.
           </p>
         </div>
 

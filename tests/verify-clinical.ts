@@ -22,6 +22,11 @@ import {
   evaluatePeRatioCompliance,
   evaluateEnergyCompliance,
   getProteinTargetBracket,
+  CLINICAL_REFERENCES,
+  MOLECULAR_WEIGHTS,
+  mgToMmol,
+  mmolToMg,
+  evaluateReferenceComparison,
 } from "../lib/lbw-nutrition";
 import {
   calculateAges,
@@ -496,6 +501,129 @@ assert(termPayload?.productName === "Pediamil® 1", `Term product is Pediamil® 
 assert(termPayload?.totalDailyVolumeMl === 600, `Term total daily volume is 600 mL (got: ${termPayload?.totalDailyVolumeMl})`);
 assert(termPayload?.dailyPowderGrams === 82.2, `Term daily powder requirement is 82.2g (got: ${termPayload?.dailyPowderGrams})`);
 assert(termPayload?.proteinGramsPerDay === 8.94, `Term delivered protein is 8.94 g/d (got: ${termPayload?.proteinGramsPerDay})`);
+
+// =============================================================================
+// DOMAIN 10: CENTRALIZED REFERENCE RANGES & CLINICAL STANDARDS (PROMPT S2 & S4)
+// =============================================================================
+console.log("\n--- Domain 10: Centralized Reference Ranges & Clinical Standards ---");
+
+// Test 10.1: ESPGHAN 2022 Preterm Carbohydrate reference range is 11–15 g/kg/day
+assert(
+  CLINICAL_REFERENCES.carbohydratePreterm.minimum === 11.0 &&
+  CLINICAL_REFERENCES.carbohydratePreterm.maximum === 15.0,
+  "Centralized carbohydrate reference is 11.0–15.0 g/kg/day (ESPGHAN 2022)"
+);
+assert(
+  ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MIN === 11.0 &&
+  ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MAX === 15.0,
+  "ESPGHAN direct guidelines define carbohydrates as 11–15 g/kg/day"
+);
+
+// Test 10.2: ESPGHAN 2022 Preterm Total Fat reference range is 4.8–8.1 g/kg/day
+assert(
+  CLINICAL_REFERENCES.fatPreterm.minimum === 4.8 &&
+  CLINICAL_REFERENCES.fatPreterm.maximum === 8.1,
+  "Centralized total fat reference is 4.8–8.1 g/kg/day (ESPGHAN 2022)"
+);
+assert(
+  ESPGHAN_DIRECT_GUIDELINES.TOTAL_FAT.TYPICAL_MIN === 4.8 &&
+  ESPGHAN_DIRECT_GUIDELINES.TOTAL_FAT.TYPICAL_MAX === 8.1,
+  "ESPGHAN direct guidelines define total fat as 4.8–8.1 g/kg/day"
+);
+
+// Test 10.3: DHA & ARA Reference Ranges and Ratio Standards
+assert(
+  CLINICAL_REFERENCES.dhaPreterm.minimum === 30 &&
+  CLINICAL_REFERENCES.dhaPreterm.maximum === 65,
+  "DHA reference range is 30–65 mg/kg/day"
+);
+assert(
+  CLINICAL_REFERENCES.araPreterm.minimum === 30 &&
+  CLINICAL_REFERENCES.araPreterm.maximum === 100,
+  "ARA reference range is 30–100 mg/kg/day"
+);
+assert(
+  CLINICAL_REFERENCES.araDhaRatioPreterm.minimum === 0.5 &&
+  CLINICAL_REFERENCES.araDhaRatioPreterm.maximum === 2.0,
+  "ARA:DHA ratio standard is 0.5–2:1"
+);
+
+// Test 10.4: Reference comparison status evaluation (no marketing claims)
+const carbLow = evaluateReferenceComparison(10.5, CLINICAL_REFERENCES.carbohydratePreterm);
+assert(carbLow.status === "BELOW_RANGE", "10.5 g/kg/d carbohydrates evaluates as BELOW_RANGE");
+
+const carbTarget = evaluateReferenceComparison(12.5, CLINICAL_REFERENCES.carbohydratePreterm);
+assert(carbTarget.status === "WITHIN_RANGE", "12.5 g/kg/d carbohydrates evaluates as WITHIN_RANGE");
+
+const carbHigh = evaluateReferenceComparison(15.5, CLINICAL_REFERENCES.carbohydratePreterm);
+assert(carbHigh.status === "ABOVE_RANGE", "15.5 g/kg/d carbohydrates evaluates as ABOVE_RANGE");
+
+const fatLow = evaluateReferenceComparison(4.2, CLINICAL_REFERENCES.fatPreterm);
+assert(fatLow.status === "BELOW_RANGE", "4.2 g/kg/d total fat evaluates as BELOW_RANGE");
+
+const fatTarget = evaluateReferenceComparison(6.5, CLINICAL_REFERENCES.fatPreterm);
+assert(fatTarget.status === "WITHIN_RANGE", "6.5 g/kg/d total fat evaluates as WITHIN_RANGE");
+
+const fatHigh = evaluateReferenceComparison(8.5, CLINICAL_REFERENCES.fatPreterm);
+assert(fatHigh.status === "ABOVE_RANGE", "8.5 g/kg/d total fat evaluates as ABOVE_RANGE");
+
+// =============================================================================
+// DOMAIN 11: EXACT ATOMIC WEIGHT CONVERSIONS & ELECTROLYTE SEPARATION (PROMPT S5)
+// =============================================================================
+console.log("\n--- Domain 11: Atomic Weight Conversions & Electrolyte Units ---");
+
+// Test 11.1: Exact atomic molecular weights defined
+assert(MOLECULAR_WEIGHTS.SODIUM === 22.99, "Atomic weight of Sodium (Na) is exactly 22.99 g/mol");
+assert(MOLECULAR_WEIGHTS.POTASSIUM === 39.10, "Atomic weight of Potassium (K) is exactly 39.10 g/mol");
+assert(MOLECULAR_WEIGHTS.CHLORIDE === 35.45, "Atomic weight of Chloride (Cl) is exactly 35.45 g/mol");
+assert(MOLECULAR_WEIGHTS.CALCIUM === 40.08, "Atomic weight of Calcium (Ca) is exactly 40.08 g/mol");
+assert(MOLECULAR_WEIGHTS.PHOSPHORUS === 30.97, "Atomic weight of Phosphorus (P) is exactly 30.97 g/mol");
+
+// Test 11.2: Atomic conversion accuracy: 22.99 mg Na = 1.000 mmol Na
+const mmolNa = mgToMmol(22.99, MOLECULAR_WEIGHTS.SODIUM);
+assert(Math.abs(mmolNa - 1.0) < 0.001, "22.99 mg Na converts to 1.000 mmol Na");
+
+const mgNa = mmolToMg(1.0, MOLECULAR_WEIGHTS.SODIUM);
+assert(Math.abs(mgNa - 22.99) < 0.001, "1.000 mmol Na converts back to 22.99 mg Na");
+
+// Test 11.3: Round-trip conversion for Potassium (39.10 g/mol)
+const mmolK = mgToMmol(78.20, MOLECULAR_WEIGHTS.POTASSIUM);
+assert(Math.abs(mmolK - 2.0) < 0.001, "78.20 mg K converts to 2.000 mmol K");
+
+// Test 11.4: Preterm payload separates mg/day, mg/kg/day, mmol/day, and mmol/kg/day
+assert(
+  pretermPayload?.sodiumMgPerDay !== undefined &&
+  pretermPayload?.sodiumMgPerKgPerDay !== undefined &&
+  pretermPayload?.sodiumMmolPerDay !== undefined &&
+  pretermPayload?.sodiumMmolPerKgPerDay !== undefined,
+  "Sodium payload separates mg/day, mg/kg/day, mmol/day, and mmol/kg/day into distinct fields"
+);
+assert(
+  pretermPayload?.sodiumMgPerDay === 78,
+  `Delivered sodium absolute mass is 78 mg/day (got: ${pretermPayload?.sodiumMgPerDay})`
+);
+assert(
+  pretermPayload?.sodiumMmolPerDay === 3.39,
+  `Delivered sodium molar quantity is 3.39 mmol/day based on 22.99 g/mol (got: ${pretermPayload?.sodiumMmolPerDay})`
+);
+assert(
+  pretermPayload?.sodiumMmolPerKgPerDay === 2.26,
+  `Delivered sodium normalized molar rate is 2.26 mmol/kg/day (got: ${pretermPayload?.sodiumMmolPerKgPerDay})`
+);
+
+// Test 11.5: DHA and ARA doses and ratio in payload
+assert(
+  pretermPayload?.dhaMgPerDay !== undefined && pretermPayload?.araMgPerDay !== undefined,
+  "Preterm payload contains both DHA and ARA doses"
+);
+assert(
+  pretermPayload?.araDhaRatio === 1.0,
+  `Delivered ARA:DHA ratio is 1.00:1 (got: ${pretermPayload?.araDhaRatio})`
+);
+assert(
+  pretermPayload?.araDhaRatioFormatted?.includes("1.0") && pretermPayload?.araDhaRatioFormatted?.includes("1"),
+  `Formatted ARA:DHA ratio represents 1:1 balance (got: ${pretermPayload?.araDhaRatioFormatted})`
+);
 
 // Helper for 28w age calculation
 function age28w() {

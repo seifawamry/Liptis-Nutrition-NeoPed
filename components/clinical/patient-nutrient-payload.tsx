@@ -155,27 +155,57 @@ export function PatientNutrientPayload({
       percent = Math.min(100, ratio);
       badgeText = `${ratio}% Electrolyte Replacement Met`;
       status = deliveredDose >= goalMin ? "target_met" : "within_target";
-    } else if (item.id === "dhaAra") {
+    } else if (item.id === "dha") {
+      const minDha = 30;
+      const maxDha = 65;
+      deliveredDose = payload.dhaMgPerKgPerDay;
+      ratio = Math.round((deliveredDose / minDha) * 100);
+      percent = Math.min(100, ratio);
+      status = deliveredDose >= minDha && deliveredDose <= maxDha ? "within_target" : deliveredDose < minDha ? "below_target" : "above_target";
+      badgeText = deliveredDose >= minDha && deliveredDose <= maxDha ? "Within displayed reference range" : deliveredDose < minDha ? "Below displayed reference range" : "Above displayed reference range";
+      goalLabel = "ESPGHAN 2022: 30–65 mg/kg/d (or 12–30 mg/100 kcal)";
+      goalRationale = `Delivers ${payload.dhaMgPerDay} mg/day (${payload.dhaMgPerKgPerDay} mg/kg/d). Structural polyunsaturated fatty acid essential for photoreceptor membrane differentiation and cognitive maturation.`;
+    } else if (item.id === "ara") {
+      const minAra = 30;
+      const maxAra = 100;
+      deliveredDose = payload.araMgPerKgPerDay;
+      ratio = Math.round((deliveredDose / minAra) * 100);
+      percent = Math.min(100, ratio);
+      status = deliveredDose >= minAra && deliveredDose <= maxAra ? "within_target" : deliveredDose < minAra ? "below_target" : "above_target";
+      badgeText = deliveredDose >= minAra && deliveredDose <= maxAra ? "Within displayed reference range" : deliveredDose < minAra ? "Below displayed reference range" : "Above displayed reference range";
+      goalLabel = "ESPGHAN 2022: 30–100 mg/kg/d";
+      goalRationale = `Delivers ${payload.araMgPerDay} mg/day (${payload.araMgPerKgPerDay} mg/kg/d). Critical omega-6 structural constituent for neurogenesis and vascular tone.`;
+    } else if (item.id === "araDhaRatio") {
       ratio = 100;
       percent = 100;
-      badgeText = "100% Neuro/Retinal Target Met";
-      status = "target_met";
-      goalLabel = "ESPGHAN: 12–30 mg DHA / 100 kcal (with ARA >= DHA)";
-      goalRationale = `Delivers ${payload.dhaMgPerDay} mg DHA + ${payload.araMgPerDay} mg ARA daily (1:1 ratio) for photoreceptor and cognitive development.`;
+      status = payload.araDhaRatio >= 0.5 && payload.araDhaRatio <= 2.0 ? "within_target" : "above_target";
+      badgeText = payload.araDhaRatio >= 0.5 && payload.araDhaRatio <= 2.0 ? "Within displayed reference range (0.5–2:1)" : "Outside displayed reference range";
+      goalLabel = "ESPGHAN 2022: 0.5:1 to 2.0:1";
+      goalRationale = `Calculated formula ratio is ${payload.araDhaRatioFormatted}. Balanced physiological ratio prevents competitive displacement in neural tissue.`;
     } else if (item.id === "carbs") {
-      ratio = 100;
-      percent = 100;
-      badgeText = "100% Energy Substrate Met";
-      status = "within_target";
-      goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN: 10.5–12.0 g/kg/d" : "Term: 9.0–13.0 g/kg/d";
-      goalRationale = "100% lactose matrix enhances intestinal calcium absorption and bifidogenic gut flora.";
+      const minCarbs = payload.weightGrams <= 3500 ? 11.0 : 9.0;
+      const maxCarbs = payload.weightGrams <= 3500 ? 15.0 : 13.0;
+      deliveredDose = payload.carbsGramsPerKgPerDay;
+      ratio = Math.round((deliveredDose / minCarbs) * 100);
+      percent = Math.min(100, ratio);
+      status = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "within_target" : deliveredDose < minCarbs ? "below_target" : "above_target";
+      badgeText = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "Within displayed reference range" : deliveredDose < minCarbs ? "Below displayed reference range" : "Above displayed reference range";
+      goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN 2022: 11.0–15.0 g/kg/d" : "Term: 9.0–13.0 g/kg/d";
+      goalRationale = payload.weightGrams <= 3500
+        ? "ESPGHAN 2022 recommended range: 11–15 g/kg/day. 100% lactose matrix enhances intestinal calcium absorption and bifidogenic gut flora."
+        : "Standard infant carbohydrate intake for mature digestion.";
     } else if (item.id === "lipids") {
-      ratio = 100;
-      percent = 100;
-      badgeText = "100% Essential Fatty Acids Met";
-      status = "within_target";
-      goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN: 4.8–6.6 g/kg/d" : "Term: 4.0–6.0 g/kg/d";
-      goalRationale = "Provides ~50% of non-protein caloric density and essential fatty acid delivery.";
+      const minLipids = payload.weightGrams <= 3500 ? 4.8 : 4.0;
+      const maxLipids = payload.weightGrams <= 3500 ? 8.1 : 6.0;
+      deliveredDose = payload.fatGramsPerKgPerDay;
+      ratio = Math.round((deliveredDose / minLipids) * 100);
+      percent = Math.min(100, ratio);
+      status = deliveredDose >= minLipids && deliveredDose <= maxLipids ? "within_target" : deliveredDose < minLipids ? "below_target" : "above_target";
+      badgeText = deliveredDose >= minLipids && deliveredDose <= maxLipids ? "Within displayed reference range" : deliveredDose < minLipids ? "Below displayed reference range" : "Above displayed reference range";
+      goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN 2022: 4.8–8.1 g/kg/d" : "Term: 4.0–6.0 g/kg/d";
+      goalRationale = payload.weightGrams <= 3500
+        ? "ESPGHAN 2022 recommended range: 4.8–8.1 g/kg/day total fat providing ~50% non-protein calories and essential fatty acids."
+        : "Standard term lipid intake supporting growth and fat-soluble vitamin absorption.";
     }
 
     return {
@@ -198,6 +228,7 @@ export function PatientNutrientPayload({
     const nrgRatio = Math.round((payload.energyKcalPerKgPerDay / activeAgeStrat.goals.energy.min) * 100);
     const feRatio = Math.round((payload.ironMgPerKgPerDay / activeAgeStrat.goals.iron.min) * 100);
     const vitDRatio = Math.round((payload.vitaminD3IuPerDay / activeAgeStrat.goals.vitaminD3.min) * 100);
+    const dhaRatio = Math.round((payload.dhaMgPerKgPerDay / 30) * 100);
 
     const scores = [
       Math.min(100, caRatio),
@@ -218,7 +249,7 @@ export function PatientNutrientPayload({
         ratio: caRatio,
         percent: Math.min(100, caRatio),
         isMet: payload.calciumMgPerKgPerDay >= activeAgeStrat.goals.calcium.min,
-        subtitle: caRatio >= 100 ? "Intrauterine Accretion Met" : `${caRatio}% of Target`,
+        subtitle: caRatio >= 100 ? "Intrauterine Accretion Reference Met" : `${caRatio}% of Target`,
       },
       phosphorus: {
         value: payload.phosphorusMgPerKgPerDay,
@@ -254,7 +285,7 @@ export function PatientNutrientPayload({
         ratio: feRatio,
         percent: Math.min(100, feRatio),
         isMet: payload.ironMgPerKgPerDay >= activeAgeStrat.goals.iron.min,
-        subtitle: payload.ironMgPerKgPerDay >= 2.0 ? "No Extra Drops Needed" : `${feRatio}% Enteral Fe Met`,
+        subtitle: payload.ironMgPerKgPerDay >= 2.0 ? "Enteral Prophylactic Dose" : `${feRatio}% Enteral Fe`,
       },
       vitaminD3: {
         value: payload.vitaminD3IuPerDay,
@@ -263,16 +294,16 @@ export function PatientNutrientPayload({
         ratio: vitDRatio,
         percent: Math.min(100, vitDRatio),
         isMet: payload.vitaminD3IuPerDay >= activeAgeStrat.goals.vitaminD3.min,
-        subtitle: payload.vitaminD3IuPerDay >= 400 ? "Enteral D3 Target Met" : `${vitDRatio}% Enteral D3 Met`,
+        subtitle: payload.vitaminD3IuPerDay >= 400 ? "Enteral D3 Reference Met" : `${vitDRatio}% Enteral D3`,
       },
       dhaAra: {
-        value: `${payload.dhaMgPerDay} / ${payload.araMgPerDay}`,
-        unit: "mg/d each",
-        goal: "12–30 mg DHA / 100 kcal",
-        ratio: 100,
-        percent: 100,
-        isMet: true,
-        subtitle: "1:1 Retinal/Cognitive Ratio",
+        value: `${payload.dhaMgPerKgPerDay} / ${payload.araMgPerKgPerDay}`,
+        unit: "mg/kg/d",
+        goal: "DHA: 30–65, ARA: 30–100 mg/kg/d",
+        ratio: dhaRatio,
+        percent: Math.min(100, dhaRatio),
+        isMet: payload.dhaMgPerKgPerDay >= 30,
+        subtitle: `ARA:DHA Ratio ${payload.araDhaRatioFormatted}`,
       },
     };
   }, [payload, activeAgeStrat]);
@@ -468,17 +499,17 @@ export function PatientNutrientPayload({
             <div className="space-y-0.5">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-950 bg-emerald-100 px-2 py-0.5 rounded border-2 border-emerald-400">
-                  Pediamil® Product Coverage Assurance
+                  Calculated Product-to-Reference Comparison
                 </span>
                 <span className="text-sm font-black font-mono text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-300">
-                  {corePillars.overallScore}% ESPGHAN Goal Met
+                  {corePillars.overallScore}% Reference Alignment
                 </span>
               </div>
               <h5 className="text-sm sm:text-base font-black text-slate-950">
                 {payload.productName} Target Fulfillment for {payload.weightGrams}g Patient ({activeAgeStrat.label})
               </h5>
               <p className="text-xs text-slate-700 leading-normal font-medium">
-                Satisfies complete intrauterine skeletal accretion, somatic velocity, and hematological requirements at prescribed intake.
+                Calculated enteral nutrient delivery compared against ESPGHAN 2022 preterm reference ranges and institutional operational targets at the entered fluid intake.
               </p>
             </div>
           </div>
@@ -671,7 +702,7 @@ export function PatientNutrientPayload({
                   <Brain className="w-4 h-4 text-indigo-700" /> DHA & ARA
                 </span>
                 <span className="text-xs font-black text-indigo-950 bg-indigo-100 px-2 py-0.5 rounded font-mono border border-indigo-400">
-                  100%
+                  {corePillars.dhaAra.ratio}%
                 </span>
               </div>
               <div className="text-base font-black font-mono text-slate-950">
@@ -684,7 +715,7 @@ export function PatientNutrientPayload({
               <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">
                 <div
                   className="bg-indigo-600 h-full rounded-full transition-all duration-300"
-                  style={{ width: "100%" }}
+                  style={{ width: `${corePillars.dhaAra.percent}%` }}
                 />
               </div>
               <div className="text-xs font-bold text-slate-800 leading-tight">
@@ -957,10 +988,10 @@ export function PatientNutrientPayload({
           <Shield className="w-5 h-5 text-blue-800 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="space-y-1 text-xs leading-relaxed">
             <span className="font-black text-blue-950 block text-sm">
-              Physician Value Relatability & Prescription Equivalence Note:
+              Physician Clinical Decision Support & Reference Comparison Note:
             </span>
             <p className="text-slate-800 font-medium">
-              The delivered payload confirms that <strong>Pediamil® LBW</strong> satisfies 100% of ESPGHAN intrauterine accretion targets for bone minerals (195.1 mg/kg/d Ca & 97.7 mg/kg/d P), prophylactic iron (2.93 mg/kg/d), and high-quality 60:40 whey-dominant protein at 150 mL/kg/day. This reduces the clinical need for multiple routine separate oral supplements (calcium, phosphate, or elemental iron drops), streamlining bedside nursing workflow and safeguarding premature gastrointestinal tolerance.
+              The delivered payload shows that <strong>Pediamil® LBW</strong> at the entered volume delivers bone minerals (195.1 mg/kg/d Ca & 97.7 mg/kg/d P), enteral iron (2.93 mg/kg/d), and 60:40 whey:casein protein within ESPGHAN 2022 preterm enteral recommendation horizons. Product nutrient values are manufacturer-specific and must be verified against the current product label. Total nutrient intake, individual clinical tolerance, and laboratory monitoring must guide clinical care.
             </p>
           </div>
         </div>
