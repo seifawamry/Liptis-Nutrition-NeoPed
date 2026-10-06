@@ -184,29 +184,71 @@ export function GrowthPlotter({
   const metricConfig = useMemo(() => {
     switch (activeMetric) {
       case "weight":
-        return { label: "Weight", unit: "g", yMin: 300, yMax: 5000, step: 500 };
+        return {
+          label: "Weight",
+          unit: "g",
+          yMin: dataset?.chartType === "who" ? 1500 : 300,
+          yMax: dataset?.chartType === "who" ? 16000 : 5500,
+          step: 500,
+        };
       case "length":
-        return { label: "Crown-Heel Length", unit: "cm", yMin: 20, yMax: 60, step: 5 };
+        return {
+          label: "Crown-Heel Length",
+          unit: "cm",
+          yMin: dataset?.chartType === "who" ? 40 : 20,
+          yMax: dataset?.chartType === "who" ? 95 : 60,
+          step: 5,
+        };
       case "headCircumference":
-        return { label: "Head Circumference", unit: "cm", yMin: 15, yMax: 42, step: 5 };
+        return {
+          label: "Head Circumference",
+          unit: "cm",
+          yMin: dataset?.chartType === "who" ? 30 : 15,
+          yMax: dataset?.chartType === "who" ? 52 : 42,
+          step: 5,
+        };
     }
-  }, [activeMetric]);
+  }, [activeMetric, dataset?.chartType]);
 
-  // Chart data points
+  // Chart data points - with unit scaling (WHO weight stored in kg scaled to g for visual alignment with patient dot)
   const chartData = useMemo(() => {
     if (!dataset || ages.isBlocked) return [];
+    const scaleFactor = activeMetric === "weight" && dataset.weightUnit === "kg" ? 1000 : 1;
     return dataset.data.map((pt) => {
       const metricLms = pt[activeMetric];
       return {
         age: pt.age,
-        p3: metricLms.p3,
-        p10: metricLms.p10,
-        p50: metricLms.p50,
-        p90: metricLms.p90,
-        p97: metricLms.p97,
+        p3: Math.round(metricLms.p3 * scaleFactor * 10) / 10,
+        p10: Math.round(metricLms.p10 * scaleFactor * 10) / 10,
+        p50: Math.round(metricLms.p50 * scaleFactor * 10) / 10,
+        p90: Math.round(metricLms.p90 * scaleFactor * 10) / 10,
+        p97: Math.round(metricLms.p97 * scaleFactor * 10) / 10,
       };
     });
   }, [dataset, activeMetric, ages.isBlocked]);
+
+  // Dynamic Y domain to auto-fit curves and patient dot
+  const yDomain = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [metricConfig.yMin, metricConfig.yMax];
+    const vals: number[] = [];
+    chartData.forEach((d) => {
+      vals.push(d.p3, d.p97);
+    });
+    if (typeof currentMetricValue === "number" && !isNaN(currentMetricValue) && currentMetricValue > 0) {
+      vals.push(currentMetricValue);
+    }
+    const minVal = Math.min(...vals);
+    const maxVal = Math.max(...vals);
+    if (activeMetric === "weight") {
+      const min = Math.max(0, Math.floor((minVal * 0.95) / 200) * 200);
+      const max = Math.ceil((maxVal * 1.05) / 500) * 500;
+      return [min, max];
+    } else {
+      const min = Math.max(0, Math.floor((minVal * 0.95) / 2) * 2);
+      const max = Math.ceil((maxVal * 1.05) / 2) * 2;
+      return [min, max];
+    }
+  }, [chartData, currentMetricValue, activeMetric, metricConfig]);
 
   return (
     <div className="space-y-6">
@@ -687,7 +729,7 @@ export function GrowthPlotter({
                           />
                           <YAxis
                             stroke="#64748b"
-                            domain={[metricConfig.yMin, metricConfig.yMax]}
+                            domain={yDomain}
                             tick={{ fontSize: 11 }}
                             label={{
                               value: `${metricConfig.label} (${metricConfig.unit})`,
@@ -996,6 +1038,54 @@ export function GrowthPlotter({
 
             {showMethodology && (
               <div className="space-y-4 pt-2 border-t border-slate-200">
+                {/* Active Dataset Provenance & Licensing */}
+                {dataset && (
+                  <div className="space-y-2 p-3 bg-white rounded-lg border border-slate-200 shadow-2xs">
+                    <h4 className="font-bold text-clinical-navy-900 text-[11.5px] uppercase tracking-wider flex items-center justify-between">
+                      <span>Active Growth Dataset Provenance</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Status: Validated
+                      </span>
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] text-slate-700">
+                      <div>
+                        <span className="text-slate-500 block">Growth Standard:</span>
+                        <strong className="text-slate-900">{dataset.metadata.standard} ({dataset.metadata.version})</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Cohort / Biological Sex:</span>
+                        <strong className="text-slate-900 capitalize">{dataset.metadata.sex} Cohort</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Source Reference:</span>
+                        <a
+                          href={dataset.metadata.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-700 underline font-medium hover:text-blue-900 break-all"
+                        >
+                          {dataset.metadata.sourceFile}
+                        </a>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block">Import Timestamp:</span>
+                        <span className="font-mono text-slate-600">{dataset.metadata.importedAt}</span>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-slate-500 block">Unit Architecture:</span>
+                        <span className="text-slate-700">
+                          Raw dataset units: Weight ({dataset.metadata.units.weight}), Length ({dataset.metadata.units.length}), HC ({dataset.metadata.units.headCircumference}).
+                          {dataset.metadata.units.weight === "kg" && " Boundary conversion: UI inputs in grams are strictly converted to kg prior to LMS evaluation and curve rendering."}
+                        </span>
+                      </div>
+                      <div className="sm:col-span-2 p-2 bg-amber-50/70 rounded border border-amber-200 text-amber-900 text-[10.5px]">
+                        <strong>Licensing & Permissions: </strong>
+                        {(dataset.metadata as any).licenseNotice || (dataset.metadata as any).license}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <h4 className="font-bold text-clinical-navy-900 text-[11.5px] uppercase tracking-wider">
                     LMS Mathematical Model

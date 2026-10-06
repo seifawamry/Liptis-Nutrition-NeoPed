@@ -361,25 +361,58 @@ assert(ds52w.chartType === "who", "PMA > 50w transitions to WHO 2006 chart");
 assert(ds52w.xAxisUnit === "months CCA", "WHO chart uses months CCA on X-axis");
 
 // Test 6.4: WHO 24-month boundary (CCA 24.0m valid, CCA > 24m flagged out of range)
+// Test 6.4: WHO 24-month boundary (CCA 24.0m valid, CCA > 24m flagged out of range)
 const age24m = calculateAges(28, 0, "2024-01-01", "2026-01-01"); // ~24 months
 const ds24m = getGrowthDataset("male", age24m);
 assert(ds24m.chartType === "who", "Older infant routes to WHO");
+
+// Test 6.5: Precise boundary routing: 50w0d (Fenton) vs 50w1d (WHO)
+const age50w0d = calculateAges(30, 0, "2026-01-01", "2026-05-21"); // 30w + 20w = 50.0w
+const ds50w0d = getGrowthDataset("male", age50w0d);
+assert(ds50w0d.chartType === "fenton", "PMA exactly 50w0d routes to Fenton 2013");
+
+const age50w1d = calculateAges(30, 0, "2026-01-01", "2026-05-22"); // 30w + 20w1d = 50.14w
+const ds50w1d = getGrowthDataset("male", age50w1d);
+assert(ds50w1d.chartType === "who", "PMA 50w1d (>50.0w) routes to WHO 2006");
 
 // =============================================================================
 // DOMAIN 7: ANTHROPOMETRIC EVALUATIONS & OPTIONAL FIELDS
 // =============================================================================
 console.log("\n--- Domain 7: Anthropometrics & Optional Fields ---");
 
-// Test 7.1: Male and female 50th percentile weight evaluation
-const evalMale = evaluatePercentile(1210, "weight", getGrowthDataset("male", age28w()));
-assert(evalMale.zScore === 0, `28w Male 1,210g has Z-score 0.00 (got: ${evalMale.zScore})`);
-assert(evalMale.percentile === 50.0, `28w Male 1,210g is 50.0th percentile (got: ${evalMale.percentile})`);
+// Test 7.1: Male and female 50th percentile weight evaluation (actual-age medians: 1079g boys, 1017g girls)
+const evalMale = evaluatePercentile(1079, "weight", getGrowthDataset("male", age28w()));
+assert(evalMale.zScore === 0, `28w Male 1,079g has Z-score 0.00 (got: ${evalMale.zScore})`);
+assert(evalMale.percentile === 50.0, `28w Male 1,079g is 50.0th percentile (got: ${evalMale.percentile})`);
 
-const evalFemale = evaluatePercentile(1140, "weight", getGrowthDataset("female", age28w()));
-assert(evalFemale.zScore === 0, `28w Female 1,140g has Z-score 0.00 (got: ${evalFemale.zScore})`);
-assert(evalFemale.percentile === 50.0, `28w Female 1,140g is 50.0th percentile (got: ${evalFemale.percentile})`);
+const evalFemale = evaluatePercentile(1017, "weight", getGrowthDataset("female", age28w()));
+assert(evalFemale.zScore === 0, `28w Female 1,017g has Z-score 0.00 (got: ${evalFemale.zScore})`);
+assert(evalFemale.percentile === 50.0, `28w Female 1,017g is 50.0th percentile (got: ${evalFemale.percentile})`);
 
-// Test 7.2: Invalid text in optional length field is strictly rejected
+// Test 7.2: WHO Unit Boundary Layer Conversion: UI grams input evaluated against WHO kg dataset
+// Preterm infant born at 28w GA, assessed at 6 months Corrected Age (PMA = 66w > 50w -> WHO)
+const ageWho6m = calculateAges(28, 0, "2025-01-01", "2025-09-24"); // CA 38w, PMA 66w, CCA ~6.0m
+const dsWho6m = getGrowthDataset("male", ageWho6m);
+assert(dsWho6m.chartType === "who", "PMA 66w routes to WHO 2006 chart");
+
+// WHO Boys 6m median weight is 7.9 kg (7,900g)
+const evalWho6m = evaluatePercentile(7900, "weight", dsWho6m);
+assert(
+  Math.abs(evalWho6m.zScore) < 0.05,
+  `WHO 6m Male 7,900g evaluates to Z ~0.00 (got: ${evalWho6m.zScoreFormatted})`
+);
+assert(
+  Math.abs(evalWho6m.percentile - 50.0) < 2.0,
+  `WHO 6m Male 7,900g evaluates to ~50.0th percentile (got: ${evalWho6m.percentileFormatted})`
+);
+
+// Test 7.3: Non-diagnostic wording in clinical note
+assert(
+  !evalMale.clinicalNote.includes("normal") && !evalMale.clinicalNote.includes("SGA"),
+  "Clinical notes use non-diagnostic screening language without diagnostic terms ('normal', 'SGA')"
+);
+
+// Test 7.4: Invalid text in optional length field is strictly rejected
 const invalidLen = validateGrowthInputs({
   gaWeeks: 28,
   gaDays: 0,
@@ -389,7 +422,7 @@ const invalidLen = validateGrowthInputs({
 });
 assert(invalidLen.isBlocked, "Non-numeric optional length 'abc' is strictly blocked");
 
-// Test 7.3: Out of physiological range length (15 cm) is rejected
+// Test 7.5: Out of physiological range length (15 cm) is rejected
 const outOfRangeLen = validateGrowthInputs({
   gaWeeks: 28,
   gaDays: 0,
@@ -399,7 +432,7 @@ const outOfRangeLen = validateGrowthInputs({
 });
 assert(outOfRangeLen.isBlocked, "Length 15.0 cm (under 20 cm) is strictly blocked");
 
-// Test 7.4: Valid length (39.5 cm) is accepted
+// Test 7.6: Valid length (39.5 cm) is accepted
 const validLen = validateGrowthInputs({
   gaWeeks: 28,
   gaDays: 0,

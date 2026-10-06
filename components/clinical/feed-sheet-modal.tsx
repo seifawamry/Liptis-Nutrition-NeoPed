@@ -679,48 +679,156 @@ export function FeedSheetModal({
               )}
 
               {/* Section 5: Anthropometric Growth Interpretation */}
-              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2">
-                <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                  <span>5. Anthropometric Growth Trajectory Assessment</span>
-                </h3>
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-1.5 gap-1">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider">
+                    5. Anthropometric Growth Trajectory Assessment
+                  </h3>
+                  {weightPercentile && (
+                    <span className="text-[10.5px] font-mono text-slate-500">
+                      Standard: <strong className="text-blue-900">{weightPercentile.standard} ({weightPercentile.version})</strong> • Status: <span className="text-emerald-700 font-semibold uppercase">{weightPercentile.validationStatus}</span>
+                    </span>
+                  )}
+                </div>
+
                 {allowNutritionOnly ? (
                   <div className="p-3 bg-amber-50 rounded border border-amber-200 text-amber-900 text-xs">
                     <strong>Growth Assessment Omitted:</strong> Growth trajectory was not evaluated due to incomplete or uncorrected demographics. This document is a nutrition calculation worksheet only.
                   </div>
                 ) : weightPercentile ? (
                   <>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                      <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
-                        <span className="text-slate-500 block text-[10px] uppercase font-semibold">Weight for Age:</span>
-                        <div className="font-bold text-slate-900 font-mono">
-                          {weightPercentile.percentileFormatted} ({weightPercentile.zScoreFormatted})
-                        </div>
-                        <p className="text-[10.5px] text-slate-600 leading-tight">{weightPercentile.clinicalNote}</p>
-                      </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs text-left border border-slate-200">
+                        <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
+                          <tr>
+                            <th className="p-2 border-r border-slate-200">Indicator</th>
+                            <th className="p-2 border-r border-slate-200">Patient Measurement</th>
+                            <th className="p-2 border-r border-slate-200">Plotted Age</th>
+                            <th className="p-2 border-r border-slate-200">Z-Score (SD)</th>
+                            <th className="p-2 border-r border-slate-200">Percentile</th>
+                            <th className="p-2 border-r border-slate-200">Reference Channel</th>
+                            <th className="p-2">Validation</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 font-mono text-[11px]">
+                          {/* Weight */}
+                          <tr>
+                            <td className="p-2 border-r border-slate-200 font-sans font-semibold text-slate-900">
+                              Weight-for-Age
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                              {weightPercentile.observedValue} g ({((weightPercentile.observedValue) / 1000).toFixed(3)} kg)
+                            </td>
+                            <td className="p-2 border-r border-slate-200 text-slate-700">
+                              {weightPercentile.plotAge} {weightPercentile.ageUnit}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
+                              {weightPercentile.zScoreFormatted}
+                              <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {weightPercentile.zScoreUnrounded > 0 ? "+" : ""}{weightPercentile.zScoreUnrounded.toFixed(3)}</span>
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
+                              {weightPercentile.percentileFormatted}
+                              <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {weightPercentile.percentileUnrounded.toFixed(2)}%</span>
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-sans">
+                              <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${weightPercentile.badgeClass}`}>
+                                {weightPercentile.shortBadge}
+                              </span>
+                            </td>
+                            <td className="p-2 font-sans text-emerald-700 font-semibold text-[10px]">
+                              Validated
+                            </td>
+                          </tr>
 
-                      <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
-                        <span className="text-slate-500 block text-[10px] uppercase font-semibold">Length for Age:</span>
-                        <div className="font-bold text-slate-900 font-mono">
-                          {lengthPercentile ? `${lengthPercentile.percentileFormatted} (${lengthPercentile.zScoreFormatted})` : "Not recorded"}
-                        </div>
-                        <p className="text-[10.5px] text-slate-600 leading-tight">
-                          {lengthPercentile ? lengthPercentile.clinicalNote : "Optional measurement not entered."}
-                        </p>
-                      </div>
+                          {/* Length */}
+                          <tr className="bg-slate-50/70">
+                            <td className="p-2 border-r border-slate-200 font-sans font-semibold text-slate-900">
+                              Length-for-Age
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                              {lengthPercentile ? `${lengthPercentile.observedValue} cm` : "Not recorded"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 text-slate-700">
+                              {lengthPercentile ? `${lengthPercentile.plotAge} ${lengthPercentile.ageUnit}` : "—"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
+                              {lengthPercentile ? (
+                                <>
+                                  {lengthPercentile.zScoreFormatted}
+                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {lengthPercentile.zScoreUnrounded > 0 ? "+" : ""}{lengthPercentile.zScoreUnrounded.toFixed(3)}</span>
+                                </>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
+                              {lengthPercentile ? (
+                                <>
+                                  {lengthPercentile.percentileFormatted}
+                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {lengthPercentile.percentileUnrounded.toFixed(2)}%</span>
+                                </>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-sans">
+                              {lengthPercentile ? (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${lengthPercentile.badgeClass}`}>
+                                  {lengthPercentile.shortBadge}
+                                </span>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2 font-sans text-emerald-700 font-semibold text-[10px]">
+                              {lengthPercentile ? "Validated" : "—"}
+                            </td>
+                          </tr>
 
-                      <div className="p-2 bg-slate-50 rounded border border-slate-200 space-y-1">
-                        <span className="text-slate-500 block text-[10px] uppercase font-semibold">Head Circumference:</span>
-                        <div className="font-bold text-slate-900 font-mono">
-                          {hcPercentile ? `${hcPercentile.percentileFormatted} (${hcPercentile.zScoreFormatted})` : "Not recorded"}
-                        </div>
-                        <p className="text-[10.5px] text-slate-600 leading-tight">
-                          {hcPercentile ? hcPercentile.clinicalNote : "Optional measurement not entered."}
-                        </p>
-                      </div>
+                          {/* Head Circumference */}
+                          <tr>
+                            <td className="p-2 border-r border-slate-200 font-sans font-semibold text-slate-900">
+                              Head Circumference (OFC)
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
+                              {hcPercentile ? `${hcPercentile.observedValue} cm` : "Not recorded"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 text-slate-700">
+                              {hcPercentile ? `${hcPercentile.plotAge} ${hcPercentile.ageUnit}` : "—"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
+                              {hcPercentile ? (
+                                <>
+                                  {hcPercentile.zScoreFormatted}
+                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {hcPercentile.zScoreUnrounded > 0 ? "+" : ""}{hcPercentile.zScoreUnrounded.toFixed(3)}</span>
+                                </>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
+                              {hcPercentile ? (
+                                <>
+                                  {hcPercentile.percentileFormatted}
+                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {hcPercentile.percentileUnrounded.toFixed(2)}%</span>
+                                </>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2 border-r border-slate-200 font-sans">
+                              {hcPercentile ? (
+                                <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${hcPercentile.badgeClass}`}>
+                                  {hcPercentile.shortBadge}
+                                </span>
+                              ) : "—"}
+                            </td>
+                            <td className="p-2 font-sans text-emerald-700 font-semibold text-[10px]">
+                              {hcPercentile ? "Validated" : "—"}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
                     </div>
-                    <p className="text-[10px] text-slate-400 italic">
-                      Methodology: Linear interpolation between tabulated LMS parameters. Screening assessment only; not an automatic treatment recommendation.
-                    </p>
+
+                    <div className="p-2.5 bg-slate-50 rounded border border-slate-200 space-y-1 text-[11px] text-slate-600">
+                      <p className="font-semibold text-slate-800">
+                        {weightPercentile.clinicalNote}
+                      </p>
+                      <p className="text-[10px] text-slate-500 italic">
+                        <strong>Clinical Decision-Support Notice:</strong> Anthropometric percentiles and Z-scores provide clinical reference tracking and screening decision support only. They do not constitute an automatic diagnosis of growth restriction or a direct prescription for nutritional changes without comprehensive clinical, biochemical, and longitudinal somatic evaluation. Reference source: {weightPercentile.standard.includes("WHO") ? "World Health Organization (WHO Child Growth Standards 2006, cdn.who.int)" : "Fenton TR, Kim JH. BMC Pediatr 2013;13:59 / University of Calgary"}.
+                      </p>
+                    </div>
                   </>
                 ) : (
                   <div className="p-3 bg-slate-50 rounded border border-slate-200 text-slate-600 text-xs">

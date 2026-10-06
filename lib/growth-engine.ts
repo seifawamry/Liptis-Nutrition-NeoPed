@@ -1,17 +1,45 @@
 /**
  * Liptis Nutrition NeoPed™ LBW Clinical Suite
- * Sex-Specific Growth, Age Correction & Longitudinal Tracking Engine
- * Reference: Fenton 2013 Preterm Growth Curves & WHO 2006 Child Growth Standards
+ * Authoritative Sex-Specific Growth, Age Correction & Longitudinal Tracking Engine
+ * 
+ * Clinical Reference Standards:
+ * 1. Preterm Growth Horizon (PMA 22 to 50 weeks):
+ *    - Fenton 2013 Preterm Growth Curves (Fenton TR, Kim JH. BMC Pediatr. 2013;13:59)
+ *    - Actual-age calibration benchmarked against authorized reference calculator (PediTools / University of Calgary)
+ *    - Commercial distribution note: Innovate Calgary requires commercial permission (jmatic@innovatecalgary.com)
+ * 2. Post-Fenton Horizon (PMA > 50 weeks, CCA 0 to 24 completed months):
+ *    - WHO Child Growth Standards (2006) Multicentre Growth Reference Study (MGRS)
+ *    - Official WHO Box-Cox LMS workbooks (wfa, lhfa, hcfa) imported with exact source precision
+ *    - License: WHO Open Access under CC BY-NC-SA 3.0 IGO
  * 
  * Technical Implementation:
  * - Linear interpolation between tabulated LMS parameters
- * - Exact Box-Cox Z-score calculation
- * - Cumulative normal CDF percentiles
- * - Patel et al. 2005 2-point exponential weight velocity
- * - Cautious decision-support clinical interpretation wording
+ * - Exact Box-Cox Z-score calculation: Z = ((X/M)^L - 1)/(L*S) for L != 0; Z = ln(X/M)/S for L == 0
+ * - WHO MGRS restricted adjustment for extreme weight tails (|Z| > 3 SD)
+ * - Abramowitz & Stegun 7.1.26 standard normal CDF Phi(Z)
+ * - Single boundary layer unit conversion (kg in WHO LMS vs grams in user interface)
+ * - Non-diagnostic, screening decision-support clinical wording
+ * - Patel et al. 2005 2-point exponential weight velocity model
  */
 
-import growthLmsData from "./data/growth-curves-lms.json";
+import {
+  WHO_2006_BOYS_POINTS,
+  WHO_2006_GIRLS_POINTS,
+  WHO_2006_METADATA_BOYS,
+  WHO_2006_METADATA_GIRLS,
+  WhoGrowthPoint,
+  GrowthDatasetMetadata,
+} from "./data/who-2006-dataset";
+
+import {
+  FENTON_2013_BOYS_POINTS,
+  FENTON_2013_GIRLS_POINTS,
+  FENTON_2013_METADATA_BOYS,
+  FENTON_2013_METADATA_GIRLS,
+  FentonGrowthPoint,
+  FentonDatasetMetadata,
+} from "./data/fenton-2013-dataset";
+
 import {
   validateGrowthInputs,
   ValidationReport,
@@ -71,6 +99,13 @@ export interface MetricLmsPoint {
   p90: number;
   p97: number;
   lms: LmsParams;
+  sd3neg?: number;
+  sd2neg?: number;
+  sd1neg?: number;
+  sd0?: number;
+  sd1?: number;
+  sd2?: number;
+  sd3?: number;
 }
 
 export interface CurvePoint {
@@ -83,15 +118,20 @@ export interface CurvePoint {
 export interface GrowthChartDataset {
   chartType: "fenton" | "who";
   standardName: string;
+  datasetVersion: string;
   datasetKey: "fenton_male" | "fenton_female" | "who_male" | "who_female";
   sex: BiologicalSex;
   xAxisLabel: string;
   xAxisUnit: "weeks PMA" | "months CCA";
+  weightUnit: "g" | "kg";
+  lengthUnit: "cm";
+  headCircumferenceUnit: "cm";
   patientPlotAge: number;
   isAgeOutOfRange: boolean;
   ageOutOfRangeWarning?: string;
   routingRationale: string;
   supportedAgeRange: string;
+  metadata: GrowthDatasetMetadata | FentonDatasetMetadata;
   data: CurvePoint[];
 }
 
@@ -106,20 +146,20 @@ export interface TechnicalMethodology {
 export const TECHNICAL_METHODOLOGY: TechnicalMethodology = {
   interpolationType: "Linear interpolation between tabulated LMS parameters",
   lmsFormula: "Z = ((X / M)^L - 1) / (L * S) for L != 0; Z = ln(X / M) / S for L == 0",
-  percentileFormula: "Percentile = Phi(Z) * 100 via standard normal cumulative distribution function",
-  extremeZHandling: "WHO right-tail and left-tail standard deviation adjustments applied for |Z| > 3 SD per WHO MGRS specification",
-  outOfRangeHandling: "Values outside supported dataset age horizons (Fenton <22w or WHO >24m) return 'Out of range' status with no fabricated percentiles",
+  percentileFormula: "Percentile = Phi(Z) * 100 via standard normal cumulative distribution function (Abramowitz & Stegun 7.1.26)",
+  extremeZHandling: "WHO MGRS restricted tail adjustment applied for weight-for-age (|Z| > 3 SD) per official WHO specification. Length and Head Circumference use exact Gaussian distribution (L = 1.0).",
+  outOfRangeHandling: "Values outside supported dataset age horizons (Fenton < 22 weeks PMA or WHO > 24 months CCA) return 'Out of Range' status with zero fabricated percentiles or Z-scores.",
 };
 
 export const CLINICAL_INTERPRETATION_FACTORS = [
-  "Accurate gestational-age dating at birth (ultrasound vs LMP)",
-  "Reliable and standardized anthropometric measurement techniques",
-  "Serial longitudinal data rather than isolated single cross-sectional points",
-  "Fluid balance, third-spacing, and peripheral edema",
-  "Birth size, intrauterine growth trajectory, and birth percentile",
-  "Acute and chronic systemic illness (e.g. BPD, NEC, sepsis)",
-  "Actual enteral and parenteral nutrient intake",
-  "Serial laboratory and metabolic status (BUN, creatinine, electrolytes, acid-base)",
+  "Accurate gestational-age dating at birth (ultrasound dating vs reliable LMP)",
+  "Standardized anthropometric measurement technique using calibrated neonatal equipment",
+  "Evaluation of longitudinal serial trajectory rather than an isolated cross-sectional measurement",
+  "Hydration balance, fluid shifts, and extracellular third-spacing",
+  "Intrauterine growth history, birth weight, and birth percentile status",
+  "Concurrent acute or chronic neonatal illness (e.g. BPD, NEC, sepsis, hemodynamically significant PDA)",
+  "Quantified enteral and parenteral macronutrient and micronutrient delivery",
+  "Biochemical markers of accretion and metabolic stability (BUN, creatinine, alkaline phosphatase, phosphorus, electrolytes)",
 ];
 
 export interface PercentileEvaluation {
@@ -128,10 +168,12 @@ export interface PercentileEvaluation {
   plotAge: number;
   ageUnit: string;
   p50Value: number;
-  zScore: number;
-  zScoreFormatted: string; // e.g. "-1.42 SD"
-  percentile: number;
-  percentileFormatted: string; // e.g. "7.8th Percentile"
+  zScore: number; // rounded for clinical display (2 decimal places)
+  zScoreUnrounded: number; // continuous floating point precision
+  zScoreFormatted: string; // e.g. "+0.60 SD" or "-1.42 SD"
+  percentile: number; // rounded for clinical display (1 decimal place)
+  percentileUnrounded: number; // continuous floating point precision (0 to 100)
+  percentileFormatted: string; // e.g. "73.0th Percentile"
   percentileBracket: string;
   shortBadge: "<3rd" | "3rd-10th" | "10th-50th" | "50th-90th" | "90th-97th" | ">97th" | "Out of Range" | "N/A";
   badgeClass: string;
@@ -139,6 +181,9 @@ export interface PercentileEvaluation {
   clinicalCaveat: string;
   interpolatedLms: LmsParams;
   methodology: string;
+  standard: string;
+  version: string;
+  validationStatus: "validated" | "pending";
 }
 
 export interface LongitudinalRecord {
@@ -189,10 +234,12 @@ export function normalCdf(z: number): number {
 
 /**
  * Calculates genuine Z-score from LMS parameters
+ * Rigorously validates: value > 0, M > 0, S > 0.
+ * Preserves source floating point precision internally.
  */
 export function calculateZScoreFromLms(value: number, lms: LmsParams): number {
   const { L, M, S } = lms;
-  if (value <= 0 || M <= 0 || S <= 0) return 0;
+  if (value <= 0 || M <= 0 || S <= 0 || isNaN(value) || isNaN(M) || isNaN(S)) return 0;
 
   if (Math.abs(L) < 0.0001) {
     return Math.log(value / M) / S;
@@ -201,25 +248,31 @@ export function calculateZScoreFromLms(value: number, lms: LmsParams): number {
 }
 
 /**
- * WHO Adjusted Z-score for extreme weight tails (|Z| > 3)
+ * WHO Adjusted Z-score for extreme weight tails (|Z| > 3 SD)
+ * Conforms to the official WHO Multicentre Growth Reference Study (MGRS) specification.
+ * For |Z| <= 3 SD, returns the exact Box-Cox Z-score.
  */
-export function calculateWhoAdjustedWeightZScore(weightGrams: number, lms: LmsParams): number {
-  const rawZ = calculateZScoreFromLms(weightGrams, lms);
+export function calculateWhoAdjustedWeightZScore(
+  weightKg: number,
+  lms: LmsParams,
+  sdPoints?: { sd2neg?: number; sd3neg?: number; sd2pos?: number; sd3pos?: number }
+): number {
+  const rawZ = calculateZScoreFromLms(weightKg, lms);
   const { L, M, S } = lms;
 
   if (rawZ > 3) {
-    const sd3pos = Math.abs(L) < 0.0001 ? M * Math.exp(S * 3) : M * Math.pow(1 + L * S * 3, 1 / L);
-    const sd2pos = Math.abs(L) < 0.0001 ? M * Math.exp(S * 2) : M * Math.pow(1 + L * S * 2, 1 / L);
+    const sd3pos = sdPoints?.sd3pos ?? (Math.abs(L) < 0.0001 ? M * Math.exp(S * 3) : M * Math.pow(1 + L * S * 3, 1 / L));
+    const sd2pos = sdPoints?.sd2pos ?? (Math.abs(L) < 0.0001 ? M * Math.exp(S * 2) : M * Math.pow(1 + L * S * 2, 1 / L));
     const sd23pos = sd3pos - sd2pos;
     if (sd23pos > 0) {
-      return 3 + (weightGrams - sd3pos) / sd23pos;
+      return 3 + (weightKg - sd3pos) / sd23pos;
     }
   } else if (rawZ < -3) {
-    const sd3neg = Math.abs(L) < 0.0001 ? M * Math.exp(S * -3) : M * Math.pow(1 + L * S * -3, 1 / L);
-    const sd2neg = Math.abs(L) < 0.0001 ? M * Math.exp(S * -2) : M * Math.pow(1 + L * S * -2, 1 / L);
+    const sd3neg = sdPoints?.sd3neg ?? (Math.abs(L) < 0.0001 ? M * Math.exp(S * -3) : M * Math.pow(1 + L * S * -3, 1 / L));
+    const sd2neg = sdPoints?.sd2neg ?? (Math.abs(L) < 0.0001 ? M * Math.exp(S * -2) : M * Math.pow(1 + L * S * -2, 1 / L));
     const sd23neg = sd2neg - sd3neg;
     if (sd23neg > 0) {
-      return -3 + (weightGrams - sd3neg) / sd23neg;
+      return -3 + (weightKg - sd3neg) / sd23neg;
     }
   }
 
@@ -228,7 +281,7 @@ export function calculateWhoAdjustedWeightZScore(weightGrams: number, lms: LmsPa
 
 /**
  * Deterministic UTC-Safe Age Calculation Engine
- * Rejects invalid dates, impossible dates, and future assessment dates.
+ * Rejects invalid dates, chronological inversions, impossible calendar dates, and future assessment dates.
  */
 export function calculateAges(
   gaWeeks: number,
@@ -350,83 +403,189 @@ export function calculateAges(
 }
 
 /**
- * Dynamic Dataset Routing:
- * - If PMA <= 50 weeks: Fenton Preterm Chart (PMA on X-axis)
- * - If PMA > 50 weeks: WHO Child Growth Standards (CCA in months on X-axis)
- * - Returns explicit routing metadata, supported range, and clinical rationale.
+ * Standardizes CurvePoint representation across Fenton and WHO datasets.
+ * In Fenton, weights are in grams. In WHO, weight M is in kg and percentiles in kg.
+ */
+function normalizeWhoPoints(points: WhoGrowthPoint[]): CurvePoint[] {
+  return points.map(pt => ({
+    age: pt.age,
+    weight: {
+      p3: pt.weight.p3,
+      p10: pt.weight.p10,
+      p50: pt.weight.p50,
+      p90: pt.weight.p90,
+      p97: pt.weight.p97,
+      lms: { L: pt.weight.L, M: pt.weight.M, S: pt.weight.S },
+      sd3neg: pt.weight.sd3neg,
+      sd2neg: pt.weight.sd2neg,
+      sd1neg: pt.weight.sd1neg,
+      sd0: pt.weight.sd0,
+      sd1: pt.weight.sd1,
+      sd2: pt.weight.sd2,
+      sd3: pt.weight.sd3,
+    },
+    length: {
+      p3: pt.length.p3,
+      p10: pt.length.p10,
+      p50: pt.length.p50,
+      p90: pt.length.p90,
+      p97: pt.length.p97,
+      lms: { L: pt.length.L, M: pt.length.M, S: pt.length.S },
+      sd3neg: pt.length.sd3neg,
+      sd2neg: pt.length.sd2neg,
+      sd1neg: pt.length.sd1neg,
+      sd0: pt.length.sd0,
+      sd1: pt.length.sd1,
+      sd2: pt.length.sd2,
+      sd3: pt.length.sd3,
+    },
+    headCircumference: {
+      p3: pt.headCircumference.p3,
+      p10: pt.headCircumference.p10,
+      p50: pt.headCircumference.p50,
+      p90: pt.headCircumference.p90,
+      p97: pt.headCircumference.p97,
+      lms: { L: pt.headCircumference.L, M: pt.headCircumference.M, S: pt.headCircumference.S },
+      sd3neg: pt.headCircumference.sd3neg,
+      sd2neg: pt.headCircumference.sd2neg,
+      sd1neg: pt.headCircumference.sd1neg,
+      sd0: pt.headCircumference.sd0,
+      sd1: pt.headCircumference.sd1,
+      sd2: pt.headCircumference.sd2,
+      sd3: pt.headCircumference.sd3,
+    },
+  }));
+}
+
+function normalizeFentonPoints(points: FentonGrowthPoint[]): CurvePoint[] {
+  return points.map(pt => ({
+    age: pt.age,
+    weight: {
+      p3: pt.weight.p3,
+      p10: pt.weight.p10,
+      p50: pt.weight.p50,
+      p90: pt.weight.p90,
+      p97: pt.weight.p97,
+      lms: { L: pt.weight.lms.L, M: pt.weight.lms.M, S: pt.weight.lms.S },
+    },
+    length: {
+      p3: pt.length.p3,
+      p10: pt.length.p10,
+      p50: pt.length.p50,
+      p90: pt.length.p90,
+      p97: pt.length.p97,
+      lms: { L: pt.length.lms.L, M: pt.length.lms.M, S: pt.length.lms.S },
+    },
+    headCircumference: {
+      p3: pt.headCircumference.p3,
+      p10: pt.headCircumference.p10,
+      p50: pt.headCircumference.p50,
+      p90: pt.headCircumference.p90,
+      p97: pt.headCircumference.p97,
+      lms: { L: pt.headCircumference.lms.L, M: pt.headCircumference.lms.M, S: pt.headCircumference.lms.S },
+    },
+  }));
+}
+
+/**
+ * Dynamic Growth Standard Routing Engine:
+ * - If PMA <= 50.0 completed weeks: Fenton 2013 Preterm Standard (PMA on X-axis)
+ * - If PMA > 50.0 weeks: WHO Child Growth Standards 2006 (CCA in months on X-axis)
+ * - Returns explicit routing metadata, supported horizons, units, and clinical rationale.
  */
 export function getGrowthDataset(
   sex: BiologicalSex,
   ages: AgeCalculations
 ): GrowthChartDataset {
+  const fentonMetadata = sex === "male" ? FENTON_2013_METADATA_BOYS : FENTON_2013_METADATA_GIRLS;
+  const fentonPoints = sex === "male" ? FENTON_2013_BOYS_POINTS : FENTON_2013_GIRLS_POINTS;
+  const whoMetadata = sex === "male" ? WHO_2006_METADATA_BOYS : WHO_2006_METADATA_GIRLS;
+  const whoPoints = sex === "male" ? WHO_2006_BOYS_POINTS : WHO_2006_GIRLS_POINTS;
+
   if (ages.isBlocked) {
-    const raw = (growthLmsData as Record<string, any>)["fenton_male"];
     return {
       chartType: "fenton",
-      standardName: raw.standard,
-      datasetKey: "fenton_male",
+      standardName: fentonMetadata.standard,
+      datasetVersion: fentonMetadata.version,
+      datasetKey: sex === "male" ? "fenton_male" : "fenton_female",
       sex,
       xAxisLabel: "Post-Menstrual Age (Weeks)",
       xAxisUnit: "weeks PMA",
+      weightUnit: "g",
+      lengthUnit: "cm",
+      headCircumferenceUnit: "cm",
       patientPlotAge: 28,
       isAgeOutOfRange: true,
       ageOutOfRangeWarning: "Age calculation blocked by input validation.",
       routingRationale: "Validation blocked; chart display inactive.",
-      supportedAgeRange: "22 to 50 weeks PMA",
-      data: raw.points,
+      supportedAgeRange: "22 to 50 completed weeks PMA",
+      metadata: fentonMetadata,
+      data: normalizeFentonPoints(fentonPoints),
     };
   }
 
+  // Routing threshold: PMA <= 50.0 weeks uses Fenton; PMA > 50.0 weeks transitions to WHO
   const isFenton = ages.pmaWeeksDecimal <= CLINICAL_BOUNDS.FENTON_MAX_PMA_WEEKS;
 
   if (isFenton) {
     const datasetKey = sex === "male" ? "fenton_male" : "fenton_female";
-    const raw = (growthLmsData as Record<string, any>)[datasetKey];
-
     const isUnderMin = ages.pmaWeeksDecimal < CLINICAL_BOUNDS.FENTON_MIN_PMA_WEEKS;
     const isAgeOutOfRange = isUnderMin;
     const ageOutOfRangeWarning = isUnderMin
-      ? `Post-menstrual age (${ages.pmaWeeksDecimal} weeks PMA) is below the Fenton 2013 chart lower limit of 22 weeks PMA.`
+      ? `Post-menstrual age (${ages.pmaWeeksDecimal.toFixed(1)} weeks PMA) is below the Fenton 2013 chart lower limit of 22 completed weeks PMA.`
       : undefined;
 
     return {
       chartType: "fenton",
-      standardName: raw.standard,
+      standardName: fentonMetadata.standard,
+      datasetVersion: fentonMetadata.version,
       datasetKey,
       sex,
       xAxisLabel: "Post-Menstrual Age (Weeks)",
       xAxisUnit: "weeks PMA",
+      weightUnit: "g",
+      lengthUnit: "cm",
+      headCircumferenceUnit: "cm",
       patientPlotAge: ages.pmaWeeksDecimal,
       isAgeOutOfRange,
       ageOutOfRangeWarning,
-      routingRationale: `Patient PMA is ${ages.pmaWeeksDecimal} weeks (<= 50 completed weeks). Fenton 2013 preterm reference standard applies.`,
+      routingRationale: `Patient PMA is ${ages.pmaWeeksDecimal.toFixed(1)} weeks (≤ 50.0 completed weeks). Fenton 2013 preterm reference standard applies.`,
       supportedAgeRange: "22 to 50 completed weeks PMA",
-      data: raw.points,
+      metadata: fentonMetadata,
+      data: normalizeFentonPoints(fentonPoints),
     };
   } else {
     const datasetKey = sex === "male" ? "who_male" : "who_female";
-    const raw = (growthLmsData as Record<string, any>)[datasetKey];
-
     const ccaMonths = ages.ccaMonthsDecimal;
+    const isUnderMin = ccaMonths < 0;
     const isOverMax = ccaMonths > CLINICAL_BOUNDS.WHO_MAX_CCA_MONTHS;
-    const isAgeOutOfRange = isOverMax;
-    const ageOutOfRangeWarning = isOverMax
-      ? `Corrected chronological age (${ccaMonths.toFixed(1)} months) exceeds the supported WHO 0–24 month infant growth standard.`
-      : undefined;
+    const isAgeOutOfRange = isUnderMin || isOverMax;
+
+    let ageOutOfRangeWarning: string | undefined = undefined;
+    if (isUnderMin) {
+      ageOutOfRangeWarning = `Patient PMA exceeds 50 weeks, but corrected chronological age is below 0 months (pre-term). Cannot plot on WHO infant chart.`;
+    } else if (isOverMax) {
+      ageOutOfRangeWarning = `Corrected chronological age (${ccaMonths.toFixed(1)} months CCA) exceeds the supported WHO 0–24 month infant growth standard horizon.`;
+    }
 
     return {
       chartType: "who",
-      standardName: raw.standard,
+      standardName: whoMetadata.standard,
+      datasetVersion: whoMetadata.version,
       datasetKey,
       sex,
       xAxisLabel: "Corrected Age (Months)",
       xAxisUnit: "months CCA",
+      weightUnit: "kg",
+      lengthUnit: "cm",
+      headCircumferenceUnit: "cm",
       patientPlotAge: ccaMonths,
       isAgeOutOfRange,
       ageOutOfRangeWarning,
-      routingRationale: `Patient PMA (${ages.pmaWeeksDecimal} weeks) exceeds 50 weeks. Standard WHO 2006 Child Growth Standards applied with age corrected for prematurity.`,
-      supportedAgeRange: "0 to 24 months Corrected Chronological Age",
-      data: raw.points,
+      routingRationale: `Patient PMA (${ages.pmaWeeksDecimal.toFixed(1)} weeks) exceeds 50.0 weeks. Standard WHO 2006 Child Growth Standards applied with age corrected for prematurity (${ccaMonths.toFixed(1)} months CCA).`,
+      supportedAgeRange: "0 to 24 completed months Corrected Chronological Age",
+      metadata: whoMetadata,
+      data: normalizeWhoPoints(whoPoints),
     };
   }
 }
@@ -438,16 +597,38 @@ export function interpolateLms(
   targetAge: number,
   metric: GrowthMetric,
   data: CurvePoint[]
-): { lms: LmsParams; p50: number } {
+): {
+  lms: LmsParams;
+  p50: number;
+  sdPoints?: { sd2neg?: number; sd3neg?: number; sd2pos?: number; sd3pos?: number };
+} {
   const sorted = [...data].sort((a, b) => a.age - b.age);
 
   if (targetAge <= sorted[0].age) {
     const pt = sorted[0][metric];
-    return { lms: pt.lms, p50: pt.p50 };
+    return {
+      lms: pt.lms,
+      p50: pt.p50,
+      sdPoints: {
+        sd2neg: pt.sd2neg,
+        sd3neg: pt.sd3neg,
+        sd2pos: pt.sd2,
+        sd3pos: pt.sd3,
+      },
+    };
   }
   if (targetAge >= sorted[sorted.length - 1].age) {
     const pt = sorted[sorted.length - 1][metric];
-    return { lms: pt.lms, p50: pt.p50 };
+    return {
+      lms: pt.lms,
+      p50: pt.p50,
+      sdPoints: {
+        sd2neg: pt.sd2neg,
+        sd3neg: pt.sd3neg,
+        sd2pos: pt.sd2,
+        sd3pos: pt.sd3,
+      },
+    };
   }
 
   // Find bounding tabulated points
@@ -465,27 +646,41 @@ export function interpolateLms(
   const ageDiff = upper.age - lower.age;
   const factor = ageDiff > 0 ? (targetAge - lower.age) / ageDiff : 0;
 
-  const lowLms = lower[metric].lms;
-  const upLms = upper[metric].lms;
+  const lowPt = lower[metric];
+  const upPt = upper[metric];
 
-  const L = lowLms.L + (upLms.L - lowLms.L) * factor;
-  const M = lowLms.M + (upLms.M - lowLms.M) * factor;
-  const S = lowLms.S + (upLms.S - lowLms.S) * factor;
-  const p50 = lower[metric].p50 + (upper[metric].p50 - lower[metric].p50) * factor;
+  const L = lowPt.lms.L + (upPt.lms.L - lowPt.lms.L) * factor;
+  const M = lowPt.lms.M + (upPt.lms.M - lowPt.lms.M) * factor;
+  const S = lowPt.lms.S + (upPt.lms.S - lowPt.lms.S) * factor;
+  const p50 = lowPt.p50 + (upPt.p50 - lowPt.p50) * factor;
+
+  const sd2neg = lowPt.sd2neg !== undefined && upPt.sd2neg !== undefined ? lowPt.sd2neg + (upPt.sd2neg - lowPt.sd2neg) * factor : undefined;
+  const sd3neg = lowPt.sd3neg !== undefined && upPt.sd3neg !== undefined ? lowPt.sd3neg + (upPt.sd3neg - lowPt.sd3neg) * factor : undefined;
+  const sd2pos = lowPt.sd2 !== undefined && upPt.sd2 !== undefined ? lowPt.sd2 + (upPt.sd2 - lowPt.sd2) * factor : undefined;
+  const sd3pos = lowPt.sd3 !== undefined && upPt.sd3 !== undefined ? lowPt.sd3 + (upPt.sd3 - lowPt.sd3) * factor : undefined;
 
   return {
     lms: {
       L: Math.round(L * 10000) / 10000,
-      M: Math.round(M * 100) / 100,
+      M: Math.round(M * 10000) / 10000,
       S: Math.round(S * 100000) / 100000,
     },
-    p50: Math.round(p50 * 10) / 10,
+    p50: Math.round(p50 * 100) / 100,
+    sdPoints: {
+      sd2neg,
+      sd3neg,
+      sd2pos,
+      sd3pos,
+    },
   };
 }
 
 /**
  * Anthropometric Percentile and Z-Score Evaluation Engine
- * Uses linear interpolation between tabulated LMS parameters and cautious clinical wording.
+ * Single tested boundary layer unit conversion:
+ * - If WHO weight: input weight in grams is converted to kg for LMS evaluation.
+ * - Displays unrounded continuous values alongside clinically rounded figures.
+ * - Non-diagnostic, screening decision-support clinical wording.
  */
 export function evaluatePercentile(
   value: number | undefined,
@@ -493,7 +688,7 @@ export function evaluatePercentile(
   dataset: GrowthChartDataset
 ): PercentileEvaluation {
   const clinicalCaveat =
-    "Screening assessment only; not a diagnosis or automatic treatment recommendation. Evaluate alongside serial trajectory, clinical illness, and hydration.";
+    "Screening reference calculation only; not an autonomous diagnosis, prescription, or clinical adequacy decision. Evaluate alongside serial growth velocity, systemic illness, and fluid balance.";
 
   const emptyEval: PercentileEvaluation = {
     metric,
@@ -502,16 +697,21 @@ export function evaluatePercentile(
     ageUnit: dataset.xAxisUnit,
     p50Value: 0,
     zScore: 0,
+    zScoreUnrounded: 0,
     zScoreFormatted: "N/A",
     percentile: 0,
+    percentileUnrounded: 0,
     percentileFormatted: "N/A",
     percentileBracket: "Measurement pending",
     shortBadge: "N/A",
     badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
-    clinicalNote: "Enter a valid measurement to determine exact percentile and Z-score.",
+    clinicalNote: "Enter a valid measurement to evaluate exact reference percentile and Z-score.",
     clinicalCaveat,
     interpolatedLms: { L: 1, M: 0, S: 0 },
     methodology: "Linear interpolation between tabulated LMS parameters",
+    standard: dataset.standardName,
+    version: dataset.datasetVersion,
+    validationStatus: dataset.metadata.validationStatus,
   };
 
   if (value === undefined || value === null || isNaN(value) || value <= 0) {
@@ -524,72 +724,80 @@ export function evaluatePercentile(
       observedValue: value,
       shortBadge: "Out of Range",
       badgeClass: "bg-amber-100 text-amber-900 border-amber-300",
-      clinicalNote: dataset.ageOutOfRangeWarning || "Patient age is outside supported growth reference curves.",
+      clinicalNote: dataset.ageOutOfRangeWarning || "Patient age is outside supported growth reference horizons.",
       clinicalCaveat,
     };
   }
 
   // Linear interpolation of LMS parameters
-  const { lms, p50 } = interpolateLms(dataset.patientPlotAge, metric, dataset.data);
+  const { lms, p50, sdPoints } = interpolateLms(dataset.patientPlotAge, metric, dataset.data);
+
+  // Single boundary layer unit conversion:
+  // WHO dataset has weight M in kilograms (kg), while user inputs weight in grams (g).
+  const isWhoWeight = dataset.chartType === "who" && metric === "weight";
+  const measurementForLms = isWhoWeight ? value / 1000 : value;
 
   // Compute exact continuous Z-score
   let rawZ = 0;
-  if (dataset.chartType === "who" && metric === "weight") {
-    rawZ = calculateWhoAdjustedWeightZScore(value, lms);
+  if (isWhoWeight) {
+    rawZ = calculateWhoAdjustedWeightZScore(measurementForLms, lms, sdPoints);
   } else {
-    rawZ = calculateZScoreFromLms(value, lms);
+    rawZ = calculateZScoreFromLms(measurementForLms, lms);
   }
 
   const roundedZ = Math.round(rawZ * 100) / 100;
   const zScoreFormatted = `${roundedZ > 0 ? "+" : ""}${roundedZ.toFixed(2)} SD`;
 
-  // Compute exact percentile via Normal CDF
+  // Compute exact continuous percentile via Standard Normal CDF
   const pNorm = normalCdf(rawZ) * 100;
   const roundedPercentile = Math.round(pNorm * 10) / 10;
   const percentileFormatted = `${roundedPercentile.toFixed(1)}th Percentile`;
 
-  // Determine standard clinical percentile bracket with cautious decision-support language
+  // Standardized p50 for clinical display (in grams if weight was entered in grams)
+  const displayP50 = isWhoWeight ? Math.round(p50 * 1000) : Math.round(p50 * 10) / 10;
+
+  // Non-diagnostic clinical decision support brackets
   let bracket = "";
   let shortBadge: PercentileEvaluation["shortBadge"] = "N/A";
   let badgeClass = "";
   let clinicalNote = "";
 
   if (roundedZ < -1.88) {
-    bracket = "< 3rd Percentile (Significant Growth Restriction / Small for Gestational Age)";
+    bracket = "< 3rd Percentile — Screening Flag for Clinical Review";
     shortBadge = "<3rd";
     badgeClass = "bg-rose-100 text-rose-900 border-rose-300";
     clinicalNote =
-      "This value is a screening flag for clinician review. Interpret with serial growth, fluid status, measurement quality, illness severity, and nutrient intake.";
+      "Measurement falls below the 3rd percentile reference line (< -1.88 SD). This is a screening flag for clinician review, not an autonomous diagnosis of growth restriction or SGA. Interpret alongside serial trajectory, clinical illness, and fluid balance.";
   } else if (roundedZ < -1.28) {
-    bracket = "3rd to 10th Percentile (Mild Growth Restriction / Borderline Low Zone)";
+    bracket = "3rd–10th Percentile — Low Reference Channel";
     shortBadge = "3rd-10th";
     badgeClass = "bg-amber-100 text-amber-900 border-amber-300";
     clinicalNote =
-      "Value lies in borderline low reference channel (-1.88 to -1.28 SD). Screening alert for clinician review; interpret with nutritional intake and serial growth.";
+      "Measurement lies within the low reference channel (-1.88 to -1.28 SD). Screening alert for clinician review; evaluate serial growth velocity and nutritional intake.";
   } else if (roundedZ <= 0) {
-    bracket = "10th to 50th Percentile (Normal Appropriate Range)";
+    bracket = "10th–50th Percentile — Reference Channel";
     shortBadge = "10th-50th";
     badgeClass = "bg-emerald-100 text-emerald-900 border-emerald-300";
     clinicalNote =
-      "Trajectory is within the selected reference channel; interpret alongside clinical context.";
+      "Trajectory tracks within the standard reference channel (10th to 50th percentile). Interpret alongside overall clinical and nutritional context.";
   } else if (roundedZ <= 1.28) {
-    bracket = "50th to 90th Percentile (Normal Appropriate Range)";
+    bracket = "50th–90th Percentile — Reference Channel";
     shortBadge = "50th-90th";
     badgeClass = "bg-emerald-100 text-emerald-900 border-emerald-300";
     clinicalNote =
-      "Trajectory is within the selected reference channel; interpret alongside clinical context.";
+      "Trajectory tracks within the standard reference channel (50th to 90th percentile). Interpret alongside overall clinical and nutritional context.";
   } else if (roundedZ <= 1.88) {
-    bracket = "90th to 97th Percentile (Upper Physiological Range)";
+    bracket = "90th–97th Percentile — Upper Reference Channel";
     shortBadge = "90th-97th";
     badgeClass = "bg-blue-100 text-blue-900 border-blue-300";
     clinicalNote =
-      "Upper reference channel (+1.28 to +1.88 SD). Monitor somatic accretion and verify fluid balance.";
+      "Measurement tracks within the upper reference channel (+1.28 to +1.88 SD). Monitor somatic accretion and hydration status.";
   } else {
-    bracket = "> 97th Percentile (Large for Gestational Age / Macrocephaly)";
+    bracket = "> 97th Percentile — Screening Flag for Clinical Review";
     shortBadge = ">97th";
     badgeClass = "bg-purple-100 text-purple-900 border-purple-300";
     clinicalNote =
-      "Value exceeds 97th percentile reference line (> +1.88 SD). Screening alert for clinician review; evaluate for fluid retention or maternal metabolic factors.";
+      "Measurement exceeds the 97th percentile reference line (> +1.88 SD). This is a screening flag for clinician review, not an autonomous diagnosis of LGA or macrocephaly. Evaluate for fluid retention or maternal metabolic factors.";
   }
 
   const methodology = `${dataset.standardName} (${dataset.sex === "male" ? "Boys" : "Girls"}) linear interpolation between tabulated LMS parameters (L=${lms.L}, M=${lms.M}, S=${lms.S})`;
@@ -599,10 +807,12 @@ export function evaluatePercentile(
     observedValue: value,
     plotAge: dataset.patientPlotAge,
     ageUnit: dataset.xAxisUnit,
-    p50Value: p50,
+    p50Value: displayP50,
     zScore: roundedZ,
+    zScoreUnrounded: rawZ,
     zScoreFormatted,
     percentile: roundedPercentile,
+    percentileUnrounded: pNorm,
     percentileFormatted,
     percentileBracket: bracket,
     shortBadge,
@@ -611,6 +821,9 @@ export function evaluatePercentile(
     clinicalCaveat,
     interpolatedLms: lms,
     methodology,
+    standard: dataset.standardName,
+    version: dataset.datasetVersion,
+    validationStatus: dataset.metadata.validationStatus,
   };
 }
 
@@ -625,7 +838,6 @@ export function calculateWeightVelocity(
   deltaDays: number
 ): number {
   if (deltaDays <= 0 || w1Grams <= 0 || w2Grams <= 0) return 0;
-  // Exponential model: 1000 * ln(W2 / W1) / deltaDays
   const velocity = (1000 * Math.log(w2Grams / w1Grams)) / deltaDays;
   return Math.round(velocity * 10) / 10;
 }
@@ -688,7 +900,7 @@ export function evaluateLongitudinalRecords(
         } else if (deltaWeightZScore < -0.67) {
           trendAlert = `Screening alert for clinician review—not a diagnosis. Weight Z-score declined by ${Math.abs(deltaWeightZScore).toFixed(2)} SD (>0.67 SD indicates dropping a full percentile channel).`;
         } else if (deltaWeightZScore > 0.67) {
-          trendAlert = `Screening alert for clinician review—not a diagnosis. Rapid upward channel crossing (+${deltaWeightZScore.toFixed(2)} SD); monitor body composition.`;
+          trendAlert = `Screening alert for clinician review—not a diagnosis. Rapid upward channel crossing (+${deltaWeightZScore.toFixed(2)} SD); monitor somatic accretion.`;
         } else {
           trendAlert = "Trajectory tracking within reference growth channel (ΔZ within ±0.67 SD).";
         }
