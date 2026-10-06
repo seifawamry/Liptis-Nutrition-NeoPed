@@ -139,6 +139,8 @@ export default function Home() {
               onLengthChange={setLengthCm}
               headCircumferenceCm={headCircumferenceCm}
               onHcChange={setHeadCircumferenceCm}
+              calculationResult={calculationResult}
+              fluidAllowance={fluidAllowance}
             />
           </section>
         )}
@@ -195,6 +197,8 @@ export default function Home() {
                 onLengthChange={setLengthCm}
                 headCircumferenceCm={headCircumferenceCm}
                 onHcChange={setHeadCircumferenceCm}
+                calculationResult={calculationResult}
+                fluidAllowance={fluidAllowance}
               />
             </div>
 

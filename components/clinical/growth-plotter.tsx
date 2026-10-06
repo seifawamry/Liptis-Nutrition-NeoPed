@@ -43,6 +43,7 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { NutritionCalculationResult } from "@/lib/lbw-nutrition";
 
 interface GrowthPlotterProps {
   biologicalSex: BiologicalSex | null;
@@ -61,6 +62,8 @@ interface GrowthPlotterProps {
   onLengthChange: (val: number) => void;
   headCircumferenceCm: number;
   onHcChange: (val: number) => void;
+  calculationResult?: NutritionCalculationResult | null;
+  fluidAllowance?: number;
 }
 
 export function GrowthPlotter({
@@ -80,6 +83,8 @@ export function GrowthPlotter({
   onLengthChange,
   headCircumferenceCm,
   onHcChange,
+  calculationResult,
+  fluidAllowance,
 }: GrowthPlotterProps) {
   const [activeMetric, setActiveMetric] = useState<GrowthMetric>("weight");
   const [showDataTable, setShowDataTable] = useState(false);
@@ -328,6 +333,107 @@ export function GrowthPlotter({
           <div>
             <strong>Age Boundary Notice: </strong>
             <span>{dataset.ageOutOfRangeWarning}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Patient Delivered Macronutrient Growth Fuel Snapshot */}
+      {calculationResult && (
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border-2 border-slate-300 shadow-sm space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                Patient Delivered Macronutrient Growth Fuel ({calculationResult.formulaProfile?.brand ?? "Pediamil® LBW"})
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-300 font-mono">
+                24h Volume: <strong className="text-slate-950 font-black">{calculationResult.deliveredNutrientPayload?.totalDailyVolumeMl ?? Math.round((weightGrams / 1000) * (fluidAllowance ?? 150))} mL/d</strong> ({fluidAllowance ?? 150} mL/kg/d)
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* 1. Energy */}
+            <div className="p-3.5 bg-amber-50/80 border-2 border-amber-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-amber-950 block text-[11px] font-black uppercase tracking-wider">
+                  Total Energy
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredEnergyKcalPerKgPerDay}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    kcal / kg / day
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-amber-200/90 text-xs font-bold text-amber-950">
+                Goal: 110–135 kcal/kg/d
+              </div>
+            </div>
+
+            {/* 2. Protein */}
+            <div className="p-3.5 bg-blue-50/80 border-2 border-blue-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-blue-950 block text-[11px] font-black uppercase tracking-wider">
+                  True Protein
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredProteinGramsPerKgPerDay}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    g / kg / day (60:40)
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-blue-200/90 text-xs font-bold text-blue-950">
+                Target: {calculationResult.proteinBracket?.targetMinGramsPerKg ?? 3.5}–{calculationResult.proteinBracket?.targetMaxGramsPerKg ?? 4.0} g/kg/d
+              </div>
+            </div>
+
+            {/* 3. Carbohydrates */}
+            <div className="p-3.5 bg-purple-50/80 border-2 border-purple-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-purple-950 block text-[11px] font-black uppercase tracking-wider">
+                  Carbohydrates
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredNutrientPayload?.carbsGramsPerKgPerDay ?? "—"}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    g / kg / day ({calculationResult.deliveredNutrientPayload?.carbsGramsPerDay ?? "—"} g/d)
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-purple-200/90 text-xs font-bold text-purple-950">
+                ESPGHAN: 11.0–15.0 g/kg/d (100% Lactose)
+              </div>
+            </div>
+
+            {/* 4. Total Lipids */}
+            <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-emerald-950 block text-[11px] font-black uppercase tracking-wider">
+                  Total Lipids
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredNutrientPayload?.fatGramsPerKgPerDay ?? "—"}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    g / kg / day ({calculationResult.deliveredNutrientPayload?.fatGramsPerDay ?? "—"} g/d)
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-emerald-200/90 text-xs font-bold text-emerald-950">
+                ESPGHAN: 4.8–8.1 g/kg/d (MCT/DHA/ARA)
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -709,6 +815,7 @@ export function GrowthPlotter({
                     <div className="h-80 w-full pt-2">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart
+                          key={`chart-${dataset.datasetKey}-${activeMetric}-${dataset.patientPlotAge}`}
                           data={chartData}
                           margin={{ top: 10, right: 20, left: 10, bottom: 20 }}
                         >
@@ -746,7 +853,7 @@ export function GrowthPlotter({
                               name,
                             ]}
                             labelFormatter={(label) =>
-                              `${dataset.xAxisLabel}: ${label}`
+                              `${dataset.xAxisLabel}: ${label} • Reference: ${dataset.sex === "male" ? "Boys Cohort" : "Girls Cohort"}`
                             }
                           />
                           <Legend wrapperStyle={{ fontSize: 11, paddingTop: 10 }} />
@@ -795,16 +902,28 @@ export function GrowthPlotter({
                             dot={false}
                           />
 
-                          {/* Active Patient Plot Point */}
+                          {/* Active Patient Plot Point Halo (Pulsing ring effect) */}
                           <ReferenceDot
                             x={dataset.patientPlotAge}
                             y={currentMetricValue}
-                            r={6}
-                            fill="#2563eb"
-                            stroke="#ffffff"
-                            strokeWidth={2}
+                            r={11}
+                            fill={dataset.sex === "male" ? "#3b82f6" : "#f43f5e"}
+                            fillOpacity={0.25}
+                            stroke={dataset.sex === "male" ? "#1d4ed8" : "#be123c"}
+                            strokeWidth={1}
                             isFront
-                            aria-label={`Patient measurement: ${currentMetricValue} ${metricConfig.unit} at ${dataset.patientPlotAge} ${dataset.xAxisUnit}`}
+                          />
+
+                          {/* Active Patient Plot Point Solid Marker */}
+                          <ReferenceDot
+                            x={dataset.patientPlotAge}
+                            y={currentMetricValue}
+                            r={6.5}
+                            fill={dataset.sex === "male" ? "#1d4ed8" : "#be123c"}
+                            stroke="#ffffff"
+                            strokeWidth={2.5}
+                            isFront
+                            aria-label={`Patient measurement: ${currentMetricValue} ${metricConfig.unit} at ${dataset.patientPlotAge} ${dataset.xAxisUnit} (${dataset.sex === "male" ? "Boy" : "Girl"})`}
                           />
                         </ComposedChart>
                       </ResponsiveContainer>
@@ -813,41 +932,56 @@ export function GrowthPlotter({
 
                   {/* Evaluation Summary Card */}
                   {percentileEval && (
-                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2">
-                        <div className="space-y-0.5">
-                          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            {metricConfig.label} Anthropometric Evaluation
-                          </span>
-                          <div className="text-base font-bold text-slate-900">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-white border-2 border-slate-300 shadow-sm space-y-3.5">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-200 pb-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-black text-slate-700 uppercase tracking-wide">
+                              {metricConfig.label} Anthropometric Evaluation
+                            </span>
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10.5px] font-black uppercase tracking-wider border ${
+                              dataset.sex === "male"
+                                ? "bg-blue-100 text-blue-950 border-blue-300"
+                                : "bg-rose-100 text-rose-950 border-rose-300"
+                            }`}>
+                              {dataset.sex === "male" ? "♂ Boys Reference" : "♀ Girls Reference"}
+                            </span>
+                          </div>
+                          <div className="text-base sm:text-lg font-black text-slate-950">
                             {currentMetricValue} {metricConfig.unit} •{" "}
                             <span className="text-blue-700">
                               {percentileEval.percentileFormatted}
                             </span>
+                            <span className="text-xs font-mono font-medium text-slate-600 ml-2">
+                              ({percentileEval.percentileUnrounded.toFixed(2)}% exact)
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="px-2.5 py-1 rounded-full text-xs font-bold font-mono bg-blue-100 text-blue-900 border border-blue-200">
+                          <span className="px-3 py-1 rounded-full text-xs font-black font-mono bg-blue-100 text-blue-950 border-2 border-blue-300">
                             Z = {percentileEval.zScoreFormatted}
                           </span>
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${percentileEval.badgeClass}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-black border-2 ${percentileEval.badgeClass}`}>
                             {percentileEval.shortBadge}
                           </span>
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 text-xs text-slate-700 leading-relaxed">
-                        <p className="font-medium text-slate-800">
+                      <div className="space-y-1.5 text-xs text-slate-800 leading-relaxed">
+                        <p className="font-semibold text-slate-950">
                           {percentileEval.clinicalNote}
                         </p>
-                        <p className="text-[11px] text-slate-500 italic">
+                        <p className="text-[11px] text-slate-600 italic">
                           {percentileEval.clinicalCaveat}
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-2 text-[10.5px] text-slate-400 font-mono">
-                        <span>Methodology: {percentileEval.methodology}</span>
-                        <span>Median (P50): {percentileEval.p50Value} {metricConfig.unit}</span>
+                      <div className="pt-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-700 font-mono">
+                        <span className="font-bold text-slate-900">Standard: {percentileEval.standard}</span>
+                        <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                          LMS: L={percentileEval.interpolatedLms.L.toFixed(3)}, M={percentileEval.interpolatedLms.M.toFixed(2)}, S={percentileEval.interpolatedLms.S.toFixed(4)}
+                        </span>
+                        <span>Median (P50): <strong className="text-slate-950 font-black">{percentileEval.p50Value} {metricConfig.unit}</strong></span>
                       </div>
                     </div>
                   )}

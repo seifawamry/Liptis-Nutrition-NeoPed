@@ -832,22 +832,61 @@ export function NutritionEngine({
                       {result.recommendationText}
                     </p>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs text-slate-800 bg-white p-3 rounded-xl border-2 border-slate-300 shadow-2xs">
-                      <div>
-                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Energy Density</span>
-                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.energyKcalPer100Ml} kcal/100mL</strong>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-white p-3.5 rounded-xl border-2 border-slate-300 shadow-sm">
+                      <div className="p-3 bg-amber-50/70 border-2 border-amber-200 rounded-xl flex flex-col justify-between">
+                        <span className="text-amber-950 block text-[11px] font-black uppercase tracking-wider">
+                          Energy Density
+                        </span>
+                        <div className="mt-1.5">
+                          <strong className="text-slate-950 font-mono text-base font-black block">
+                            {result.formulaProfile.energyKcalPer100Ml}
+                          </strong>
+                          <span className="text-[11px] font-bold text-slate-700 font-sans">
+                            kcal / 100mL
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Protein Content</span>
-                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.proteinGramsPer100Ml} g/100mL</strong>
+
+                      <div className="p-3 bg-blue-50/70 border-2 border-blue-200 rounded-xl flex flex-col justify-between">
+                        <span className="text-blue-950 block text-[11px] font-black uppercase tracking-wider">
+                          Protein Content
+                        </span>
+                        <div className="mt-1.5">
+                          <strong className="text-slate-950 font-mono text-base font-black block">
+                            {result.formulaProfile.proteinGramsPer100Ml}
+                          </strong>
+                          <span className="text-[11px] font-bold text-slate-700 font-sans">
+                            g / 100mL (60:40)
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Carbohydrates</span>
-                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.carbsGramsPer100Ml ?? "—"} g/100mL</strong>
+
+                      <div className="p-3 bg-purple-50/70 border-2 border-purple-200 rounded-xl flex flex-col justify-between">
+                        <span className="text-purple-950 block text-[11px] font-black uppercase tracking-wider">
+                          Carbohydrates
+                        </span>
+                        <div className="mt-1.5">
+                          <strong className="text-slate-950 font-mono text-base font-black block">
+                            {result.formulaProfile.carbsGramsPer100Ml ?? "—"}
+                          </strong>
+                          <span className="text-[11px] font-bold text-slate-700 font-sans">
+                            g / 100mL (Lactose)
+                          </span>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-slate-600 block text-[11px] font-bold uppercase tracking-wider">Total Lipids</span>
-                        <strong className="text-slate-950 font-mono text-sm font-black">{result.formulaProfile.fatGramsPer100Ml ?? "—"} g/100mL</strong>
+
+                      <div className="p-3 bg-emerald-50/70 border-2 border-emerald-200 rounded-xl flex flex-col justify-between">
+                        <span className="text-emerald-950 block text-[11px] font-black uppercase tracking-wider">
+                          Total Lipids
+                        </span>
+                        <div className="mt-1.5">
+                          <strong className="text-slate-950 font-mono text-base font-black block">
+                            {result.formulaProfile.fatGramsPer100Ml ?? "—"}
+                          </strong>
+                          <span className="text-[11px] font-bold text-slate-700 font-sans">
+                            g / 100mL (MCT/DHA)
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
