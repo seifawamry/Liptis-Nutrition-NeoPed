@@ -195,7 +195,7 @@ export function ClinicalHeader({
 
           <div className="text-[11px] text-slate-400 hidden xl:flex items-center gap-1.5 font-mono">
             <Sparkles className="w-3.5 h-3.5 text-clinical-gold" aria-hidden="true" />
-            <span>Pediamil® LBW Matrix: 80 kcal/100 mL • 2.2 g Prot/100 mL</span>
+            <span>Pediamil® LBW Matrix: 79.7 kcal/100 mL • 2.42 g Prot/100 mL</span>
           </div>
         </div>
       </div>

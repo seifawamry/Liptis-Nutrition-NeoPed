@@ -27,12 +27,19 @@ export interface NutrientComposition {
   lactoseGramsPer100Ml: number;
   lactoseGramsPer100G: number;
 
-  // Selected functional ingredients
+  // Selected functional ingredients & Essential Fatty Acids
+  linoleicAcidGramsPer100Ml?: number;
+  linoleicAcidGramsPer100G?: number;
+  alphaLinolenicAcidGramsPer100Ml?: number;
+  alphaLinolenicAcidGramsPer100G?: number;
   alphaLactalbuminGramsPer100G?: number;
   prebioticsGosGramsPer100Ml?: number;
   twoFlHmoGramsPer100Ml?: number;
+  fibersGramsPer100Ml?: number;
   araMgPer100Ml?: number;
+  araMgPer100G?: number;
   dhaMgPer100Ml?: number;
+  dhaMgPer100G?: number;
 
   // Key Electrolytes & Minerals
   sodiumMgPer100Ml: number;
@@ -47,6 +54,8 @@ export interface NutrientComposition {
   copperMcgPer100Ml: number;
   iodineMcgPer100Ml: number;
   seleniumMcgPer100Ml: number;
+  manganeseMcgPer100Ml?: number;
+  fluorideMcgPer100Ml?: number;
 
   // Key Vitamins
   vitaminAMcgPer100Ml: number;
@@ -55,6 +64,20 @@ export interface NutrientComposition {
   vitaminCMgPer100Ml: number;
   vitaminEMgOrIuPer100Ml: string;
   folicAcidMcgPer100Ml: number;
+  vitaminB1McgPer100Ml?: number;
+  vitaminB2McgPer100Ml?: number;
+  vitaminB6McgPer100Ml?: number;
+  vitaminB12McgPer100Ml?: number;
+  niacinMgPer100Ml?: number;
+  pantothenicAcidMgPer100Ml?: number;
+  biotinMcgPer100Ml?: number;
+
+  // Bioactives & Other Important Nutrients
+  taurineMgPer100Ml?: number;
+  cholineMgPer100Ml?: number;
+  inositolMgPer100Ml?: number;
+  carnitineMgPer100Ml?: number;
+  nucleotidesMgPer100Ml?: number;
 }
 
 export interface ReconstitutionProtocol {
@@ -155,14 +178,21 @@ export const PEDIAMIL_LBW_PRODUCT: ProductProfile = {
     wheyCaseinRatio: "60:40",
     fatGramsPer100Ml: 4.88,
     fatGramsPer100G: 32.5,
+    linoleicAcidGramsPer100Ml: 0.465,
+    linoleicAcidGramsPer100G: 3.1,
+    alphaLinolenicAcidGramsPer100Ml: 0.057,
+    alphaLinolenicAcidGramsPer100G: 0.38,
+    araMgPer100Ml: 13.5,
+    araMgPer100G: 90.0,
+    dhaMgPer100Ml: 13.5,
+    dhaMgPer100G: 90.0,
     carbsGramsPer100Ml: 6.37,
     carbsGramsPer100G: 42.5,
     lactoseGramsPer100Ml: 6.32,
     lactoseGramsPer100G: 42.2,
     twoFlHmoGramsPer100Ml: 0.14,
     prebioticsGosGramsPer100Ml: 0.3,
-    araMgPer100Ml: 13.5,
-    dhaMgPer100Ml: 13.5,
+    fibersGramsPer100Ml: 0.4425,
     sodiumMgPer100Ml: 34.65, // 1.51 mmol / 100 mL
     potassiumMgPer100Ml: 71.25,
     chlorideMgPer100Ml: 75.0,
@@ -174,13 +204,27 @@ export const PEDIAMIL_LBW_PRODUCT: ProductProfile = {
     zincMgPer100Ml: 0.89,
     copperMcgPer100Ml: 97.5,
     iodineMcgPer100Ml: 21.75,
+    manganeseMcgPer100Ml: 7.5,
     seleniumMcgPer100Ml: 3.75,
+    fluorideMcgPer100Ml: 41.25,
     vitaminAMcgPer100Ml: 311.0,
     vitaminD3McgPer100Ml: 4.13, // 165.2 IU / 100 mL
     vitaminKMcgPer100Ml: 11.25,
-    vitaminCMgPer100Ml: 18.0,
     vitaminEMgOrIuPer100Ml: "4.8 IU",
+    vitaminB1McgPer100Ml: 120.0,
+    vitaminB2McgPer100Ml: 225.0,
+    niacinMgPer100Ml: 0.81,
+    pantothenicAcidMgPer100Ml: 0.63,
+    vitaminB6McgPer100Ml: 78.0,
     folicAcidMcgPer100Ml: 30.0,
+    vitaminB12McgPer100Ml: 0.33,
+    vitaminCMgPer100Ml: 18.0,
+    biotinMcgPer100Ml: 6.0,
+    taurineMgPer100Ml: 6.0,
+    cholineMgPer100Ml: 10.5,
+    inositolMgPer100Ml: 6.0,
+    carnitineMgPer100Ml: 2.25,
+    nucleotidesMgPer100Ml: 2.85,
   },
 };
 
@@ -218,19 +262,25 @@ export const PEDIAMIL_1_PRODUCT: ProductProfile = {
     proteinGramsPer100G: 11.0,
     wheyGramsPer100Ml: 0.89,
     wheyGramsPer100G: 6.6,
+    alphaLactalbuminGramsPer100G: 1.9,
     caseinGramsPer100Ml: 0.59,
     caseinGramsPer100G: 4.4,
     wheyCaseinRatio: "60:40",
     fatGramsPer100Ml: 3.65,
     fatGramsPer100G: 27.0,
+    linoleicAcidGramsPer100Ml: 0.675,
+    linoleicAcidGramsPer100G: 5.0,
+    alphaLinolenicAcidGramsPer100Ml: 0.081,
+    alphaLinolenicAcidGramsPer100G: 0.6,
+    araMgPer100Ml: 8.1,
+    araMgPer100G: 60.0,
+    dhaMgPer100Ml: 8.1,
+    dhaMgPer100G: 60.0,
     carbsGramsPer100Ml: 7.18,
     carbsGramsPer100G: 53.2,
     lactoseGramsPer100Ml: 7.18,
     lactoseGramsPer100G: 53.2,
-    alphaLactalbuminGramsPer100G: 1.9,
     prebioticsGosGramsPer100Ml: 0.55,
-    araMgPer100Ml: 8.1,
-    dhaMgPer100Ml: 8.1,
     sodiumMgPer100Ml: 20.25,
     potassiumMgPer100Ml: 70.2,
     chlorideMgPer100Ml: 40.5,
@@ -242,13 +292,27 @@ export const PEDIAMIL_1_PRODUCT: ProductProfile = {
     zincMgPer100Ml: 0.61,
     copperMcgPer100Ml: 47.25,
     iodineMcgPer100Ml: 9.45,
+    manganeseMcgPer100Ml: 8.1,
     seleniumMcgPer100Ml: 0.95,
+    fluorideMcgPer100Ml: 37.13,
     vitaminAMcgPer100Ml: 72.9,
     vitaminD3McgPer100Ml: 1.15,
     vitaminKMcgPer100Ml: 4.73,
-    vitaminCMgPer100Ml: 13.0,
     vitaminEMgOrIuPer100Ml: "1.07 mg",
+    vitaminB1McgPer100Ml: 60.75,
+    vitaminB2McgPer100Ml: 135.0,
+    vitaminB6McgPer100Ml: 60.75,
+    vitaminB12McgPer100Ml: 0.2,
+    niacinMgPer100Ml: 0.54,
+    pantothenicAcidMgPer100Ml: 0.41,
     folicAcidMcgPer100Ml: 10.8,
+    vitaminCMgPer100Ml: 13.0,
+    biotinMcgPer100Ml: 2.03,
+    taurineMgPer100Ml: 4.05,
+    cholineMgPer100Ml: 8.1,
+    inositolMgPer100Ml: 5.4,
+    carnitineMgPer100Ml: 1.35,
+    nucleotidesMgPer100Ml: 3.38,
   },
 };
 

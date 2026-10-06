@@ -746,6 +746,16 @@ export interface NutritionCalculationResult {
   proteinToEnergyRatioGramsPer100Kcal?: number;
   peRatioCompliance?: ComplianceEvaluation;
 
+  // Delivered Carbohydrates
+  deliveredCarbsGramsPerDay?: number;
+  deliveredCarbsGramsPerKgPerDay?: number;
+  carbsCompliance?: ComplianceEvaluation;
+
+  // Delivered Total Lipids
+  deliveredFatGramsPerDay?: number;
+  deliveredFatGramsPerKgPerDay?: number;
+  fatCompliance?: ComplianceEvaluation;
+
   // Practical Feeding Schedule
   feedingSchedule?: FeedingSchedule;
 
@@ -992,6 +1002,140 @@ export function evaluatePeRatioCompliance(peRatioGramsPer100Kcal: number): Compl
 }
 
 /**
+ * Evaluates Carbohydrate Compliance against ESPGHAN 2022 preterm (11–15 g/kg/d) or term targets (9–13 g/kg/d)
+ */
+export function evaluateCarbohydrateCompliance(
+  deliveredCarbsGramsPerKgPerDay: number,
+  isGraduated: boolean = false
+): ComplianceEvaluation {
+  const roundedVal = Math.round(deliveredCarbsGramsPerKgPerDay * 100) / 100;
+  const minTarget = isGraduated ? 9.0 : ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MIN; // 11.0 or 9.0
+  const maxTarget = isGraduated ? 13.0 : ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MAX; // 15.0 or 13.0
+  const deltaFromMin = Math.round((roundedVal - minTarget) * 100) / 100;
+  const deltaFromMax = Math.round((roundedVal - maxTarget) * 100) / 100;
+
+  if (roundedVal < minTarget) {
+    const deficit = Math.abs(deltaFromMin);
+    return {
+      status: "suboptimal",
+      badgeLabel: `Below Target (<${minTarget} g/kg/d)`,
+      colorHex: "#d97706",
+      badgeClass: "bg-amber-100 text-amber-900 border-amber-300",
+      deliveredValue: roundedVal,
+      targetMin: minTarget,
+      targetMax: maxTarget,
+      deltaFromMin,
+      deltaFromMax,
+      interpretation: isGraduated
+        ? `Delivered carbohydrates (${roundedVal.toFixed(2)} g/kg/d) is below standard term reference (${minTarget}–${maxTarget} g/kg/d, deficit: -${deficit.toFixed(2)} g/kg/d).`
+        : `Delivered carbohydrates (${roundedVal.toFixed(2)} g/kg/d) is below the ESPGHAN 2022 preterm enteral range (${minTarget}–${maxTarget} g/kg/d, deficit: -${deficit.toFixed(2)} g/kg/d). Formula density provides 8.0 g/100 kcal, compliant with ESPGHAN energy density criteria (8–13 g/100 kcal).`,
+      clinicalAdvisory: "Assess glycemic balance and advance fluid allowance as clinically tolerated.",
+      sourceNote: isGraduated ? "Standard Infant Nutrition Guidelines" : "ESPGHAN 2022 Preterm Enteral Guidelines Section 3.3",
+    };
+  } else if (roundedVal <= maxTarget) {
+    return {
+      status: "on_target",
+      badgeLabel: `Within Reference Range (${minTarget}–${maxTarget} g/kg/d)`,
+      colorHex: "#16a34a",
+      badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300",
+      deliveredValue: roundedVal,
+      targetMin: minTarget,
+      targetMax: maxTarget,
+      deltaFromMin,
+      deltaFromMax,
+      interpretation: isGraduated
+        ? `Delivered carbohydrates (${roundedVal.toFixed(2)} g/kg/d) meets standard term targets (${minTarget}–${maxTarget} g/kg/d). 100% lactose matrix supports normal digestion.`
+        : `Delivered carbohydrates (${roundedVal.toFixed(2)} g/kg/d) is within the ESPGHAN 2022 preterm reference range (${minTarget}–${maxTarget} g/kg/d). 100% lactose matrix enhances mineral absorption and gut bifidobacteria.`,
+      clinicalAdvisory: "Optimal glycemic substrate delivery with prebiotics GOS and 2'-FL HMO.",
+      sourceNote: isGraduated ? "Standard Infant Nutrition Guidelines" : "ESPGHAN 2022 Preterm Enteral Guidelines Section 3.3",
+    };
+  } else {
+    const surplus = deltaFromMax;
+    return {
+      status: "exceeding",
+      badgeLabel: `Above Reference (>${maxTarget} g/kg/d)`,
+      colorHex: "#dc2626",
+      badgeClass: "bg-red-100 text-red-900 border-red-300",
+      deliveredValue: roundedVal,
+      targetMin: minTarget,
+      targetMax: maxTarget,
+      deltaFromMin,
+      deltaFromMax,
+      interpretation: `Delivered carbohydrates (${roundedVal.toFixed(2)} g/kg/d) exceeds upper reference limit (+${surplus.toFixed(2)} g/kg/d above ${maxTarget} g/kg/d).`,
+      clinicalAdvisory: "Monitor for osmotic diarrhea, stool reducing substances, and feeding intolerance.",
+      sourceNote: isGraduated ? "Standard Infant Nutrition Guidelines" : "ESPGHAN 2022 Preterm Enteral Guidelines Section 3.3",
+    };
+  }
+}
+
+/**
+ * Evaluates Lipids / Total Fat Compliance against ESPGHAN 2022 preterm (4.8–8.1 g/kg/d) or term targets (4.0–6.0 g/kg/d)
+ */
+export function evaluateLipidsCompliance(
+  deliveredFatGramsPerKgPerDay: number,
+  isGraduated: boolean = false
+): ComplianceEvaluation {
+  const roundedVal = Math.round(deliveredFatGramsPerKgPerDay * 100) / 100;
+  const minTarget = isGraduated ? 4.0 : ESPGHAN_DIRECT_GUIDELINES.TOTAL_FAT.TYPICAL_MIN; // 4.8 or 4.0
+  const maxTarget = isGraduated ? 6.0 : ESPGHAN_DIRECT_GUIDELINES.TOTAL_FAT.TYPICAL_MAX; // 8.1 or 6.0
+  const deltaFromMin = Math.round((roundedVal - minTarget) * 100) / 100;
+  const deltaFromMax = Math.round((roundedVal - maxTarget) * 100) / 100;
+
+  if (roundedVal < minTarget) {
+    const deficit = Math.abs(deltaFromMin);
+    return {
+      status: "suboptimal",
+      badgeLabel: `Below Target (<${minTarget} g/kg/d)`,
+      colorHex: "#d97706",
+      badgeClass: "bg-amber-100 text-amber-900 border-amber-300",
+      deliveredValue: roundedVal,
+      targetMin: minTarget,
+      targetMax: maxTarget,
+      deltaFromMin,
+      deltaFromMax,
+      interpretation: isGraduated
+        ? `Delivered total fat (${roundedVal.toFixed(2)} g/kg/d) is below standard term target (${minTarget}–${maxTarget} g/kg/d, deficit: -${deficit.toFixed(2)} g/kg/d).`
+        : `Delivered total fat (${roundedVal.toFixed(2)} g/kg/d) is below ESPGHAN preterm recommendation (${minTarget}–${maxTarget} g/kg/d, deficit: -${deficit.toFixed(2)} g/kg/d).`,
+      clinicalAdvisory: "Review fluid allowance to ensure adequate essential fatty acid delivery.",
+      sourceNote: isGraduated ? "Standard Infant Nutrition Guidelines" : "ESPGHAN 2022 Preterm Enteral Guidelines Section 3.2",
+    };
+  } else if (roundedVal <= maxTarget) {
+    return {
+      status: "on_target",
+      badgeLabel: `Within Reference Range (${minTarget}–${maxTarget} g/kg/d)`,
+      colorHex: "#16a34a",
+      badgeClass: "bg-emerald-100 text-emerald-900 border-emerald-300",
+      deliveredValue: roundedVal,
+      targetMin: minTarget,
+      targetMax: maxTarget,
+      deltaFromMin,
+      deltaFromMax,
+      interpretation: isGraduated
+        ? `Delivered total fat (${roundedVal.toFixed(2)} g/kg/d) meets standard term targets (${minTarget}–${maxTarget} g/kg/d). Formulated with >60% milk fat for optimal digestion.`
+        : `Delivered total fat (${roundedVal.toFixed(2)} g/kg/d) is within the ESPGHAN 2022 preterm reference range (${minTarget}–${maxTarget} g/kg/d), providing ~55% of dietary energy and essential LC-PUFAs.`,
+      clinicalAdvisory: "Supports somatic myelination, retinal development, and energy balance.",
+      sourceNote: isGraduated ? "Standard Infant Nutrition Guidelines" : "ESPGHAN 2022 Preterm Enteral Guidelines Section 3.2",
+    };
+  } else {
+    const surplus = deltaFromMax;
+    return {
+      status: "exceeding",
+      badgeLabel: `Above Reference (>${maxTarget} g/kg/d)`,
+      colorHex: "#dc2626",
+      badgeClass: "bg-red-100 text-red-900 border-red-300",
+      deliveredValue: roundedVal,
+      targetMin: minTarget,
+      targetMax: maxTarget,
+      deltaFromMin,
+      deltaFromMax,
+      interpretation: `Delivered total fat (${roundedVal.toFixed(2)} g/kg/d) exceeds upper reference limit (+${surplus.toFixed(2)} g/kg/d above ${maxTarget} g/kg/d).`,
+      clinicalAdvisory: "Monitor for delayed gastric emptying and lipid intolerance.",
+      sourceNote: isGraduated ? "Standard Infant Nutrition Guidelines" : "ESPGHAN 2022 Preterm Enteral Guidelines Section 3.2",
+    };
+  }
+}
+
+/**
  * Canonical Audit Metadata Factory
  */
 export function createAuditMetadata(): AuditMetadata {
@@ -1102,7 +1246,29 @@ export function calculateLbwNutrition(
   const proteinToEnergyRatioGramsPer100Kcal = Math.round(rawPeRatio * 100) / 100;
   const peRatioCompliance = evaluatePeRatioCompliance(proteinToEnergyRatioGramsPer100Kcal);
 
-  // 5. Feeding Schedules with Reconciled Discrepancies
+  // 5. Delivered Carbohydrates (g/day & g/kg/day)
+  const formulaCarbsPer100Ml = activeFormula.carbsGramsPer100Ml ?? (isGraduated ? 7.18 : 6.37);
+  const deliveredCarbsGramsPerDay =
+    Math.round(((totalDailyVolumeMl * formulaCarbsPer100Ml) / 100) * 100) / 100;
+  const deliveredCarbsGramsPerKgPerDay =
+    Math.round((deliveredCarbsGramsPerDay / weightKg) * 100) / 100;
+  const carbsCompliance = evaluateCarbohydrateCompliance(
+    deliveredCarbsGramsPerKgPerDay,
+    isGraduated
+  );
+
+  // 6. Delivered Total Lipids (g/day & g/kg/day)
+  const formulaFatPer100Ml = activeFormula.fatGramsPer100Ml ?? (isGraduated ? 3.65 : 4.88);
+  const deliveredFatGramsPerDay =
+    Math.round(((totalDailyVolumeMl * formulaFatPer100Ml) / 100) * 100) / 100;
+  const deliveredFatGramsPerKgPerDay =
+    Math.round((deliveredFatGramsPerDay / weightKg) * 100) / 100;
+  const fatCompliance = evaluateLipidsCompliance(
+    deliveredFatGramsPerKgPerDay,
+    isGraduated
+  );
+
+  // 7. Feeding Schedules with Reconciled Discrepancies
   const q2hVolumePerFeedMl = Math.round((totalDailyVolumeMl / 12) * 10) / 10;
   const q3hVolumePerFeedMl = Math.round((totalDailyVolumeMl / 8) * 10) / 10;
   const continuousInfusionMlPerHour = Math.round((totalDailyVolumeMl / 24) * 10) / 10;
@@ -1217,6 +1383,12 @@ export function calculateLbwNutrition(
     proteinCompliance,
     proteinToEnergyRatioGramsPer100Kcal,
     peRatioCompliance,
+    deliveredCarbsGramsPerDay,
+    deliveredCarbsGramsPerKgPerDay,
+    carbsCompliance,
+    deliveredFatGramsPerDay,
+    deliveredFatGramsPerKgPerDay,
+    fatCompliance,
     feedingSchedule,
     isGraduated,
     graduationAlertText,

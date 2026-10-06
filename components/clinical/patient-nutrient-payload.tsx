@@ -281,7 +281,7 @@ export function PatientNutrientPayload({
         ratio: nrgRatio,
         percent: Math.min(100, nrgRatio),
         isMet: payload.energyKcalPerKgPerDay >= activeAgeStrat.goals.energy.min,
-        subtitle: `~0.80 kcal/mL`,
+        subtitle: `${(payload.energyKcalPerDay / payload.totalDailyVolumeMl).toFixed(2)} kcal/mL`,
       },
       iron: {
         value: payload.ironMgPerKgPerDay,
@@ -555,7 +555,7 @@ export function PatientNutrientPayload({
                     <strong className="text-blue-800">{normalizedFluidFactor}× per 100 mL</strong>
                   </div>
                   <div className="pt-1 border-t border-slate-200 flex items-center justify-between text-slate-950 font-black">
-                    <span>Powder Density (15%):</span>
+                    <span>Powder Density ({payload.weightGrams > 3500 ? "13.5%" : "15%"}):</span>
                     <span className="text-sm">{payload.dailyPowderGrams}g (~{payload.dailyScoops} scp)</span>
                   </div>
                 </div>
@@ -572,8 +572,8 @@ export function PatientNutrientPayload({
                   • <strong>Delivered /kg/d:</strong> <span className="font-mono">({payload.fluidAllowanceMlPerKg} ÷ 100) × Conc. /100mL</span>
                 </p>
                 <div className="pt-1 border-t border-blue-200 flex items-center justify-between text-[11px] font-mono text-blue-950 font-bold">
-                  <span>Pediamil® LBW Matrix:</span>
-                  <span>79.7 kcal & 2.42g Prot / 100mL</span>
+                  <span>{payload.productName} Matrix:</span>
+                  <span>{payload.weightGrams > 3500 ? "67.4 kcal & 1.40g Prot / 100mL" : "79.7 kcal & 2.42g Prot / 100mL"}</span>
                 </div>
               </div>
             </div>
@@ -1080,7 +1080,7 @@ export function PatientNutrientPayload({
               Physician Clinical Decision Support & Reference Comparison Note:
             </span>
             <p className="text-slate-800 font-medium">
-              The delivered payload demonstrates that <strong>Pediamil® LBW</strong> at the entered volume delivers bone minerals ({payload.calciumMgPerKgPerDay} mg/kg/d Ca & {payload.phosphorusMgPerKgPerDay} mg/kg/d P), enteral iron ({payload.ironMgPerKgPerDay} mg/kg/d), and 60:40 whey:casein protein within ESPGHAN 2022 preterm enteral recommendation horizons. Product nutrient values are manufacturer-specific and must be verified against current batch labeling. Total nutrient intake, individual clinical tolerance, and laboratory monitoring must guide bedside clinical care.
+              The delivered payload demonstrates that <strong>{payload.productName}</strong> at the entered volume delivers bone minerals ({payload.calciumMgPerKgPerDay} mg/kg/d Ca & {payload.phosphorusMgPerKgPerDay} mg/kg/d P), enteral iron ({payload.ironMgPerKgPerDay} mg/kg/d), and {payload.wheyCaseinRatio} whey:casein protein within ESPGHAN clinical recommendation horizons. Product nutrient values are manufacturer-specific and must be verified against current batch labeling. Total nutrient intake, individual clinical tolerance, and laboratory monitoring must guide bedside clinical care.
             </p>
           </div>
         </div>

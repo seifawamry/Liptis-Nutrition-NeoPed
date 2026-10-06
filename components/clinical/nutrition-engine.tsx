@@ -562,155 +562,202 @@ export function NutritionEngine({
                 Enter an authorized weight (400g to 10,000g) and physiological fluid allowance to activate nutritional calculations.
               </p>
             </div>
-          ) : result.isGraduated ? (
-            /* Large Blue Clinical Alert Card for Graduation (>3500g) with Product Tin Visual */
-            <div
-              role="alert"
-              aria-live="polite"
-              className="p-6 rounded-2xl bg-blue-50 border-2 border-blue-400 shadow-sm space-y-5 text-blue-950"
-            >
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                {/* Product Tin Visual with Crisp Outlined Powder Box */}
-                <div className="shrink-0 flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl border-2 border-slate-300 shadow-sm gap-2.5 w-full sm:w-auto">
-                  <Image
-                    src={result.imageSrc || "/pediamil-1.png"}
-                    alt="Pediamil 1 Standard Infant Formula Tin"
-                    width={180}
-                    height={200}
-                    className="max-h-[190px] sm:max-h-[200px] w-auto object-contain drop-shadow-md"
-                    unoptimized
-                  />
-                  {result.deliveredNutrientPayload && (
-                    <div className="w-full p-2.5 bg-blue-50 rounded-xl border-2 border-blue-400 text-center text-xs space-y-0.5 shadow-xs">
-                      <span className="font-black text-blue-950 uppercase tracking-wider block text-[10px]">
-                        Patient Daily Powder Need
-                      </span>
-                      <div className="font-mono font-black text-blue-950 text-base">
-                        {result.deliveredNutrientPayload.dailyPowderGrams}g{" "}
-                        <span className="text-xs font-semibold text-blue-800">powder/day</span>
-                      </div>
-                      <div className="text-blue-900 text-xs font-bold font-mono">
-                        ≈ {result.deliveredNutrientPayload.dailyScoops} scoops/day
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3 flex-1 text-center sm:text-left">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-200 text-blue-900 border border-blue-300">
-                      Term-Equivalent Transition
-                    </span>
-                    <span className="text-xs font-mono text-blue-700 font-semibold">
-                      Current Weight: {result.currentWeightGrams}g (&gt; 3,500g)
-                    </span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-blue-950">
-                    Mature Infant Transition (Weight &gt; 3,500g)
-                  </h3>
-                  <div className="text-sm font-semibold text-blue-950 leading-relaxed bg-white/95 p-3.5 rounded-xl border border-blue-200 shadow-2xs">
-                    {result.recommendationText}
-                  </div>
-
-                  {/* Standard Nutrition Recommendation Box */}
-                  <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200 space-y-2 shadow-2xs text-left">
-                    <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
-                      <Sparkles className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
-                      <span>Standard Term-Infant Nutrition Targets</span>
-                    </div>
-                    <ul className="text-xs text-slate-700 space-y-1.5 pl-1">
-                      <li>• <strong>Energy:</strong> {result.standardTermTargets?.energyTarget}</li>
-                      <li>• <strong>Protein:</strong> {result.standardTermTargets?.proteinTarget}</li>
-                      <li>• <strong>Recommended Formulation:</strong> {result.standardTermTargets?.formulationBrand} ({result.standardTermTargets?.formulationStage})</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
-                <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-900">
-                    <ShieldAlert className="w-4 h-4 text-blue-600" aria-hidden="true" />
-                    <span>Clinical Rationale & Solute Load</span>
-                  </div>
-                  <p className="text-slate-700 leading-relaxed text-[11.5px]">
-                    Preterm catch-up macronutrient densities (such as high protein fortifiers and high-energy preterm formulas) are specifically indicated for infants under 3,500g. Continuing preterm targets past term weight carries risks of high renal solute load (RSL) and abnormal fat mass accrual.
-                  </p>
-                </div>
-
-                <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
-                  <div className="flex items-center gap-1.5 font-bold text-blue-900">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" aria-hidden="true" />
-                    <span>Recommended Clinical Next Steps</span>
-                  </div>
-                  <p className="text-slate-700 leading-relaxed text-[11.5px]">
-                    Transition patient to a standard infant formulation (Pediamil® 1) or exclusive maternal breastfeeding on demand. Monitor somatic growth against standard WHO 2006 weight-for-age percentiles.
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-blue-100/70 p-3 rounded-lg border border-blue-200 flex items-center justify-between text-xs text-blue-950 font-mono">
-                <span>Prescribed Fluid Allowance: <strong>{result.targetFluidMlPerKgPerDay} mL/kg/day</strong></span>
-                <span>Total 24h Volume: <strong className="text-sm font-bold text-blue-900">{result.totalDailyVolumeMl} mL/day</strong></span>
-              </div>
-            </div>
           ) : (
-            /* Real-Time ESPGHAN Target Gauges */
-            <ClinicalCard
-              title="Delivered Macronutrient Densities vs. ESPGHAN 2022"
-              subtitle="Deterministic 4-tier energy evaluation and protein accretion analysis"
-              icon={<Flame className="w-4 h-4 text-orange-500" />}
-            >
-              <div className="space-y-6">
-                {/* Energy Gauge with ESPGHAN 2022 115-140 typical and 140-160 conditional */}
-                <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
-                  <RangeGauge
-                    currentValue={result.deliveredEnergyKcalPerKgPerDay || 0}
-                    minTarget={ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MIN}
-                    maxTarget={ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MAX}
-                    conditionalMaxTarget={ESPGHAN_DIRECT_GUIDELINES.ENERGY.CONDITIONAL_MAX}
-                    minScale={90}
-                    maxScale={180}
-                    unit="kcal/kg/day"
-                    metricName="Delivered Energy (ESPGHAN 2022: 115–140 kcal/kg/d, Cond: 140–160)"
-                    status={result.energyCompliance?.status || "on_target"}
-                  />
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
-                    <div>
-                      Total Daily Energy:{" "}
-                      <strong className="text-slate-950 font-bold">{result.deliveredEnergyKcalPerDay} kcal/day</strong>
+            <div className="space-y-6">
+              {/* Graduation Alert Callout for Infants >3500g */}
+              {result.isGraduated && (
+                <div
+                  role="alert"
+                  aria-live="polite"
+                  className="p-6 rounded-2xl bg-blue-50 border-2 border-blue-400 shadow-sm space-y-5 text-blue-950"
+                >
+                  <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+                    {/* Product Tin Visual with Crisp Outlined Powder Box */}
+                    <div className="shrink-0 flex flex-col items-center justify-center p-3.5 bg-white rounded-2xl border-2 border-slate-300 shadow-sm gap-2.5 w-full sm:w-auto">
+                      <Image
+                        src={result.imageSrc || "/pediamil-1.png"}
+                        alt="Pediamil 1 Standard Infant Formula Tin"
+                        width={180}
+                        height={200}
+                        className="max-h-[190px] sm:max-h-[200px] w-auto object-contain drop-shadow-md"
+                        unoptimized
+                      />
+                      {result.deliveredNutrientPayload && (
+                        <div className="w-full p-2.5 bg-blue-50 rounded-xl border-2 border-blue-400 text-center text-xs space-y-0.5 shadow-xs">
+                          <span className="font-black text-blue-950 uppercase tracking-wider block text-[10px]">
+                            Patient Daily Powder Need
+                          </span>
+                          <div className="font-mono font-black text-blue-950 text-base">
+                            {result.deliveredNutrientPayload.dailyPowderGrams}g{" "}
+                            <span className="text-xs font-semibold text-blue-800">powder/day</span>
+                          </div>
+                          <div className="text-blue-900 text-xs font-bold font-mono">
+                            ≈ {result.deliveredNutrientPayload.dailyScoops} scoops/day
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
-                      <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
-                        {result.energyCompliance?.badgeLabel}
-                      </strong>
+
+                    <div className="space-y-3 flex-1 text-center sm:text-left">
+                      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-blue-200 text-blue-900 border border-blue-300">
+                          Term-Equivalent Transition
+                        </span>
+                        <span className="text-xs font-mono text-blue-700 font-semibold">
+                          Current Weight: {result.currentWeightGrams}g (&gt; 3,500g)
+                        </span>
+                      </div>
+                      <h3 className="text-base sm:text-lg font-bold text-blue-950">
+                        Mature Infant Transition (Weight &gt; 3,500g)
+                      </h3>
+                      <div className="text-sm font-semibold text-blue-950 leading-relaxed bg-white/95 p-3.5 rounded-xl border border-blue-200 shadow-2xs">
+                        {result.recommendationText}
+                      </div>
+
+                      {/* Standard Nutrition Recommendation Box */}
+                      <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200 space-y-2 shadow-2xs text-left">
+                        <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wide">
+                          <Sparkles className="w-3.5 h-3.5 text-blue-600" aria-hidden="true" />
+                          <span>Standard Term-Infant Nutrition Targets</span>
+                        </div>
+                        <ul className="text-xs text-slate-700 space-y-1.5 pl-1">
+                          <li>• <strong>Energy:</strong> {result.standardTermTargets?.energyTarget}</li>
+                          <li>• <strong>Protein:</strong> {result.standardTermTargets?.proteinTarget}</li>
+                          <li>• <strong>Recommended Formulation:</strong> {result.standardTermTargets?.formulationBrand} ({result.standardTermTargets?.formulationStage})</li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-tight">
-                    {result.energyCompliance?.interpretation}
-                  </p>
-                </div>
 
-                {/* Protein Gauge */}
-                {result.proteinBracket && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
+                    <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center gap-1.5 font-bold text-blue-900">
+                        <ShieldAlert className="w-4 h-4 text-blue-600" aria-hidden="true" />
+                        <span>Clinical Rationale & Solute Load</span>
+                      </div>
+                      <p className="text-slate-700 leading-relaxed text-[11.5px]">
+                        Preterm catch-up macronutrient densities (such as high protein fortifiers and high-energy preterm formulas) are specifically indicated for infants under 3,500g. Continuing preterm targets past term weight carries risks of high renal solute load (RSL) and abnormal fat mass accrual.
+                      </p>
+                    </div>
+
+                    <div className="bg-white/95 p-3.5 rounded-xl border border-blue-200/80 space-y-1.5 shadow-2xs">
+                      <div className="flex items-center gap-1.5 font-bold text-blue-900">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" aria-hidden="true" />
+                        <span>Recommended Clinical Next Steps</span>
+                      </div>
+                      <p className="text-slate-700 leading-relaxed text-[11.5px]">
+                        Transition patient to a standard infant formulation (Pediamil® 1) or exclusive maternal breastfeeding on demand. Monitor somatic growth against standard WHO 2006 weight-for-age percentiles.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-100/70 p-3 rounded-lg border border-blue-200 flex items-center justify-between text-xs text-blue-950 font-mono">
+                    <span>Prescribed Fluid Allowance: <strong>{result.targetFluidMlPerKgPerDay} mL/kg/day</strong></span>
+                    <span>Total 24h Volume: <strong className="text-sm font-bold text-blue-900">{result.totalDailyVolumeMl} mL/day</strong></span>
+                  </div>
+                </div>
+              )}
+
+              {/* Real-Time Macronutrient Densities vs. ESPGHAN 2022 / Term Guidelines */}
+              <ClinicalCard
+                title={
+                  result.isGraduated
+                    ? "Delivered Macronutrient Densities vs. Term Infant Guidelines"
+                    : "Delivered Macronutrient Densities vs. ESPGHAN 2022"
+                }
+                subtitle={
+                  result.isGraduated
+                    ? "Standard infant energy, protein, carbohydrate & lipid accretion with Pediamil® 1"
+                    : "Deterministic 4-tier energy, protein, carbohydrate & lipid accretion evaluation"
+                }
+                icon={<Flame className="w-4 h-4 text-orange-500" />}
+              >
+                <div className="space-y-6">
+                  {/* Protocol Context Badge */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-xl bg-slate-100 border border-slate-200 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-slate-800 uppercase tracking-wider text-[10.5px]">
+                        Active Reference:
+                      </span>
+                      <span className="font-semibold text-clinical-navy-950">
+                        {result.isGraduated
+                          ? "Term Infant Nutrition Standards (Pediamil® 1 Matrix)"
+                          : "ESPGHAN 2022 Preterm Enteral Recommendations (Pediamil® LBW Matrix)"}
+                      </span>
+                    </div>
+                    <span className="font-mono text-xs font-bold text-slate-800 bg-white px-2.5 py-1 rounded border border-slate-300">
+                      Fluid: {result.targetFluidMlPerKgPerDay} mL/kg/d • 24h Feed Vol: {result.totalDailyVolumeMl} mL/d
+                    </span>
+                  </div>
+
+                  {/* 1. Delivered Energy Gauge */}
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <RangeGauge
+                      currentValue={result.deliveredEnergyKcalPerKgPerDay || 0}
+                      minTarget={result.isGraduated ? 90 : ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MIN}
+                      maxTarget={result.isGraduated ? 120 : ESPGHAN_DIRECT_GUIDELINES.ENERGY.TYPICAL_MAX}
+                      conditionalMaxTarget={result.isGraduated ? undefined : ESPGHAN_DIRECT_GUIDELINES.ENERGY.CONDITIONAL_MAX}
+                      minScale={result.isGraduated ? 70 : 90}
+                      maxScale={result.isGraduated ? 150 : 180}
+                      unit="kcal/kg/day"
+                      metricName={
+                        result.isGraduated
+                          ? "Delivered Energy (Standard Term Infant: 90–120 kcal/kg/d)"
+                          : "Delivered Energy (ESPGHAN 2022: 115–140 kcal/kg/d, Cond: 140–160)"
+                      }
+                      status={result.energyCompliance?.status || "on_target"}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
+                      <div>
+                        Total Daily Energy:{" "}
+                        <strong className="text-slate-950 font-bold">{result.deliveredEnergyKcalPerDay} kcal/day</strong>
+                      </div>
+                      <div>
+                        Formula Caloric Density:{" "}
+                        <strong className="text-slate-950 font-bold">
+                          {result.formulaProfile?.energyKcalPer100Ml} kcal/100 mL
+                        </strong>
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:justify-end">
+                        <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
+                        <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
+                          {result.energyCompliance?.badgeLabel}
+                        </strong>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      {result.energyCompliance?.interpretation}
+                    </p>
+                  </div>
+
+                  {/* 2. Delivered Protein Gauge */}
                   <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
                     <RangeGauge
                       currentValue={result.deliveredProteinGramsPerKgPerDay || 0}
-                      minTarget={result.proteinBracket.targetMinGramsPerKg}
-                      maxTarget={result.proteinBracket.targetMaxGramsPerKg}
-                      minScale={2.0}
-                      maxScale={5.0}
+                      minTarget={result.isGraduated ? 1.8 : (result.proteinBracket?.targetMinGramsPerKg || 3.0)}
+                      maxTarget={result.isGraduated ? 2.5 : (result.proteinBracket?.targetMaxGramsPerKg || 3.6)}
+                      minScale={result.isGraduated ? 1.0 : 2.0}
+                      maxScale={result.isGraduated ? 3.5 : 5.0}
                       unit="g/kg/day"
-                      metricName={`Delivered Protein (${result.proteinBracket.classification}: ${result.proteinBracket.targetMinGramsPerKg}–${result.proteinBracket.targetMaxGramsPerKg} g/kg/d)`}
+                      metricName={
+                        result.isGraduated
+                          ? "Delivered Protein (Term Infant Target: 1.8–2.5 g/kg/d, protects renal solute load)"
+                          : `Delivered Protein (${result.proteinBracket?.classification}: ${result.proteinBracket?.targetMinGramsPerKg}–${result.proteinBracket?.targetMaxGramsPerKg} g/kg/d)`
+                      }
                       status={result.proteinCompliance?.status || "on_target"}
                     />
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
                       <div>
                         Total Daily Protein:{" "}
                         <strong className="text-slate-950 font-bold">{result.deliveredProteinGramsPerDay} g/day</strong>
                       </div>
-                      <div className="flex items-center gap-1.5">
+                      <div>
+                        Whey:Casein Ratio:{" "}
+                        <strong className="text-purple-900 font-bold">
+                          60:40 ({result.deliveredNutrientPayload?.wheyGramsPerDay ?? (Math.round((result.deliveredProteinGramsPerDay || 0) * 0.6 * 100) / 100)}g Whey, {result.deliveredNutrientPayload?.caseinGramsPerDay ?? (Math.round((result.deliveredProteinGramsPerDay || 0) * 0.4 * 100) / 100)}g Casein)
+                        </strong>
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:justify-end">
                         <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
                         <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
                           {result.proteinCompliance?.badgeLabel}
@@ -718,72 +765,219 @@ export function NutritionEngine({
                       </div>
                     </div>
                     <p className="text-[11px] text-slate-500 leading-tight">
-                      {result.proteinCompliance?.interpretation}
-                    </p>
-                  </div>
-                )}
-
-                {/* Consistent Protein-to-Energy Ratio & Overall Status (Section 2 & 13) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* P:E Ratio Card with Consistent Status Messages */}
-                  <div className="p-3.5 rounded-lg bg-purple-50/70 border border-purple-200 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
-                        <Dna className="w-3.5 h-3.5 text-purple-700" />
-                        Protein-to-Energy Ratio
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                          result.peRatioCompliance?.status === "on_target"
-                            ? "bg-emerald-100 text-emerald-900 border-emerald-300"
-                            : "bg-amber-100 text-amber-900 border-amber-300"
-                        }`}
-                      >
-                        {result.peRatioCompliance?.status === "on_target" ? "Target 2.8–3.6" : "Non-Target"}
-                      </span>
-                    </div>
-                    <div className="text-lg font-bold text-purple-950 font-mono">
-                      {result.proteinToEnergyRatioGramsPer100Kcal}{" "}
-                      <span className="text-xs font-normal text-purple-700">
-                        g / 100 kcal
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-purple-900 leading-snug font-medium">
-                      {result.peRatioCompliance?.interpretation}
+                      {result.proteinCompliance?.interpretation}{" "}
+                      {result.isGraduated
+                        ? "Whey enriched with 1.9 g/100g Alpha-Lactalbumin; delivers balanced amino acids without metabolic stress."
+                        : "Whey containing Alpha-Lactalbumin promotes high bioavailable tryptophan, supporting neurogenesis and positive nitrogen accretion."}
                     </p>
                   </div>
 
-                  {/* Overall Compliance Status: Never calls 'Within Reference Target' if ANY metric is abnormal */}
-                  <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-300 space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-slate-700" />
-                        Overall Clinical Compliance
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                          result.overallStatus === "Within reference range"
-                            ? "bg-emerald-100 text-emerald-900 border-emerald-300"
-                            : "bg-amber-100 text-amber-900 border-amber-300"
-                        }`}
-                      >
-                        {result.overallStatus === "Within reference range" ? "Reference Met" : "Review Flag"}
-                      </span>
+                  {/* 3. Delivered Carbohydrates Gauge */}
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <RangeGauge
+                      currentValue={result.deliveredCarbsGramsPerKgPerDay || result.deliveredNutrientPayload?.carbsGramsPerKgPerDay || 0}
+                      minTarget={result.isGraduated ? 9.0 : ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MIN}
+                      maxTarget={result.isGraduated ? 13.0 : ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MAX}
+                      minScale={result.isGraduated ? 6.0 : 7.0}
+                      maxScale={result.isGraduated ? 16.0 : 18.0}
+                      unit="g/kg/day"
+                      metricName={
+                        result.isGraduated
+                          ? "Delivered Carbohydrates (Term Infant Target: 9.0–13.0 g/kg/d | 100% Lactose Matrix)"
+                          : "Delivered Carbohydrates (ESPGHAN 2022: 11.0–15.0 g/kg/d | 8.0–13.0 g/100 kcal)"
+                      }
+                      status={result.carbsCompliance?.status || "on_target"}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
+                      <div>
+                        Total Daily Carbs:{" "}
+                        <strong className="text-slate-950 font-bold">
+                          {result.deliveredCarbsGramsPerDay ?? result.deliveredNutrientPayload?.carbsGramsPerDay} g/day
+                        </strong>
+                      </div>
+                      <div>
+                        Carbohydrate Density:{" "}
+                        <strong className="text-amber-950 font-bold">
+                          {result.isGraduated ? "7.18 g/100 mL (10.5 g/100 kcal)" : "6.37 g/100 mL (8.0 g/100 kcal)"}
+                        </strong>
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:justify-end">
+                        <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
+                        <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
+                          {result.carbsCompliance?.badgeLabel || "Evaluated"}
+                        </strong>
+                      </div>
                     </div>
-                    <div className={`text-sm font-bold ${
-                      result.overallStatus === "Within reference range" ? "text-emerald-900" : "text-amber-900"
-                    }`}>
-                      {result.overallStatus}
+                    <div className="p-2.5 bg-amber-50/60 rounded-lg border border-amber-200/80 text-[11px] text-amber-950 space-y-1">
+                      <div className="font-semibold text-amber-900 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
+                        <span>Carbohydrate Composition & Gut Physiology:</span>
+                      </div>
+                      <p className="text-amber-950/90 leading-tight">
+                        {result.isGraduated
+                          ? "100% Lactose Digestible Carbohydrates (7.18 g/100 mL) + GOS Prebiotics (0.55 g/100 mL). Zero maltodextrin. Supports lactase maturation, stool softening, and physiological calcium absorption."
+                          : "100% Lactose Digestible Carbohydrate (6.32 g/100 mL, 99.2% of carbohydrates) + 2'-FL HMO (0.14 g/100 mL = 0.95 g/100g powder) + GOS Prebiotics (0.30 g/100 mL = 2.0 g/100g powder) + Dietary Fibers (0.44 g/100 mL). Promotes intestinal lactobacilli colonization and calcium/magnesium uptake."}
+                      </p>
                     </div>
-                    <p className="text-[10.5px] text-slate-500 leading-tight">
-                      {result.overallStatus === "Within reference range"
-                        ? "Energy, protein, and P:E ratio all satisfy recommended reference boundaries."
-                        : "One or more nutritional parameters fall outside standard targets. Review clinical plan."}
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      {result.carbsCompliance?.interpretation}
                     </p>
+                  </div>
+
+                  {/* 4. Delivered Total Lipids Gauge */}
+                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
+                    <RangeGauge
+                      currentValue={result.deliveredFatGramsPerKgPerDay || result.deliveredNutrientPayload?.fatGramsPerKgPerDay || 0}
+                      minTarget={result.isGraduated ? 4.0 : ESPGHAN_DIRECT_GUIDELINES.TOTAL_FAT.TYPICAL_MIN}
+                      maxTarget={result.isGraduated ? 6.0 : ESPGHAN_DIRECT_GUIDELINES.TOTAL_FAT.TYPICAL_MAX}
+                      minScale={result.isGraduated ? 2.5 : 3.0}
+                      maxScale={result.isGraduated ? 8.0 : 10.0}
+                      unit="g/kg/day"
+                      metricName={
+                        result.isGraduated
+                          ? "Delivered Total Lipids (Term Target: 4.0–6.0 g/kg/d | >60% Milk Fat Matrix)"
+                          : "Delivered Total Lipids (ESPGHAN 2022: 4.8–8.1 g/kg/d | 4.8–6.6 g/100 kcal)"
+                      }
+                      status={result.fatCompliance?.status || "on_target"}
+                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
+                      <div>
+                        Total Daily Lipids:{" "}
+                        <strong className="text-slate-950 font-bold">
+                          {result.deliveredFatGramsPerDay ?? result.deliveredNutrientPayload?.fatGramsPerDay} g/day
+                        </strong>
+                      </div>
+                      <div>
+                        Lipid Density:{" "}
+                        <strong className="text-emerald-950 font-bold">
+                          {result.isGraduated ? "3.65 g/100 mL (>60% Milk Fat)" : "4.88 g/100 mL (6.12 g/100 kcal, ~55% Energy)"}
+                        </strong>
+                      </div>
+                      <div className="flex items-center gap-1.5 sm:justify-end">
+                        <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
+                        <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
+                          {result.fatCompliance?.badgeLabel || "Evaluated"}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Essential Fatty Acids Matrix (LA, ALA, DHA, ARA) */}
+                    <div className="p-3 bg-emerald-50/60 rounded-lg border border-emerald-200/80 text-[11px] text-emerald-950 space-y-1.5">
+                      <div className="font-semibold text-emerald-900 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Droplets className="w-3.5 h-3.5 text-emerald-600" aria-hidden="true" />
+                          <span>Essential Fatty Acids & LC-PUFA Delivery:</span>
+                        </span>
+                        <span className="font-mono text-[10.5px] font-bold px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300 text-emerald-900">
+                          {result.isGraduated ? "LA:ALA 8.3:1" : "LA:ALA 8.2:1 • ARA:DHA 1:1"}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px] pt-0.5">
+                        <div className="bg-white/80 p-2 rounded border border-emerald-200">
+                          <span className="text-slate-500 text-[10px] block font-sans">Linoleic Acid (LA)</span>
+                          <strong className="text-emerald-950">
+                            {result.isGraduated ? "0.675 g/100 mL" : "0.465 g/100 mL"}
+                          </strong>
+                          <span className="text-[10px] text-slate-600 block">
+                            ≈ {(((result.totalDailyVolumeMl || 0) * (result.isGraduated ? 0.675 : 0.465) / 100 * 1000) / (result.currentWeightKg || 1)).toFixed(0)} mg/kg/d
+                          </span>
+                        </div>
+                        <div className="bg-white/80 p-2 rounded border border-emerald-200">
+                          <span className="text-slate-500 text-[10px] block font-sans">Alpha-Linolenic (ALA)</span>
+                          <strong className="text-emerald-950">
+                            {result.isGraduated ? "0.081 g/100 mL" : "0.057 g/100 mL"}
+                          </strong>
+                          <span className="text-[10px] text-slate-600 block">
+                            ≈ {(((result.totalDailyVolumeMl || 0) * (result.isGraduated ? 0.081 : 0.057) / 100 * 1000) / (result.currentWeightKg || 1)).toFixed(1)} mg/kg/d
+                          </span>
+                        </div>
+                        <div className="bg-white/80 p-2 rounded border border-emerald-200">
+                          <span className="text-slate-500 text-[10px] block font-sans">Double-Encaps. DHA</span>
+                          <strong className="text-emerald-950">
+                            {result.isGraduated ? "8.1 mg/100 mL" : "13.5 mg/100 mL"}
+                          </strong>
+                          <span className="text-[10px] text-slate-600 block">
+                            ≈ {(((result.totalDailyVolumeMl || 0) * (result.isGraduated ? 8.1 : 13.5) / 100) / (result.currentWeightKg || 1)).toFixed(1)} mg/kg/d
+                          </span>
+                        </div>
+                        <div className="bg-white/80 p-2 rounded border border-emerald-200">
+                          <span className="text-slate-500 text-[10px] block font-sans">Arachidonic Acid (ARA)</span>
+                          <strong className="text-emerald-950">
+                            {result.isGraduated ? "8.1 mg/100 mL" : "13.5 mg/100 mL"}
+                          </strong>
+                          <span className="text-[10px] text-slate-600 block">
+                            ≈ {(((result.totalDailyVolumeMl || 0) * (result.isGraduated ? 8.1 : 13.5) / 100) / (result.currentWeightKg || 1)).toFixed(1)} mg/kg/d
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      {result.fatCompliance?.interpretation}
+                    </p>
+                  </div>
+
+                  {/* Summary Row: P:E Ratio & Overall Status */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    {/* P:E Ratio Card with Consistent Status Messages */}
+                    <div className="p-3.5 rounded-lg bg-purple-50/70 border border-purple-200 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-purple-900 flex items-center gap-1.5">
+                          <Dna className="w-3.5 h-3.5 text-purple-700" />
+                          Protein-to-Energy Ratio
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                            result.peRatioCompliance?.status === "on_target"
+                              ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                              : "bg-amber-100 text-amber-900 border-amber-300"
+                          }`}
+                        >
+                          {result.isGraduated ? "Term Target 1.8–2.5" : (result.peRatioCompliance?.status === "on_target" ? "Target 2.8–3.6" : "Non-Target")}
+                        </span>
+                      </div>
+                      <div className="text-lg font-bold text-purple-950 font-mono">
+                        {result.proteinToEnergyRatioGramsPer100Kcal}{" "}
+                        <span className="text-xs font-normal text-purple-700">
+                          g / 100 kcal
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-purple-900 leading-snug font-medium">
+                        {result.peRatioCompliance?.interpretation}
+                      </p>
+                    </div>
+
+                    {/* Overall Compliance Status: Never calls 'Within Reference Target' if ANY metric is abnormal */}
+                    <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-300 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-900 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-slate-700" />
+                          Overall Clinical Compliance
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                            result.overallStatus === "Within reference range"
+                              ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                              : "bg-amber-100 text-amber-900 border-amber-300"
+                          }`}
+                        >
+                          {result.overallStatus === "Within reference range" ? "Reference Met" : "Review Flag"}
+                        </span>
+                      </div>
+                      <div className={`text-sm font-bold ${
+                        result.overallStatus === "Within reference range" ? "text-emerald-900" : "text-amber-900"
+                      }`}>
+                        {result.overallStatus}
+                      </div>
+                      <p className="text-[10.5px] text-slate-500 leading-tight">
+                        {result.overallStatus === "Within reference range"
+                          ? "Energy, protein, carbohydrates, lipids, and P:E ratio all satisfy recommended reference boundaries."
+                          : "One or more nutritional parameters fall outside standard targets. Review clinical plan."}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </ClinicalCard>
+              </ClinicalCard>
+            </div>
           )}
 
           {/* Clinical Formulation Matrix & Recommendation Card */}
@@ -870,7 +1064,7 @@ export function NutritionEngine({
                             {result.formulaProfile.carbsGramsPer100Ml ?? "—"}
                           </strong>
                           <span className="text-[11px] font-bold text-slate-700 font-sans">
-                            g / 100mL (Lactose)
+                            g / 100mL ({result.isGraduated ? "100% Lactose" : "Lactose • 2'-FL • GOS"})
                           </span>
                         </div>
                       </div>
@@ -884,7 +1078,7 @@ export function NutritionEngine({
                             {result.formulaProfile.fatGramsPer100Ml ?? "—"}
                           </strong>
                           <span className="text-[11px] font-bold text-slate-700 font-sans">
-                            g / 100mL (MCT/DHA)
+                            g / 100mL ({result.isGraduated ? ">60% Milk Fat" : "Milk Fat • DHA/ARA"})
                           </span>
                         </div>
                       </div>
