@@ -34,10 +34,10 @@ The application centralizes all reference ranges in `lib/lbw-nutrition.ts` (`CLI
 
 ### Macronutrients & Fluid Ranges (ESPGHAN 2022)
 * **Daily Fluid Allowance:**
+  * Supported Enteral Range: `135–200 mL/kg/day`
   * Typical Target: `150–180 mL/kg/day`
-  * Physiological Allowable Range: `80–240 mL/kg/day`
-  * Clinical Discretionary Alert (Restriction): `< 135 mL/kg/day`
-  * Clinical Discretionary Alert (Volume Overload Risk): `> 200 mL/kg/day`
+  * Below Range Block: `< 135 mL/kg/day`
+  * Upper Ceiling Block: `> 200 mL/kg/day`
 * **Energy Delivery:**
   * Typical Intake Range: `115–140 kcal/kg/day`
   * Conditional Catch-Up Intake: `140–160 kcal/kg/day` (for infants with documented growth failure under medical supervision)
@@ -99,7 +99,7 @@ The application is validated by an automated, deterministic TypeScript test suit
 | Test Domain | Scope & Safety Critical Checks | Test Count | Status |
 | :--- | :--- | :---: | :---: |
 | **Domain 1: Nutrition Bounds** | 400g accepted, 399g blocked; 10,000g accepted, 10,001g blocked; verified product energy/protein/reconstitution. | 13 | **PASS (100%)** |
-| **Domain 2: Fluid Allowance** | 135 mL/kg/d accepted; 134 mL/kg/d triggers alert; 150–180 typical; 201 mL/kg/d overload alert; 240 mL/kg/d limit; 241 mL/kg/d & 79 mL/kg/d blocked. | 11 | **PASS (100%)** |
+| **Domain 2: Fluid Allowance** | 135–200 mL/kg/d supported range; 135 & 200 mL/kg/d accepted at boundaries; 150–180 typical; 134 mL/kg/d (<135) & 201 mL/kg/d (>200) strictly blocked. | 11 | **PASS (100%)** |
 | **Domain 3: Energy Compliance** | 114.9 kcal/kg/d suboptimal; 115.0 & 140.0 on-target; 140.1 conditional catch-up; 160.0 conditional ceiling; 160.1 above range. | 9 | **PASS (100%)** |
 | **Domain 4: P:E Ratio Acceptance** | Boundary testing: 2.79 (below), 2.80 (target lower boundary), 3.60 (target upper boundary), 3.61 (above). Single consistent status system without contradictory labels. | 12 | **PASS (100%)** |
 | **Domain 5: Calendar Date Integrity** | Strict Gregorian calendar parsing: rejects Feb 30, April 31, non-leap Feb 29 (2025), slash delimiters, two-digit years, future DOM, and inverted dates (DOM < DOB). | 13 | **PASS (100%)** |

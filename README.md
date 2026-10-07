@@ -24,7 +24,7 @@ Formulated against the **ESPGHAN 2022 Enteral Nutrient Supply Guidelines** and c
 Pure deterministic math engine located in [`/lib/lbw-nutrition.ts`](./lib/lbw-nutrition.ts):
 - **Inputs:**
   - Infant weight: 600g to 4,000g (with clinical presets).
-  - Target fluid allowance: 120 to 200 mL/kg/day (default 150 mL/kg/day).
+  - Target fluid allowance: 135 to 200 mL/kg/day (default 150 mL/kg/day).
   - Matrix Profile: **Pediamil® LBW** (Energy = 80 kcal/100 mL, Protein = 2.2 g/100 mL).
 - **Calculations:**
   - Total 24h Volume (mL/day) = Weight (kg) × Fluid Allowance (mL/kg/day).

@@ -119,22 +119,21 @@ assert(
 );
 
 // =============================================================================
-// DOMAIN 2: FLUID ALLOWANCE RANGES & ALERTS
+// DOMAIN 2: FLUID ALLOWANCE RANGES & ALERTS (135 to 200 mL/kg/day)
 // =============================================================================
 console.log("\n--- Domain 2: Fluid Allowance Ranges & Alerts ---");
 
-// Fluid: 135 mL/kg/d (restricted alert)
+// Fluid: 135 mL/kg/d (lower boundary of range)
 const res135 = calculateLbwNutrition(1350, 135);
-assert(!res135.isBlocked, "Fluid 135 mL/kg/d is accepted");
+assert(!res135.isBlocked, "Fluid 135 mL/kg/d is accepted as lower range boundary");
 assert(
-  res135.validation.warnings.length === 0, // 135 is the exact lower typical threshold (alert is <135)
+  res135.validation.warnings.length === 0,
   "Fluid 135 mL/kg/d meets the boundary threshold without warning"
 );
 
-// Fluid: 134 mL/kg/d (triggers restricted warning)
+// Fluid: 134 mL/kg/d (below 135 mL/kg/d range - blocked)
 const res134 = calculateLbwNutrition(1350, 134);
-assert(!res134.isBlocked, "Fluid 134 mL/kg/d is accepted");
-assert(res134.validation.warnings.length > 0, "Fluid 134 mL/kg/d triggers fluid restriction warning (<135)");
+assert(res134.isBlocked, "Fluid 134 mL/kg/d is strictly blocked (<135)");
 
 // Fluid: 150 mL/kg/d (typical target)
 const res150 = calculateLbwNutrition(1350, 150);
@@ -144,22 +143,29 @@ assert(!res150.isBlocked && res150.validation.warnings.length === 0, "Fluid 150 
 const res180 = calculateLbwNutrition(1350, 180);
 assert(!res180.isBlocked && res180.validation.warnings.length === 0, "Fluid 180 mL/kg/d is typical target ceiling without warnings");
 
-// Fluid: 201 mL/kg/d (triggers volume overload warning)
+// Fluid: 200 mL/kg/d (upper boundary of range)
+const res200 = calculateLbwNutrition(1350, 200);
+assert(!res200.isBlocked, "Fluid 200 mL/kg/d is accepted as upper range boundary");
+assert(
+  res200.validation.warnings.length === 0,
+  "Fluid 200 mL/kg/d meets upper threshold without warning"
+);
+
+// Fluid: 201 mL/kg/d (above 200 mL/kg/d range - blocked)
 const res201 = calculateLbwNutrition(1350, 201);
-assert(!res201.isBlocked, "Fluid 201 mL/kg/d is accepted");
-assert(res201.validation.warnings.length > 0, "Fluid 201 mL/kg/d triggers high volume risk warning (>200)");
+assert(res201.isBlocked, "Fluid 201 mL/kg/d is strictly blocked (>200)");
 
-// Fluid: 240 mL/kg/d (absolute upper limit)
+// Fluid: 240 mL/kg/d (blocked - exceeds range)
 const res240 = calculateLbwNutrition(1350, 240);
-assert(!res240.isBlocked, "Fluid 240 mL/kg/d is accepted as physiological absolute maximum");
+assert(res240.isBlocked, "Fluid 240 mL/kg/d is strictly blocked (>200)");
 
-// Fluid: 241 mL/kg/d (blocked)
+// Fluid: 241 mL/kg/d (blocked - exceeds range)
 const res241 = calculateLbwNutrition(1350, 241);
-assert(res241.isBlocked, "Fluid 241 mL/kg/d is strictly blocked (>240)");
+assert(res241.isBlocked, "Fluid 241 mL/kg/d is strictly blocked (>200)");
 
-// Fluid: 79 mL/kg/d (blocked)
+// Fluid: 79 mL/kg/d (blocked - below range)
 const res79 = calculateLbwNutrition(1350, 79);
-assert(res79.isBlocked, "Fluid 79 mL/kg/d is strictly blocked (<80)");
+assert(res79.isBlocked, "Fluid 79 mL/kg/d is strictly blocked (<135)");
 
 // =============================================================================
 // DOMAIN 3: ESPGHAN 2022 4-TIER ENERGY EVALUATION

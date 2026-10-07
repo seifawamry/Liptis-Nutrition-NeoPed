@@ -65,7 +65,7 @@ export function NutritionEngine({
     { label: "7,800g (Graduation)", value: 7800 },
   ];
 
-  const quickFluidPresets = [135, 150, 160, 180];
+  const quickFluidPresets = [135, 150, 160, 180, 200];
 
   const handleCopySummary = async () => {
     if (!result.clinicalSummary) return;
@@ -429,7 +429,7 @@ export function NutritionEngine({
                     <span className="text-rose-500" aria-hidden="true">*</span>
                   </label>
                   <span className="text-[11px] text-slate-500 font-mono">
-                    Typical: 150–180 mL/kg/d
+                    Range: 135–200 mL/kg/d (Typical: 150–180)
                   </span>
                 </div>
 
@@ -437,17 +437,31 @@ export function NutritionEngine({
                   <input
                     id="fluid-allowance-input"
                     type="number"
-                    min={80}
-                    max={240}
+                    min={135}
+                    max={200}
                     step={5}
                     value={fluidAllowance}
                     onChange={(e) => onFluidChange(Number(e.target.value))}
-                    aria-describedby="fluid-warnings fluid-presets-group"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-base font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 focus:border-transparent transition-all focus-visible:outline-none"
+                    aria-describedby="fluid-warnings fluid-presets-group fluid-bounds-note"
+                    className={`w-full px-3.5 py-2.5 rounded-lg text-base font-semibold transition-all focus-visible:outline-none ${
+                      result.isBlocked && result.validation.errors.some((e) => e.field === "fluidAllowance")
+                        ? "bg-rose-50 border-2 border-rose-400 text-rose-950 focus:ring-2 focus:ring-rose-500"
+                        : "bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 focus:border-transparent"
+                    }`}
                   />
                   <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-xs font-semibold text-slate-400" aria-hidden="true">
                     mL/kg/day
                   </div>
+                </div>
+
+                <div id="fluid-bounds-note" className="text-[11px] text-slate-500 flex items-center justify-between">
+                  <span>Supported enteral range: 135 to 200 mL/kg/day</span>
+                  {fluidAllowance < 135 && (
+                    <span className="text-rose-600 font-semibold">Below enteral minimum (135 mL)</span>
+                  )}
+                  {fluidAllowance > 200 && (
+                    <span className="text-rose-600 font-semibold">Exceeds enteral ceiling (200 mL)</span>
+                  )}
                 </div>
 
                 {/* Fluid Presets */}

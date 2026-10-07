@@ -37,15 +37,17 @@ export const CLINICAL_BOUNDS = {
       "Weight exceeds maximum supported neonatal threshold of 10,000g (10 kg). For infants >10kg, refer to pediatric growth and nutrition protocols.",
   },
   FLUID_ML_PER_KG_DAY: {
-    ABSOLUTE_MIN: 80,
-    ABSOLUTE_MAX: 240,
+    MIN: 135,
+    MAX: 200,
+    ABSOLUTE_MIN: 135,
+    ABSOLUTE_MAX: 200,
     TYPICAL_MIN: 150,
     TYPICAL_MAX: 180,
     ALERT_LOW: 135,
     ALERT_HIGH: 200,
     LABEL: "Target Fluid Allowance",
     UNIT: "mL/kg/day",
-    RANGE_STR: "80 to 240 mL/kg/day (Typical: 150–180 mL/kg/day)",
+    RANGE_STR: "135 to 200 mL/kg/day (Typical: 150–180 mL/kg/day)",
   },
   GA_WEEKS: {
     MIN: 22,
@@ -263,9 +265,9 @@ export function validateNutritionInputs(
       field: "fluidAllowance",
       fieldLabel: CLINICAL_BOUNDS.FLUID_ML_PER_KG_DAY.LABEL,
       value: numFluid,
-      message: `Prescribed fluid allowance (${numFluid} mL/kg/d) is outside safe physiological enteral boundaries (${CLINICAL_BOUNDS.FLUID_ML_PER_KG_DAY.ABSOLUTE_MIN}–${CLINICAL_BOUNDS.FLUID_ML_PER_KG_DAY.ABSOLUTE_MAX} mL/kg/d).`,
+      message: `Prescribed fluid allowance (${numFluid} mL/kg/d) is outside safe enteral feeding boundaries (${CLINICAL_BOUNDS.FLUID_ML_PER_KG_DAY.ABSOLUTE_MIN}–${CLINICAL_BOUNDS.FLUID_ML_PER_KG_DAY.ABSOLUTE_MAX} mL/kg/d).`,
       acceptedRange: CLINICAL_BOUNDS.FLUID_ML_PER_KG_DAY.RANGE_STR,
-      remediation: "Re-evaluate fluid volume against hydration, cardiorespiratory status, and diuresis.",
+      remediation: "Specify target enteral fluid allowance between 135 and 200 mL/kg/day (typical: 150–180 mL/kg/day).",
       severity: "critical",
     });
   } else {
