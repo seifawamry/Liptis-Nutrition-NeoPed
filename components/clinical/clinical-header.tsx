@@ -47,6 +47,16 @@ export function ClinicalHeader({
           {/* Brand & Title */}
           <div className="flex items-center gap-2.5 sm:gap-4 w-full md:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-clinical-gold/60 shadow-md shrink-0 bg-clinical-navy-950">
+                <Image
+                  src="/icons/icon-192.png"
+                  alt="NeoPed™ Clinical Suite Emblem"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
               <div className="bg-white px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
                 <div className="relative w-24 sm:w-32 h-7 sm:h-9">
                   <Image
