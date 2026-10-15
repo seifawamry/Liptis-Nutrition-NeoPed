@@ -337,107 +337,6 @@ export function GrowthPlotter({
         </div>
       )}
 
-      {/* Patient Delivered Macronutrient Growth Fuel Snapshot */}
-      {calculationResult && (
-        <div className="p-4 sm:p-5 bg-white rounded-2xl border-2 border-slate-300 shadow-sm space-y-3.5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
-                Patient Delivered Macronutrient Growth Fuel ({calculationResult.formulaProfile?.brand ?? "Pediamil® LBW"})
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-300 font-mono">
-                24h Volume: <strong className="text-slate-950 font-black">{calculationResult.deliveredNutrientPayload?.totalDailyVolumeMl ?? Math.round((weightGrams / 1000) * (fluidAllowance ?? 150))} mL/d</strong> ({fluidAllowance ?? 150} mL/kg/d)
-              </span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {/* 1. Energy */}
-            <div className="p-3.5 bg-amber-50/80 border-2 border-amber-200 rounded-xl flex flex-col justify-between">
-              <div>
-                <span className="text-amber-950 block text-[11px] font-black uppercase tracking-wider">
-                  Total Energy
-                </span>
-                <div className="mt-1">
-                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
-                    {calculationResult.deliveredEnergyKcalPerKgPerDay}
-                  </strong>
-                  <span className="text-xs font-bold text-slate-700 font-sans">
-                    kcal / kg / day
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 pt-1.5 border-t border-amber-200/90 text-xs font-bold text-amber-950">
-                ESPGHAN 2022: 115–140 kcal/kg/d (Typical)
-              </div>
-            </div>
-
-            {/* 2. Protein */}
-            <div className="p-3.5 bg-blue-50/80 border-2 border-blue-200 rounded-xl flex flex-col justify-between">
-              <div>
-                <span className="text-blue-950 block text-[11px] font-black uppercase tracking-wider">
-                  True Protein
-                </span>
-                <div className="mt-1">
-                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
-                    {calculationResult.deliveredProteinGramsPerKgPerDay}
-                  </strong>
-                  <span className="text-xs font-bold text-slate-700 font-sans">
-                    g / kg / day (60:40)
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 pt-1.5 border-t border-blue-200/90 text-xs font-bold text-blue-950">
-                Target: {calculationResult.proteinBracket?.targetMinGramsPerKg ?? 3.5}–{calculationResult.proteinBracket?.targetMaxGramsPerKg ?? 4.0} g/kg/d
-              </div>
-            </div>
-
-            {/* 3. Carbohydrates */}
-            <div className="p-3.5 bg-purple-50/80 border-2 border-purple-200 rounded-xl flex flex-col justify-between">
-              <div>
-                <span className="text-purple-950 block text-[11px] font-black uppercase tracking-wider">
-                  Carbohydrates
-                </span>
-                <div className="mt-1">
-                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
-                    {calculationResult.deliveredNutrientPayload?.carbsGramsPerKgPerDay ?? "—"}
-                  </strong>
-                  <span className="text-xs font-bold text-slate-700 font-sans">
-                    g / kg / day ({calculationResult.deliveredNutrientPayload?.carbsGramsPerDay ?? "—"} g/d)
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 pt-1.5 border-t border-purple-200/90 text-xs font-bold text-purple-950">
-                ESPGHAN: 11.0–15.0 g/kg/d (100% Lactose)
-              </div>
-            </div>
-
-            {/* 4. Total Lipids */}
-            <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-200 rounded-xl flex flex-col justify-between">
-              <div>
-                <span className="text-emerald-950 block text-[11px] font-black uppercase tracking-wider">
-                  Total Lipids
-                </span>
-                <div className="mt-1">
-                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
-                    {calculationResult.deliveredNutrientPayload?.fatGramsPerKgPerDay ?? "—"}
-                  </strong>
-                  <span className="text-xs font-bold text-slate-700 font-sans">
-                    g / kg / day ({calculationResult.deliveredNutrientPayload?.fatGramsPerDay ?? "—"} g/d)
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 pt-1.5 border-t border-emerald-200/90 text-xs font-bold text-emerald-950">
-                ESPGHAN: 4.8–8.1 g/kg/d (MCT/DHA/ARA)
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Main Grid: Inputs (Left) and Growth Visualizer (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Baseline Parameters (5 Cols) */}
@@ -1281,6 +1180,107 @@ export function GrowthPlotter({
           </div>
         </div>
       </div>
+
+      {/* Patient Delivered Macronutrient Growth Fuel Snapshot - Positioned below Demographics & Charts */}
+      {calculationResult && (
+        <div className="p-4 sm:p-5 bg-white rounded-2xl border-2 border-slate-300 shadow-sm space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
+              <h3 className="text-xs font-black uppercase tracking-wider text-slate-900">
+                Patient Delivered Macronutrient Growth Fuel ({calculationResult.formulaProfile?.brand ?? "Pediamil® LBW"})
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-300 font-mono">
+                24h Volume: <strong className="text-slate-950 font-black">{calculationResult.deliveredNutrientPayload?.totalDailyVolumeMl ?? Math.round((weightGrams / 1000) * (fluidAllowance ?? 150))} mL/d</strong> ({fluidAllowance ?? 150} mL/kg/d)
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {/* 1. Energy */}
+            <div className="p-3.5 bg-amber-50/80 border-2 border-amber-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-amber-950 block text-[11px] font-black uppercase tracking-wider">
+                  Total Energy
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredEnergyKcalPerKgPerDay}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    kcal / kg / day
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-amber-200/90 text-xs font-bold text-amber-950">
+                ESPGHAN 2022: 115–140 kcal/kg/d (Typical)
+              </div>
+            </div>
+
+            {/* 2. Protein */}
+            <div className="p-3.5 bg-blue-50/80 border-2 border-blue-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-blue-950 block text-[11px] font-black uppercase tracking-wider">
+                  True Protein
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredProteinGramsPerKgPerDay}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    g / kg / day (60:40)
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-blue-200/90 text-xs font-bold text-blue-950">
+                Target: {calculationResult.proteinBracket?.targetMinGramsPerKg ?? 3.5}–{calculationResult.proteinBracket?.targetMaxGramsPerKg ?? 4.0} g/kg/d
+              </div>
+            </div>
+
+            {/* 3. Carbohydrates */}
+            <div className="p-3.5 bg-purple-50/80 border-2 border-purple-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-purple-950 block text-[11px] font-black uppercase tracking-wider">
+                  Carbohydrates
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredNutrientPayload?.carbsGramsPerKgPerDay ?? "—"}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    g / kg / day ({calculationResult.deliveredNutrientPayload?.carbsGramsPerDay ?? "—"} g/d)
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-purple-200/90 text-xs font-bold text-purple-950">
+                ESPGHAN: 11.0–15.0 g/kg/d (100% Lactose)
+              </div>
+            </div>
+
+            {/* 4. Total Lipids */}
+            <div className="p-3.5 bg-emerald-50/80 border-2 border-emerald-200 rounded-xl flex flex-col justify-between">
+              <div>
+                <span className="text-emerald-950 block text-[11px] font-black uppercase tracking-wider">
+                  Total Lipids
+                </span>
+                <div className="mt-1">
+                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
+                    {calculationResult.deliveredNutrientPayload?.fatGramsPerKgPerDay ?? "—"}
+                  </strong>
+                  <span className="text-xs font-bold text-slate-700 font-sans">
+                    g / kg / day ({calculationResult.deliveredNutrientPayload?.fatGramsPerDay ?? "—"} g/d)
+                  </span>
+                </div>
+              </div>
+              <div className="mt-2 pt-1.5 border-t border-emerald-200/90 text-xs font-bold text-emerald-950">
+                ESPGHAN: 4.8–8.1 g/kg/d (MCT/DHA/ARA)
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
