@@ -13,7 +13,8 @@ import {
   getGrowthDataset,
   evaluatePercentile,
 } from "@/lib/growth-engine";
-import { ShieldCheck, Sparkles, BookOpen } from "lucide-react";
+import { ShieldCheck, Sparkles, BookOpen, AlertTriangle, ShieldAlert, X } from "lucide-react";
+import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
 export default function Home() {
   // HCP Gate state
@@ -22,6 +23,7 @@ export default function Home() {
   // Tab navigation: "growth" | "nutrition" | "split"
   const [activeTab, setActiveTab] = useState<"growth" | "nutrition" | "split">("growth");
   const [isFeedSheetOpen, setIsFeedSheetOpen] = useState(false);
+  const [feedSheetValidationErrors, setFeedSheetValidationErrors] = useState<string[]>([]);
 
   // Default dates: DOB 14 days ago, DOM today
   const defaultDates = useMemo(() => {
@@ -92,6 +94,37 @@ export default function Home() {
     return evaluatePercentile(headCircumferenceCm, "headCircumference", growthDataset);
   }, [headCircumferenceCm, growthDataset]);
 
+  // Handle feed sheet opening with strict validation
+  const handleOpenFeedSheet = useCallback(() => {
+    const errors: string[] = [];
+    if (calculationResult.isBlocked) {
+      if (calculationResult.validation?.errors?.length) {
+        errors.push(...calculationResult.validation.errors.map((e) => e.message));
+      } else {
+        errors.push("Nutrition calculations are blocked due to invalid patient weight or fluid parameters.");
+      }
+    }
+    if (ages.isBlocked) {
+      if (ages.validation?.errors?.length) {
+        errors.push(...ages.validation.errors.map((e) => e.message));
+      } else {
+        errors.push("Growth age assessment is blocked due to invalid date or gestational age inputs.");
+      }
+    }
+
+    if (errors.length > 0) {
+      setFeedSheetValidationErrors(errors);
+      setIsFeedSheetOpen(false);
+      setTimeout(() => {
+        document.getElementById("feed-sheet-validation-error-summary")?.focus();
+      }, 50);
+      return;
+    }
+
+    setFeedSheetValidationErrors([]);
+    setIsFeedSheetOpen(true);
+  }, [calculationResult, ages]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-100/70">
       {/* Skip to Main Clinical Content Link for Keyboard Navigation */}
@@ -108,8 +141,44 @@ export default function Home() {
       <ClinicalHeader
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onOpenFeedSheet={() => setIsFeedSheetOpen(true)}
+        onOpenFeedSheet={handleOpenFeedSheet}
       />
+
+      {/* Feed Sheet Accessible Error Summary Banner */}
+      {feedSheetValidationErrors.length > 0 && (
+        <div
+          id="feed-sheet-validation-error-summary"
+          role="alert"
+          tabIndex={-1}
+          aria-live="assertive"
+          className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 focus:outline-none"
+        >
+          <div className="p-4 bg-rose-50 border-2 border-rose-400 rounded-xl shadow-md text-rose-950 flex items-start justify-between gap-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-rose-900 font-bold text-sm">
+                <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0" aria-hidden="true" />
+                <span>Cannot Generate Clinical Feed Sheet — Validation Errors Identified</span>
+              </div>
+              <p className="text-xs text-rose-800">
+                Please correct the following clinical parameters before generating the hospital feed sheet:
+              </p>
+              <ul className="list-disc list-inside text-xs font-semibold space-y-1 text-rose-900">
+                {feedSheetValidationErrors.map((err, idx) => (
+                  <li key={idx}>{err}</li>
+                ))}
+              </ul>
+            </div>
+            <button
+              type="button"
+              onClick={() => setFeedSheetValidationErrors([])}
+              className="p-1 text-rose-600 hover:text-rose-900 hover:bg-rose-100 rounded-lg text-xs"
+              aria-label="Dismiss error summary"
+            >
+              <X className="w-4 h-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Suite Content Area */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 focus:outline-none">
@@ -248,7 +317,7 @@ export default function Home() {
               <div className="font-bold text-slate-900 flex items-center gap-2">
                 <span>Liptis Nutrition NeoPed™ LBW Clinical Suite</span>
                 <span className="text-[10px] px-2 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200 font-mono">
-                  v2.1.0 Institutional
+                  {APP_VERSION_LABEL}
                 </span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
@@ -258,9 +327,9 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-4 text-[11px] text-slate-500">
-              <span className="flex items-center gap-1.5 text-emerald-700 font-medium">
-                <ShieldCheck className="w-4 h-4" />
-                Zero Data Transmission • No PHI Stored
+              <span className="flex items-center gap-1.5 text-slate-700 font-medium">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                {CLINICAL_GOVERNANCE.privacyNotice}
               </span>
               <span>•</span>
               <span className="font-mono">100% Client-Side Pure Math</span>

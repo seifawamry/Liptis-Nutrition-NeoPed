@@ -4,6 +4,7 @@ import React from "react";
 import Image from "next/image";
 import { Printer, ShieldCheck, Activity, LineChart, Columns, Sparkles } from "lucide-react";
 import { cn } from "./ui-primitives";
+import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
 interface ClinicalHeaderProps {
   activeTab: "nutrition" | "growth" | "split";
@@ -23,11 +24,11 @@ export function ClinicalHeader({
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1.5 text-slate-300 font-medium">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-            Client-side calculation design; institutional privacy and regulatory review required before clinical deployment.
+            Client-side calculation design; institutional review required before clinical deployment.
           </span>
           <span className="hidden md:inline text-slate-600">|</span>
           <span className="hidden md:inline text-slate-400 font-mono">
-            Zero External Logging • Ephemeral Session • v2.2.0 Reference
+            No Network Transmission • Ephemeral Session • {APP_VERSION_LABEL}
           </span>
         </div>
         <div className="flex items-center gap-3 text-xs">

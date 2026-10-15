@@ -351,3 +351,49 @@ export function toProductSpecification(profile: ProductProfile): ProductSpecific
 export const PEDIAMIL_LBW_SPEC: ProductSpecification = toProductSpecification(PEDIAMIL_LBW_PRODUCT);
 export const PEDIAMIL_1_SPEC: ProductSpecification = toProductSpecification(PEDIAMIL_1_PRODUCT);
 
+export interface ProductValidationReport {
+  isValid: boolean;
+  errors: string[];
+}
+
+export function validateProductProfile(profile: ProductProfile): ProductValidationReport {
+  const errors: string[] = [];
+  if (!profile.id || typeof profile.id !== "string") {
+    errors.push("Product ID is required");
+  }
+  if (!profile.brandName || typeof profile.brandName !== "string") {
+    errors.push("Brand name is required");
+  }
+  const c = profile.composition;
+  if (!c) {
+    errors.push("Nutrient composition is missing");
+  } else {
+    if (typeof c.energyKcalPer100Ml !== "number" || c.energyKcalPer100Ml <= 0) {
+      errors.push("Energy (kcal/100mL) must be a positive number");
+    }
+    if (typeof c.proteinGramsPer100Ml !== "number" || c.proteinGramsPer100Ml <= 0) {
+      errors.push("Protein (g/100mL) must be a positive number");
+    }
+    if (typeof c.fatGramsPer100Ml !== "number" || c.fatGramsPer100Ml <= 0) {
+      errors.push("Fat (g/100mL) must be a positive number");
+    }
+    if (typeof c.carbsGramsPer100Ml !== "number" || c.carbsGramsPer100Ml <= 0) {
+      errors.push("Carbohydrates (g/100mL) must be a positive number");
+    }
+  }
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+// Runtime assertion on initial product profile registration
+const lbwValidation = validateProductProfile(PEDIAMIL_LBW_PRODUCT);
+if (!lbwValidation.isValid) {
+  throw new Error(`CRITICAL: Pediamil LBW product profile validation failed: ${lbwValidation.errors.join(", ")}`);
+}
+const stage1Validation = validateProductProfile(PEDIAMIL_1_PRODUCT);
+if (!stage1Validation.isValid) {
+  throw new Error(`CRITICAL: Pediamil 1 product profile validation failed: ${stage1Validation.errors.join(", ")}`);
+}
+

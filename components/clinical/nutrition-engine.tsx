@@ -7,6 +7,7 @@ import {
   ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
 import { AgeCalculations } from "@/lib/growth-engine";
+import { APP_VERSION, APP_VERSION_LABEL, ENGINE_VERSION, CLINICAL_GOVERNANCE } from "@/lib/version";
 import { PatientNutrientPayload } from "./patient-nutrient-payload";
 import { ClinicalCard, RangeGauge, StatusBadge } from "./ui-primitives";
 import {
@@ -89,8 +90,9 @@ export function NutritionEngine({
     const auditData = {
       calculationSession: {
         timestampUtc: result.auditMetadata.calculatedAtUtc,
+        appVersion: APP_VERSION,
         engineVersion: result.auditMetadata.engineVersion,
-        runtimeEnvironment: "Client-side isolated execution (zero cloud telemetry)",
+        runtimeEnvironment: CLINICAL_GOVERNANCE.privacyNotice,
         inputs: {
           patientWeightGrams: weightGrams,
           patientWeightKg: result.currentWeightKg,
@@ -157,7 +159,7 @@ export function NutritionEngine({
               <BookOpen className="w-4 h-4 text-clinical-navy-800" />
               <span>Authoritative Clinical Sources & Provenance Mapping</span>
             </div>
-            <span className="text-[11px] text-slate-500 font-mono">v2.1.0 Institutional</span>
+            <span className="text-[11px] text-slate-500 font-mono">{APP_VERSION_LABEL}</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

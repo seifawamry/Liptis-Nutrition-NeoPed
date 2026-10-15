@@ -16,6 +16,8 @@
  * Horizon: 22 to 50 completed weeks Post-Menstrual Age (PMA).
  */
 
+import { CLINICAL_GOVERNANCE } from "../version";
+
 export interface MetricLmsPoint {
   p3: number;
   p10: number;
@@ -65,7 +67,7 @@ export const FENTON_2013_METADATA_BOYS: FentonDatasetMetadata = {
     headCircumference: "cm"
   },
   validationStatus: "validated",
-  licensingNotice: "Preterm pooled meta-analysis data. University of Calgary requires commercial license (jmatic@innovatecalgary.com). Reference / Institutional Review edition."
+  licensingNotice: CLINICAL_GOVERNANCE.fentonLicensingNotice,
 };
 
 export const FENTON_2013_METADATA_GIRLS: FentonDatasetMetadata = {
@@ -81,7 +83,7 @@ export const FENTON_2013_METADATA_GIRLS: FentonDatasetMetadata = {
     headCircumference: "cm"
   },
   validationStatus: "validated",
-  licensingNotice: "Preterm pooled meta-analysis data. University of Calgary requires commercial license (jmatic@innovatecalgary.com). Reference / Institutional Review edition."
+  licensingNotice: CLINICAL_GOVERNANCE.fentonLicensingNotice,
 };
 
 export const FENTON_2013_BOYS_POINTS: FentonGrowthPoint[] = [

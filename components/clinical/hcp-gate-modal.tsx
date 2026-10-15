@@ -155,7 +155,7 @@ export function HcpGateModal({ onVerified }: HcpGateModalProps) {
                   </div>
                   <div className="flex items-center gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
-                    <span>Zero Remote Data Logging (HIPAA/GDPR)</span>
+                    <span>Ephemeral Client Session (No PHI Transmission)</span>
                   </div>
                 </div>
               </div>

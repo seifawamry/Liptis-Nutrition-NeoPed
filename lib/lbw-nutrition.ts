@@ -17,6 +17,7 @@ import {
   PRODUCT_DATA_DISCLAIMER,
   ProductProfile,
 } from "./product-config";
+import { APP_VERSION, APP_VERSION_LABEL, ENGINE_VERSION, CLINICAL_GOVERNANCE } from "./version";
 
 export interface FormulaProfile {
   name: string;
@@ -1140,8 +1141,8 @@ export function evaluateLipidsCompliance(
  */
 export function createAuditMetadata(): AuditMetadata {
   return {
-    applicationVersion: "v2.2.0 Reference Prototype",
-    engineVersion: "NeoPed Engine v2.2 (Deterministic Reference Model)",
+    applicationVersion: APP_VERSION,
+    engineVersion: ENGINE_VERSION,
     productDataVersion: "Liptis-Spec-2026-v1.0",
     productDataVerificationDate: "2026-10-02",
     guidelinesReference: "ESPGHAN 2022 Preterm Enteral Nutrition Position Paper (J Pediatr Gastroenterol Nutr. 2023;76(2):248-268)",
@@ -1157,8 +1158,7 @@ export function createAuditMetadata(): AuditMetadata {
     selectedClinicalProtocol: "ESPGHAN 2022 Preterm Recommendations + Institutional Weight Brackets",
     selectedProduct: "Pediamil® LBW (Preterm) / Pediamil® 1 (Term)",
     roundingPolicy: "Displayed rates rounded to 1 decimal (0.1 mL); 24-hr sum reconciles within ±0.4 mL (q3h), ±0.6 mL (q2h), ±1.2 mL (cont).",
-    nonDeviceDisclaimer:
-      "For licensed healthcare professionals. Reference calculation only. Not a prescription, medical order, diagnosis, or substitute for local NICU/pediatric protocol. Clinical judgment, fluid balance, illness severity, laboratory monitoring, parenteral nutrition, and total nutrient intake supersede calculated values.",
+    nonDeviceDisclaimer: CLINICAL_GOVERNANCE.regulatoryNotice,
     productDisclaimer: PRODUCT_DATA_DISCLAIMER,
     sourceMapping: {
       espghanGuidelineValues: [

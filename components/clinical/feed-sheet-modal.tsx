@@ -8,6 +8,7 @@ import {
   ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
 import { AgeCalculations, BiologicalSex, PercentileEvaluation } from "@/lib/growth-engine";
+import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
 interface FeedSheetModalProps {
   isOpen: boolean;
@@ -43,11 +44,23 @@ export function FeedSheetModal({
   hcPercentile,
 }: FeedSheetModalProps) {
   const [nicuBed, setNicuBed] = useState("NICU Incubator #04 (Level III)");
-  const [patientId, setPatientId] = useState("NEO-" + Math.floor(100000 + Math.random() * 900000));
+  const [patientId, setPatientId] = useState("NEO-784201");
+  const [currentDateStr, setCurrentDateStr] = useState("15 Oct 2026");
   const [clinicianName, setClinicianName] = useState("Attending Neonatologist, MD / Clinical Dietitian");
   const [allowNutritionOnly, setAllowNutritionOnly] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
   const printBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    setPatientId("NEO-" + Math.floor(100000 + Math.random() * 900000));
+    setCurrentDateStr(
+      new Date().toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    );
+  }, []);
 
   // Focus trap and Escape key listener
   useEffect(() => {
@@ -95,18 +108,13 @@ export function FeedSheetModal({
     window.print();
   };
 
-  const currentDateStr = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-
   const isGrowthBlocked = ages.isBlocked;
   const isPrintingBlocked = nut.isBlocked || (isGrowthBlocked && !allowNutritionOnly);
 
   return (
     <div
       ref={modalRef}
+      id="feed-sheet-modal"
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
@@ -114,7 +122,7 @@ export function FeedSheetModal({
     >
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-6 overflow-hidden border border-slate-300 flex flex-col max-h-[92vh]">
         {/* Modal Top Control Bar (Hidden when printed) */}
-        <div className="no-print bg-clinical-navy-950 text-white px-6 py-3.5 flex items-center justify-between border-b border-clinical-navy-800 shrink-0">
+        <div className="no-print bg-clinical-navy-950 text-white px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-clinical-navy-800 shrink-0">
           <div className="flex items-center gap-2.5">
             <FileText className="w-5 h-5 text-clinical-gold" aria-hidden="true" />
             <div>
@@ -126,8 +134,9 @@ export function FeedSheetModal({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 self-end sm:self-center">
             <button
+              id="print-feed-sheet-btn"
               ref={printBtnRef}
               type="button"
               onClick={handlePrint}
@@ -139,6 +148,7 @@ export function FeedSheetModal({
               <span>Print Worksheet / Save PDF</span>
             </button>
             <button
+              id="close-feed-sheet-btn"
               type="button"
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
@@ -147,6 +157,14 @@ export function FeedSheetModal({
               <X className="w-5 h-5" aria-hidden="true" />
             </button>
           </div>
+        </div>
+
+        {/* Fallback instruction banner */}
+        <div className="no-print bg-slate-900 text-slate-300 px-6 py-1.5 text-[11px] flex items-center justify-between border-b border-slate-800">
+          <span>Preview Mode: Verify all calculated values with infant clinical status.</span>
+          <span className="text-amber-300 font-medium">
+            If print dialog does not open, press Ctrl+P (or Cmd+P) or verify browser pop-up permissions.
+          </span>
         </div>
 
         {/* Printable Feed Sheet Document Body */}
@@ -724,11 +742,19 @@ export function FeedSheetModal({
                             </td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
                               {weightPercentile.zScoreFormatted}
-                              <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {weightPercentile.zScoreUnrounded > 0 ? "+" : ""}{weightPercentile.zScoreUnrounded.toFixed(3)}</span>
+                              {weightPercentile.zScoreUnrounded != null && (
+                                <span className="text-[9.5px] text-slate-400 block font-normal">
+                                  Exact: {weightPercentile.zScoreUnrounded > 0 ? "+" : ""}{weightPercentile.zScoreUnrounded.toFixed(3)}
+                                </span>
+                              )}
                             </td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-900">
                               {weightPercentile.percentileFormatted}
-                              <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {weightPercentile.percentileUnrounded.toFixed(2)}%</span>
+                              {weightPercentile.percentileUnrounded != null && (
+                                <span className="text-[9.5px] text-slate-400 block font-normal">
+                                  Exact: {weightPercentile.percentileUnrounded.toFixed(2)}%
+                                </span>
+                              )}
                             </td>
                             <td className="p-2 border-r border-slate-200 font-sans">
                               <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded border ${weightPercentile.badgeClass}`}>
@@ -755,7 +781,11 @@ export function FeedSheetModal({
                               {lengthPercentile ? (
                                 <>
                                   {lengthPercentile.zScoreFormatted}
-                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {lengthPercentile.zScoreUnrounded > 0 ? "+" : ""}{lengthPercentile.zScoreUnrounded.toFixed(3)}</span>
+                                  {lengthPercentile.zScoreUnrounded != null && (
+                                    <span className="text-[9.5px] text-slate-400 block font-normal">
+                                      Exact: {lengthPercentile.zScoreUnrounded > 0 ? "+" : ""}{lengthPercentile.zScoreUnrounded.toFixed(3)}
+                                    </span>
+                                  )}
                                 </>
                               ) : "—"}
                             </td>
@@ -763,7 +793,11 @@ export function FeedSheetModal({
                               {lengthPercentile ? (
                                 <>
                                   {lengthPercentile.percentileFormatted}
-                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {lengthPercentile.percentileUnrounded.toFixed(2)}%</span>
+                                  {lengthPercentile.percentileUnrounded != null && (
+                                    <span className="text-[9.5px] text-slate-400 block font-normal">
+                                      Exact: {lengthPercentile.percentileUnrounded.toFixed(2)}%
+                                    </span>
+                                  )}
                                 </>
                               ) : "—"}
                             </td>
@@ -794,7 +828,11 @@ export function FeedSheetModal({
                               {hcPercentile ? (
                                 <>
                                   {hcPercentile.zScoreFormatted}
-                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {hcPercentile.zScoreUnrounded > 0 ? "+" : ""}{hcPercentile.zScoreUnrounded.toFixed(3)}</span>
+                                  {hcPercentile.zScoreUnrounded != null && (
+                                    <span className="text-[9.5px] text-slate-400 block font-normal">
+                                      Exact: {hcPercentile.zScoreUnrounded > 0 ? "+" : ""}{hcPercentile.zScoreUnrounded.toFixed(3)}
+                                    </span>
+                                  )}
                                 </>
                               ) : "—"}
                             </td>
@@ -802,7 +840,11 @@ export function FeedSheetModal({
                               {hcPercentile ? (
                                 <>
                                   {hcPercentile.percentileFormatted}
-                                  <span className="text-[9.5px] text-slate-400 block font-normal">Exact: {hcPercentile.percentileUnrounded.toFixed(2)}%</span>
+                                  {hcPercentile.percentileUnrounded != null && (
+                                    <span className="text-[9.5px] text-slate-400 block font-normal">
+                                      Exact: {hcPercentile.percentileUnrounded.toFixed(2)}%
+                                    </span>
+                                  )}
                                 </>
                               ) : "—"}
                             </td>
@@ -864,6 +906,9 @@ export function FeedSheetModal({
 
               {/* Regulatory & Institutional Audit Footnote */}
               <div className="text-[10px] text-slate-400 pt-2 border-t border-slate-200 space-y-1 font-mono">
+                <p>
+                  <strong>Application Version:</strong> {APP_VERSION_LABEL} • {CLINICAL_GOVERNANCE.privacyNotice}
+                </p>
                 <p>
                   <strong>Clinical Notice:</strong> {nut.auditMetadata.nonDeviceDisclaimer}
                 </p>

@@ -371,7 +371,7 @@ export function GrowthPlotter({
                 </div>
               </div>
               <div className="mt-2 pt-1.5 border-t border-amber-200/90 text-xs font-bold text-amber-950">
-                Goal: 110–135 kcal/kg/d
+                ESPGHAN 2022: 115–140 kcal/kg/d (Typical)
               </div>
             </div>
 
@@ -508,6 +508,8 @@ export function GrowthPlotter({
                     type="number"
                     min={22}
                     max={36}
+                    required
+                    aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={gaWeeks}
                     onChange={(e) => onGaWeeksChange(Number(e.target.value))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600"
@@ -525,6 +527,8 @@ export function GrowthPlotter({
                     type="number"
                     min={0}
                     max={6}
+                    required
+                    aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={gaDays}
                     onChange={(e) => onGaDaysChange(Number(e.target.value))}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600"
@@ -544,6 +548,8 @@ export function GrowthPlotter({
                   <input
                     id="dob-input"
                     type="date"
+                    required
+                    aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={dob}
                     onChange={(e) => onDobChange(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white"
@@ -559,6 +565,8 @@ export function GrowthPlotter({
                   <input
                     id="dom-input"
                     type="date"
+                    required
+                    aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={dom}
                     onChange={(e) => onDomChange(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white"
@@ -952,9 +960,11 @@ export function GrowthPlotter({
                             <span className="text-blue-700">
                               {percentileEval.percentileFormatted}
                             </span>
-                            <span className="text-xs font-mono font-medium text-slate-600 ml-2">
-                              ({percentileEval.percentileUnrounded.toFixed(2)}% exact)
-                            </span>
+                            {percentileEval.percentileUnrounded != null && (
+                              <span className="text-xs font-mono font-medium text-slate-600 ml-2">
+                                ({percentileEval.percentileUnrounded.toFixed(2)}% exact)
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -978,10 +988,18 @@ export function GrowthPlotter({
 
                       <div className="pt-2.5 border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-700 font-mono">
                         <span className="font-bold text-slate-900">Standard: {percentileEval.standard}</span>
-                        <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
-                          LMS: L={percentileEval.interpolatedLms.L.toFixed(3)}, M={percentileEval.interpolatedLms.M.toFixed(2)}, S={percentileEval.interpolatedLms.S.toFixed(4)}
-                        </span>
-                        <span>Median (P50): <strong className="text-slate-950 font-black">{percentileEval.p50Value} {metricConfig.unit}</strong></span>
+                        {percentileEval.isOutOfRange || !percentileEval.interpolatedLms || percentileEval.p50Value == null ? (
+                          <span className="bg-amber-50 text-amber-900 px-2.5 py-1 rounded border border-amber-300 font-sans font-semibold">
+                            Median and LMS values: Not applicable outside the supported reference range.
+                          </span>
+                        ) : (
+                          <>
+                            <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-300">
+                              LMS: L={percentileEval.interpolatedLms.L.toFixed(3)}, M={percentileEval.interpolatedLms.M.toFixed(2)}, S={percentileEval.interpolatedLms.S.toFixed(4)}
+                            </span>
+                            <span>Median (P50): <strong className="text-slate-950 font-black">{percentileEval.p50Value} {metricConfig.unit}</strong></span>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1025,9 +1043,11 @@ export function GrowthPlotter({
                             <td className="p-2.5 text-slate-700">{rec.pmaWeeksDecimal}w</td>
                             <td className="p-2.5 font-bold text-slate-900">{rec.weightGrams}g</td>
                             <td className="p-2.5 font-bold text-blue-700">
-                              {rec.weightZScore > 0 ? "+" : ""}{rec.weightZScore.toFixed(2)}
+                              {rec.weightZScore != null ? `${rec.weightZScore > 0 ? "+" : ""}${rec.weightZScore.toFixed(2)}` : "—"}
                             </td>
-                            <td className="p-2.5">{rec.weightPercentile.toFixed(1)}%</td>
+                            <td className="p-2.5">
+                              {rec.weightPercentile != null ? `${rec.weightPercentile.toFixed(1)}%` : "—"}
+                            </td>
                             <td className="p-2.5">
                               {rec.deltaWeightZScore !== undefined ? (
                                 <span className={rec.deltaWeightZScore < -0.67 ? "text-rose-600 font-bold" : rec.deltaWeightZScore > 0 ? "text-emerald-600" : "text-slate-600"}>

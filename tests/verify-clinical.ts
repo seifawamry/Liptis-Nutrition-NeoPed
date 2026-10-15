@@ -46,10 +46,18 @@ import {
 import {
   PEDIAMIL_LBW_PRODUCT,
   PEDIAMIL_1_PRODUCT,
+  validateProductProfile,
 } from "../lib/product-config";
+import {
+  APP_VERSION,
+  APP_VERSION_LABEL,
+  ENGINE_VERSION,
+  CLINICAL_GOVERNANCE,
+} from "../lib/version";
+import { FENTON_2013_METADATA_BOYS } from "../lib/data/fenton-2013-dataset";
 
 console.log("================================================================================");
-console.log("RUNNING LIPTIS NEOPED INSTITUTIONAL CLINICAL ACCEPTANCE TEST SUITE (v2.1.0)");
+console.log(`RUNNING LIPTIS NEOPED INSTITUTIONAL CLINICAL ACCEPTANCE TEST SUITE (${APP_VERSION})`);
 console.log("================================================================================");
 
 let testsPassed = 0;
@@ -669,6 +677,155 @@ function age28w() {
   return calculateAges(28, 0, "2026-05-01", "2026-05-01");
 }
 
+// =============================================================================
+// DOMAIN 12: FEED SHEET PRE-FLIGHT VALIDATION & CLINICAL SAFETY WORKFLOW
+// =============================================================================
+console.log("\n--- Domain 12: Feed Sheet Pre-flight Validation & Safety Workflow ---");
+
+// Test 12.1: Blocked nutrition input (weight < 400g) detects failure before generation
+const blockedNutRes = calculateLbwNutrition(350, 150);
+assert(blockedNutRes.isBlocked === true, "Pre-flight validation blocks feed sheet when weight < 400g");
+assert(
+  blockedNutRes.validation.errors.some((e) => e.field === "weightGrams"),
+  "Validation error summary identifies 'weightGrams' field as invalid"
+);
+
+// Test 12.2: Blocked growth timeline (DOM before DOB) detects failure before generation
+const blockedGrowthAges = calculateAges(28, 0, "2026-05-15", "2026-05-10");
+assert(blockedGrowthAges.isBlocked === true, "Pre-flight validation blocks feed sheet when DOM < DOB");
+assert(
+  blockedGrowthAges.validation.errors.some((e) => e.field === "dom"),
+  "Validation error summary identifies measurement date ('dom') as invalid"
+);
+
+// Test 12.3: Valid inputs produce complete calculation result ready for sheet rendering
+const validNutRes = calculateLbwNutrition(1350, 150);
+assert(!validNutRes.isBlocked, "Valid clinical inputs (1350g, 150 mL/kg/d) pass pre-flight validation");
+assert(
+  validNutRes.deliveredNutrientPayload !== undefined,
+  "Valid result produces complete deliveredNutrientPayload for feed sheet"
+);
+
+// Test 12.4: Feed sheet audit metadata includes non-device disclaimer
+assert(
+  validNutRes.auditMetadata.nonDeviceDisclaimer.includes("Clinical decision support reference calculation"),
+  "Feed sheet metadata contains official clinical decision support notice"
+);
+
+// =============================================================================
+// DOMAIN 13: CENTRALIZED VERSION CONSISTENCY & PROVENANCE
+// =============================================================================
+console.log("\n--- Domain 13: Centralized Version Consistency & Provenance ---");
+
+// Test 13.1: APP_VERSION is strictly v2.2.0
+assert(APP_VERSION === "v2.2.0", `APP_VERSION is centralized as 'v2.2.0' (got: ${APP_VERSION})`);
+assert(APP_VERSION_LABEL === "v2.2.0 Reference", `APP_VERSION_LABEL is 'v2.2.0 Reference' (got: ${APP_VERSION_LABEL})`);
+
+// Test 13.2: ENGINE_VERSION contains v2.2.0
+assert(ENGINE_VERSION.includes("v2.2.0"), `ENGINE_VERSION references v2.2.0 (got: ${ENGINE_VERSION})`);
+
+// Test 13.3: Verifiable privacy statement (no network transmission)
+assert(
+  CLINICAL_GOVERNANCE.privacyNotice.includes("No network transmission"),
+  "Privacy notice states verifiable client-side operation (no network transmission)"
+);
+
+// Test 13.4: Fenton licensing notice verified
+assert(
+  CLINICAL_GOVERNANCE.fentonLicensingNotice.includes("Fenton 2013 reference implementation for institutional review"),
+  "Fenton licensing notice contains institutional review specification"
+);
+
+// Test 13.5: Fenton dataset metadata uses centralized notice
+assert(
+  FENTON_2013_METADATA_BOYS.licensingNotice === CLINICAL_GOVERNANCE.fentonLicensingNotice,
+  "Fenton dataset metadata synchronizes with centralized CLINICAL_GOVERNANCE licensing notice"
+);
+
+// =============================================================================
+// DOMAIN 14: OUT-OF-RANGE GROWTH HANDLING & EXTREME PERCENTILE PROTECTION
+// =============================================================================
+console.log("\n--- Domain 14: Out-of-Range Growth Handling & Extreme Percentiles ---");
+
+// Test 14.1: Fenton out-of-range (<22w PMA) returns null technical values, no dummy zeros
+const d14Under22wAges = calculateAges(21, 0, "2026-05-01", "2026-05-01");
+const under22wDataset = getGrowthDataset("male", d14Under22wAges);
+assert(under22wDataset.isAgeOutOfRange === true, "Age < 22 weeks PMA flagged as isAgeOutOfRange");
+
+const under22wEval = evaluatePercentile(450, "weight", under22wDataset);
+assert(under22wEval.isOutOfRange === true, "Evaluation under 22w PMA sets isOutOfRange=true");
+assert(under22wEval.p50Value === null, "Out-of-range growth returns p50Value === null (no dummy 0g)");
+assert(under22wEval.zScore === null, "Out-of-range growth returns zScore === null (no dummy 0.00)");
+assert(under22wEval.percentile === null, "Out-of-range growth returns percentile === null (no dummy 0.0%)");
+assert(under22wEval.interpolatedLms === null, "Out-of-range growth returns interpolatedLms === null (no dummy L=1, M=0, S=0)");
+assert(under22wEval.zScoreFormatted === "N/A", "Out-of-range growth returns zScoreFormatted === 'N/A'");
+assert(under22wEval.percentileFormatted === "N/A", "Out-of-range growth returns percentileFormatted === 'N/A'");
+
+// Test 14.2: WHO out-of-range (>24 months CCA) returns null technical values
+const over24mAges = calculateAges(30, 0, "2024-01-01", "2026-05-01"); // ~28 months CA (<1095d), CCA > 24 months
+const over24mDataset = getGrowthDataset("male", over24mAges);
+assert(over24mDataset.isAgeOutOfRange === true, "Age > 24 months CCA flagged as isAgeOutOfRange");
+
+const over24mEval = evaluatePercentile(14000, "weight", over24mDataset);
+assert(over24mEval.isOutOfRange === true, "Evaluation > 24m CCA sets isOutOfRange=true");
+assert(over24mEval.p50Value === null, "Over 24m CCA returns p50Value === null");
+assert(over24mEval.interpolatedLms === null, "Over 24m CCA returns interpolatedLms === null");
+
+// Test 14.3: Extreme low percentile (< 0.1th) formats as '<0.1th Percentile'
+const normalFentonDataset = getGrowthDataset("male", calculateAges(34, 0, "2026-03-20", "2026-05-01")); // 34w GA + 6w CA = 40.0w PMA
+const extremeLowEval = evaluatePercentile(500, "weight", normalFentonDataset); // 500g at 40w is extreme low
+assert(
+  extremeLowEval.percentileFormatted === "<0.1th Percentile",
+  `Extreme low percentile formatted as '<0.1th Percentile' (got: ${extremeLowEval.percentileFormatted})`
+);
+
+// Test 14.4: Extreme high percentile (> 99.9th) formats as '>99.9th Percentile'
+const extremeHighEval = evaluatePercentile(6000, "weight", normalFentonDataset); // 6000g at 40w is extreme high
+assert(
+  extremeHighEval.percentileFormatted === ">99.9th Percentile",
+  `Extreme high percentile formatted as '>99.9th Percentile' (got: ${extremeHighEval.percentileFormatted})`
+);
+
+// =============================================================================
+// DOMAIN 15: PRODUCT PROFILE RUNTIME INTEGRITY & RECONSTITUTION
+// =============================================================================
+console.log("\n--- Domain 15: Product Profile Runtime Integrity & Reconstitution ---");
+
+// Test 15.1: Pediamil LBW product profile runtime check
+const lbwReport = validateProductProfile(PEDIAMIL_LBW_PRODUCT);
+assert(lbwReport.isValid === true, "Pediamil LBW passes runtime validation check");
+assert(lbwReport.errors.length === 0, "Pediamil LBW validation reports 0 errors");
+
+// Test 15.2: Pediamil 1 product profile runtime check
+const stage1Report = validateProductProfile(PEDIAMIL_1_PRODUCT);
+assert(stage1Report.isValid === true, "Pediamil 1 passes runtime validation check");
+assert(stage1Report.errors.length === 0, "Pediamil 1 validation reports 0 errors");
+
+// Test 15.3: Invalid mock profile fails validation
+const badProfile = {
+  ...PEDIAMIL_LBW_PRODUCT,
+  composition: {
+    ...PEDIAMIL_LBW_PRODUCT.composition,
+    energyKcalPer100Ml: -10, // invalid negative energy
+  },
+};
+const badReport = validateProductProfile(badProfile);
+assert(badReport.isValid === false, "Profile with negative energy fails validation");
+assert(
+  badReport.errors.some((e) => e.includes("Energy")),
+  "Validation error message identifies Energy issue"
+);
+
+// Test 15.4: Dilution rates match clinical reconstitution standards
+assert(
+  PEDIAMIL_LBW_PRODUCT.reconstitution.standardDilutionPercent === 15.0,
+  "Pediamil LBW standard dilution is 15.0%"
+);
+assert(
+  PEDIAMIL_1_PRODUCT.reconstitution.standardDilutionPercent === 13.7,
+  "Pediamil 1 standard dilution is 13.7%"
+);
+
 console.log("================================================================================");
 console.log(`TEST SUMMARY: ${testsPassed} PASSED, ${testsFailed} FAILED`);
 console.log("================================================================================");
@@ -676,5 +833,5 @@ console.log("===================================================================
 if (testsFailed > 0) {
   process.exit(1);
 } else {
-  console.log(">> ALL 14 CLINICAL ACCEPTANCE TEST DOMAINS VERIFIED SUCCESSFULLY! <<\n");
+  console.log(">> ALL 15 CLINICAL ACCEPTANCE TEST DOMAINS VERIFIED SUCCESSFULLY! <<\n");
 }

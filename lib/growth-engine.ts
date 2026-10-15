@@ -167,19 +167,20 @@ export interface PercentileEvaluation {
   observedValue: number;
   plotAge: number;
   ageUnit: string;
-  p50Value: number;
-  zScore: number; // rounded for clinical display (2 decimal places)
-  zScoreUnrounded: number; // continuous floating point precision
-  zScoreFormatted: string; // e.g. "+0.60 SD" or "-1.42 SD"
-  percentile: number; // rounded for clinical display (1 decimal place)
-  percentileUnrounded: number; // continuous floating point precision (0 to 100)
-  percentileFormatted: string; // e.g. "73.0th Percentile"
+  isOutOfRange?: boolean;
+  p50Value?: number | null;
+  zScore?: number | null; // rounded for clinical display (2 decimal places)
+  zScoreUnrounded?: number | null; // continuous floating point precision
+  zScoreFormatted: string; // e.g. "+0.60 SD", "-1.42 SD", "N/A", "Pending"
+  percentile?: number | null; // rounded for clinical display (1 decimal place)
+  percentileUnrounded?: number | null; // continuous floating point precision (0 to 100)
+  percentileFormatted: string; // e.g. "73.0th Percentile", "<0.1th Percentile", ">99.9th Percentile", "N/A", "Pending"
   percentileBracket: string;
   shortBadge: "<3rd" | "3rd-10th" | "10th-50th" | "50th-90th" | "90th-97th" | ">97th" | "Out of Range" | "N/A";
   badgeClass: string;
   clinicalNote: string;
   clinicalCaveat: string;
-  interpolatedLms: LmsParams;
+  interpolatedLms?: LmsParams | null;
   methodology: string;
   standard: string;
   version: string;
@@ -195,14 +196,14 @@ export interface LongitudinalRecord {
   caDays: number;
   pmaWeeksDecimal: number;
   ccaMonthsDecimal: number;
-  weightZScore: number;
-  weightPercentile: number;
+  weightZScore?: number | null;
+  weightPercentile?: number | null;
   deltaWeightZScore?: number; // delta Z compared to previous record
   weightVelocityGPerKgPerDay?: number; // Patel et al. 2005 2-point exponential model
-  lengthZScore?: number;
-  lengthPercentile?: number;
-  hcZScore?: number;
-  hcPercentile?: number;
+  lengthZScore?: number | null;
+  lengthPercentile?: number | null;
+  hcZScore?: number | null;
+  hcPercentile?: number | null;
   trendAlert?: string;
   isDuplicateDate?: boolean;
 }
@@ -695,19 +696,20 @@ export function evaluatePercentile(
     observedValue: 0,
     plotAge: dataset.patientPlotAge,
     ageUnit: dataset.xAxisUnit,
-    p50Value: 0,
-    zScore: 0,
-    zScoreUnrounded: 0,
+    isOutOfRange: false,
+    p50Value: null,
+    zScore: null,
+    zScoreUnrounded: null,
     zScoreFormatted: "N/A",
-    percentile: 0,
-    percentileUnrounded: 0,
+    percentile: null,
+    percentileUnrounded: null,
     percentileFormatted: "N/A",
     percentileBracket: "Measurement pending",
     shortBadge: "N/A",
     badgeClass: "bg-slate-100 text-slate-700 border-slate-300",
     clinicalNote: "Enter a valid measurement to evaluate exact reference percentile and Z-score.",
     clinicalCaveat,
-    interpolatedLms: { L: 1, M: 0, S: 0 },
+    interpolatedLms: null,
     methodology: "Linear interpolation between tabulated LMS parameters",
     standard: dataset.standardName,
     version: dataset.datasetVersion,
@@ -722,10 +724,21 @@ export function evaluatePercentile(
     return {
       ...emptyEval,
       observedValue: value,
+      isOutOfRange: true,
+      p50Value: null,
+      zScore: null,
+      zScoreUnrounded: null,
+      zScoreFormatted: "N/A",
+      percentile: null,
+      percentileUnrounded: null,
+      percentileFormatted: "N/A",
+      percentileBracket: "Out of reference range",
       shortBadge: "Out of Range",
       badgeClass: "bg-amber-100 text-amber-900 border-amber-300",
       clinicalNote: dataset.ageOutOfRangeWarning || "Patient age is outside supported growth reference horizons.",
       clinicalCaveat,
+      interpolatedLms: null,
+      methodology: "Reference calculation suspended: age is outside supported growth reference horizons.",
     };
   }
 
@@ -751,7 +764,12 @@ export function evaluatePercentile(
   // Compute exact continuous percentile via Standard Normal CDF
   const pNorm = normalCdf(rawZ) * 100;
   const roundedPercentile = Math.round(pNorm * 10) / 10;
-  const percentileFormatted = `${roundedPercentile.toFixed(1)}th Percentile`;
+  let percentileFormatted = `${roundedPercentile.toFixed(1)}th Percentile`;
+  if (pNorm < 0.1) {
+    percentileFormatted = "<0.1th Percentile";
+  } else if (pNorm > 99.9) {
+    percentileFormatted = ">99.9th Percentile";
+  }
 
   // Standardized p50 for clinical display (in grams if weight was entered in grams)
   const displayP50 = isWhoWeight ? Math.round(p50 * 1000) : Math.round(p50 * 10) / 10;
@@ -892,14 +910,16 @@ export function evaluateLongitudinalRecords(
         isDuplicateDate = true;
         trendAlert = "Duplicate date entry; velocity cannot be computed across zero days.";
       } else if (deltaDays > 0) {
-        deltaWeightZScore = Math.round((wEval.zScore - prev.weightZScore) * 100) / 100;
+        if (wEval.zScore != null && prev.weightZScore != null) {
+          deltaWeightZScore = Math.round((wEval.zScore - prev.weightZScore) * 100) / 100;
+        }
         weightVelocity = calculateWeightVelocity(sorted[i - 1].weightGrams, item.weightGrams, deltaDays);
 
         if (item.weightGrams < sorted[i - 1].weightGrams) {
           trendAlert = `Screening alert for clinician review—not a diagnosis. Patient demonstrated negative weight velocity (${weightVelocity.toFixed(1)} g/kg/d).`;
-        } else if (deltaWeightZScore < -0.67) {
+        } else if (deltaWeightZScore != null && deltaWeightZScore < -0.67) {
           trendAlert = `Screening alert for clinician review—not a diagnosis. Weight Z-score declined by ${Math.abs(deltaWeightZScore).toFixed(2)} SD (>0.67 SD indicates dropping a full percentile channel).`;
-        } else if (deltaWeightZScore > 0.67) {
+        } else if (deltaWeightZScore != null && deltaWeightZScore > 0.67) {
           trendAlert = `Screening alert for clinician review—not a diagnosis. Rapid upward channel crossing (+${deltaWeightZScore.toFixed(2)} SD); monitor somatic accretion.`;
         } else {
           trendAlert = "Trajectory tracking within reference growth channel (ΔZ within ±0.67 SD).";
