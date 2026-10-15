@@ -45,8 +45,9 @@ export function ClinicalHeader({
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3">
         <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
           {/* Brand & Title */}
-          <div className="flex items-center gap-2.5 sm:gap-4 w-full md:w-auto justify-between sm:justify-start">
-            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 w-full md:w-auto justify-between sm:justify-start">
+            {/* Primary NeoPed Suite Identity */}
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
               <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-clinical-gold/60 shadow-md shrink-0 bg-clinical-navy-950">
                 <Image
                   src="/icons/icon-192.png"
@@ -57,8 +58,27 @@ export function ClinicalHeader({
                 />
               </div>
 
+              <div>
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  <h1 className="text-base sm:text-lg font-bold tracking-tight text-white leading-tight">
+                    NeoPed™
+                  </h1>
+                  <span className="text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded bg-clinical-gold text-slate-950 uppercase tracking-wide shrink-0">
+                    LBW Suite
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 hidden lg:block leading-tight">
+                  Enteral Macronutrient Calculator & Age-Corrected Growth Engine
+                </p>
+              </div>
+            </div>
+
+            <div className="hidden sm:block h-7 w-[1px] bg-clinical-navy-700 shrink-0" />
+
+            {/* Corporate & Formula Brand Logos */}
+            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
               <div className="bg-white px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
-                <div className="relative w-24 sm:w-32 h-7 sm:h-9">
+                <div className="relative w-20 sm:w-28 h-6 sm:h-7">
                   <Image
                     src="/logos/liptis-nutrition.png"
                     alt="Liptis Nutrition Logo"
@@ -69,10 +89,8 @@ export function ClinicalHeader({
                 </div>
               </div>
 
-              <div className="hidden sm:block h-8 w-[1px] bg-clinical-navy-700" />
-
-              <div className="bg-white/95 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border border-white/20 flex items-center shrink-0">
-                <div className="relative w-20 sm:w-28 h-6 sm:h-8">
+              <div className="bg-white/95 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border border-white/20 flex items-center justify-center shrink-0">
+                <div className="relative w-18 sm:w-24 h-6 sm:h-7">
                   <Image
                     src="/logos/pediamil-lbw.png"
                     alt="Pediamil LBW"
@@ -82,20 +100,6 @@ export function ClinicalHeader({
                   />
                 </div>
               </div>
-            </div>
-
-            <div className="text-right sm:text-left">
-              <div className="flex items-center gap-1.5 sm:gap-2 justify-end sm:justify-start">
-                <h1 className="text-sm sm:text-lg font-bold tracking-tight text-white leading-tight">
-                  NeoPed™
-                </h1>
-                <span className="text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded bg-clinical-gold text-slate-950 uppercase tracking-wide shrink-0">
-                  LBW Suite
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-300 hidden md:block">
-                Enteral Macronutrient Calculator & Age-Corrected Growth Trajectory Engine
-              </p>
             </div>
           </div>
 
