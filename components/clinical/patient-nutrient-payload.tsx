@@ -832,7 +832,7 @@ export function PatientNutrientPayload({
               key={mile.id}
               type="button"
               onClick={() => setSelectedAgeMilestone(mile.id as AgeStratificationId)}
-              className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all border ${
+              className={`min-h-[36px] text-xs px-2.5 sm:px-3 py-1.5 rounded-lg font-bold transition-all border shrink-0 ${
                 selectedAgeMilestone === mile.id
                   ? "bg-slate-950 text-white border-slate-950 shadow-md ring-2 ring-blue-500/40"
                   : "bg-white text-slate-800 border-slate-300 hover:border-slate-500 hover:bg-slate-50"
@@ -867,20 +867,20 @@ export function PatientNutrientPayload({
       </div>
 
       {/* 5. Category Navigation Filter Tabs */}
-      <div className="px-4 pt-3 pb-3 sm:px-5 flex flex-wrap items-center gap-2 border-b-2 border-slate-300 bg-slate-50">
+      <div className="px-3 sm:px-5 pt-3 pb-3 flex overflow-x-auto items-center gap-1.5 border-b-2 border-slate-300 bg-slate-50">
         {[
           { id: "all", label: "All Delivered Nutrients" },
           { id: "mineral", label: "Bone & Growth Minerals" },
           { id: "macronutrient", label: "Macronutrients & Energy" },
           { id: "electrolyte", label: "Electrolytes & Renal" },
           { id: "vitamin", label: "Vitamins & Defense" },
-          { id: "specialty", label: "Specialty Bioactives (HMO/DHA/GOS)" },
+          { id: "specialty", label: "Specialty Bioactives" },
         ].map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveCategory(tab.id as any)}
-            className={`text-xs px-3 py-1.5 rounded-lg transition-all font-bold border ${
+            className={`min-h-[36px] text-xs px-3 py-1.5 rounded-lg transition-all font-bold border shrink-0 ${
               activeCategory === tab.id
                 ? "bg-slate-950 text-white border-slate-950 shadow-sm"
                 : "bg-white hover:bg-slate-100 text-slate-800 border-slate-300"

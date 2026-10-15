@@ -115,26 +115,26 @@ export function FeedSheetModal({
     <div
       ref={modalRef}
       id="feed-sheet-modal"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-950/80 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto"
       role="dialog"
       aria-modal="true"
       aria-labelledby="feed-sheet-title"
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full my-6 overflow-hidden border border-slate-300 flex flex-col max-h-[92vh]">
+      <div className="bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl max-w-4xl w-full my-0 sm:my-6 overflow-hidden border border-slate-300 flex flex-col h-[94vh] sm:h-auto sm:max-h-[92vh]">
         {/* Modal Top Control Bar (Hidden when printed) */}
-        <div className="no-print bg-clinical-navy-950 text-white px-6 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-clinical-navy-800 shrink-0">
+        <div className="no-print bg-clinical-navy-950 text-white px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-clinical-navy-800 shrink-0">
           <div className="flex items-center gap-2.5">
-            <FileText className="w-5 h-5 text-clinical-gold" aria-hidden="true" />
+            <FileText className="w-5 h-5 text-clinical-gold shrink-0" aria-hidden="true" />
             <div>
               <h2 id="feed-sheet-title" className="text-sm font-bold text-white tracking-tight">
                 Clinical Calculation Worksheet Preview
               </h2>
-              <p className="text-[11px] text-amber-300 font-medium">
-                Clinical calculation worksheet — requires independent clinician verification before use
+              <p className="text-[10.5px] sm:text-[11px] text-amber-300 font-medium">
+                Clinical worksheet — requires independent clinician verification before use
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3 self-end sm:self-center">
+          <div className="flex items-center gap-2.5 self-end sm:self-center w-full sm:w-auto justify-end">
             <button
               id="print-feed-sheet-btn"
               ref={printBtnRef}
@@ -142,16 +142,16 @@ export function FeedSheetModal({
               onClick={handlePrint}
               disabled={isPrintingBlocked}
               aria-label="Print Hospital Feed Sheet or Save as PDF"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center gap-2 transition-all border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-50"
+              className="min-h-[44px] px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold shadow flex items-center justify-center gap-2 transition-all border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 disabled:opacity-50 flex-1 sm:flex-initial"
             >
-              <Printer className="w-4 h-4" aria-hidden="true" />
+              <Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Print Worksheet / Save PDF</span>
             </button>
             <button
               id="close-feed-sheet-btn"
               type="button"
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="min-h-[44px] min-w-[44px] p-2 text-slate-300 hover:text-white rounded-lg hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white flex items-center justify-center shrink-0"
               aria-label="Close feed sheet modal"
             >
               <X className="w-5 h-5" aria-hidden="true" />

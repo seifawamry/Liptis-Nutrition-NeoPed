@@ -263,7 +263,7 @@ export function NutritionEngine({
             type="button"
             onClick={handleCopySummary}
             disabled={result.isBlocked}
-            className={`text-xs px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+            className={`min-h-[36px] sm:min-h-[32px] text-xs px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
               copyFeedback
                 ? "bg-emerald-600 text-white"
                 : "bg-blue-600 hover:bg-blue-500 text-white disabled:opacity-50"
@@ -373,6 +373,7 @@ export function NutritionEngine({
                   <input
                     id="weight-input"
                     type="number"
+                    inputMode="numeric"
                     min={400}
                     max={10000}
                     step={10}
@@ -380,7 +381,7 @@ export function NutritionEngine({
                     onChange={(e) => onWeightChange(Number(e.target.value))}
                     aria-invalid={result.isBlocked}
                     aria-describedby="weight-kg-display weight-presets-group weight-bounds-note"
-                    className={`w-full px-3.5 py-2.5 rounded-lg text-base font-semibold transition-all focus-visible:outline-none ${
+                    className={`w-full px-3.5 py-2.5 rounded-lg text-base font-semibold transition-all focus-visible:outline-none min-h-[44px] ${
                       result.isBlocked
                         ? "bg-rose-50 border-2 border-rose-400 text-rose-950 focus:ring-2 focus:ring-rose-500"
                         : "bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 focus:border-transparent"
@@ -408,7 +409,7 @@ export function NutritionEngine({
                       aria-pressed={weightGrams === preset.value}
                       aria-label={`Set weight to ${preset.label}`}
                       onClick={() => onWeightChange(preset.value)}
-                      className={`text-[11px] px-2 py-0.5 rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinical-navy-800 ${
+                      className={`min-h-[34px] sm:min-h-[26px] text-[11px] px-2.5 sm:px-2 py-1 sm:py-0.5 rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinical-navy-800 ${
                         weightGrams === preset.value
                           ? "bg-clinical-navy-900 text-white border-clinical-navy-900 font-semibold"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200"
@@ -439,13 +440,14 @@ export function NutritionEngine({
                   <input
                     id="fluid-allowance-input"
                     type="number"
+                    inputMode="numeric"
                     min={135}
                     max={200}
                     step={5}
                     value={fluidAllowance}
                     onChange={(e) => onFluidChange(Number(e.target.value))}
                     aria-describedby="fluid-warnings fluid-presets-group fluid-bounds-note"
-                    className={`w-full px-3.5 py-2.5 rounded-lg text-base font-semibold transition-all focus-visible:outline-none ${
+                    className={`w-full px-3.5 py-2.5 rounded-lg text-base font-semibold transition-all focus-visible:outline-none min-h-[44px] ${
                       result.isBlocked && result.validation.errors.some((e) => e.field === "fluidAllowance")
                         ? "bg-rose-50 border-2 border-rose-400 text-rose-950 focus:ring-2 focus:ring-rose-500"
                         : "bg-slate-50 border border-slate-300 text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 focus:border-transparent"
@@ -467,7 +469,7 @@ export function NutritionEngine({
                 </div>
 
                 {/* Fluid Presets */}
-                <div id="fluid-presets-group" role="group" aria-label="Quick Fluid Target Presets" className="flex items-center gap-1.5 pt-1">
+                <div id="fluid-presets-group" role="group" aria-label="Quick Fluid Target Presets" className="flex flex-wrap items-center gap-1.5 pt-1">
                   <span className="text-[11px] text-slate-400 mr-1">Presets:</span>
                   {quickFluidPresets.map((val) => (
                     <button
@@ -476,7 +478,7 @@ export function NutritionEngine({
                       aria-pressed={fluidAllowance === val}
                       aria-label={`Set fluid allowance to ${val} mL per kg per day`}
                       onClick={() => onFluidChange(val)}
-                      className={`text-[11px] px-2 py-0.5 rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinical-navy-800 ${
+                      className={`min-h-[34px] sm:min-h-[26px] text-[11px] px-2.5 sm:px-2 py-1 sm:py-0.5 rounded border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clinical-navy-800 ${
                         fluidAllowance === val
                           ? "bg-clinical-navy-900 text-white border-clinical-navy-900 font-semibold"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200"

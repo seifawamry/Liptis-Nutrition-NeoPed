@@ -181,7 +181,7 @@ export default function Home() {
       )}
 
       {/* Main Suite Content Area */}
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 space-y-6 focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 focus:outline-none">
         {/* View Routing with Tabpanel Semantics */}
         {activeTab === "growth" && (
           <section

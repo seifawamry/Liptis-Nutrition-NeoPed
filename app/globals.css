@@ -61,6 +61,18 @@ body {
   background: #94a3b8;
 }
 
+/* Touch Momentum & Mobile Safe Areas */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
 /* High-Density Clinical Print Styles */
 @media print {
   @page {

@@ -31,9 +31,9 @@ export function ClinicalCard({
       )}
     >
       {(title || subtitle || action) && (
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70">
           <div className="flex items-center gap-2.5">
-            {icon && <div className="text-clinical-navy-800">{icon}</div>}
+            {icon && <div className="text-clinical-navy-800 shrink-0">{icon}</div>}
             <div>
               {title && (
                 <h3 className="text-sm font-semibold text-clinical-navy-950 tracking-tight">
@@ -45,10 +45,10 @@ export function ClinicalCard({
               )}
             </div>
           </div>
-          {action && <div>{action}</div>}
+          {action && <div className="w-full sm:w-auto">{action}</div>}
         </div>
       )}
-      <div className="p-5">{children}</div>
+      <div className="p-3.5 sm:p-5">{children}</div>
     </div>
   );
 }

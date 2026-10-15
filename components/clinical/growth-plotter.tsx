@@ -280,22 +280,22 @@ export function GrowthPlotter({
             Fenton 2013 and WHO 2006 growth standards exhibit sexual dimorphism.
             Select biological sex below to activate linear LMS age correction and percentile curves.
           </p>
-          <div className="flex justify-center gap-4 pt-2">
+          <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 pt-2">
             <button
               type="button"
               onClick={() => onSexChange("male")}
-              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
+              className="min-h-[44px] px-5 py-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
             >
-              <Baby className="w-4 h-4" aria-hidden="true" />
-              Male Infant (Boys Reference)
+              <Baby className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Male Infant (Boys Reference)</span>
             </button>
             <button
               type="button"
               onClick={() => onSexChange("female")}
-              className="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
+              className="min-h-[44px] px-5 py-2.5 bg-rose-600 hover:bg-rose-700 active:bg-rose-800 text-white text-xs font-bold rounded-lg shadow transition-all flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400"
             >
-              <Baby className="w-4 h-4" aria-hidden="true" />
-              Female Infant (Girls Reference)
+              <Baby className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Female Infant (Girls Reference)</span>
             </button>
           </div>
         </div>
@@ -464,7 +464,7 @@ export function GrowthPlotter({
                     role="radio"
                     aria-checked={biologicalSex === "male"}
                     onClick={() => onSexChange("male")}
-                    className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                    className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                       biologicalSex === "male"
                         ? "bg-blue-600 text-white border-blue-700 shadow-sm"
                         : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
@@ -480,7 +480,7 @@ export function GrowthPlotter({
                     role="radio"
                     aria-checked={biologicalSex === "female"}
                     onClick={() => onSexChange("female")}
-                    className={`py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
+                    className={`min-h-[44px] py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-2 border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 ${
                       biologicalSex === "female"
                         ? "bg-rose-600 text-white border-rose-700 shadow-sm"
                         : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200"
@@ -506,13 +506,14 @@ export function GrowthPlotter({
                   <input
                     id="ga-weeks-input"
                     type="number"
+                    inputMode="numeric"
                     min={22}
                     max={36}
                     required
                     aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={gaWeeks}
                     onChange={(e) => onGaWeeksChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -525,13 +526,14 @@ export function GrowthPlotter({
                   <input
                     id="ga-days-input"
                     type="number"
+                    inputMode="numeric"
                     min={0}
                     max={6}
                     required
                     aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={gaDays}
                     onChange={(e) => onGaDaysChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-clinical-navy-600 min-h-[44px]"
                   />
                 </div>
               </div>
@@ -552,7 +554,7 @@ export function GrowthPlotter({
                     aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={dob}
                     onChange={(e) => onDobChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white min-h-[44px]"
                   />
                 </div>
                 <div>
@@ -569,7 +571,7 @@ export function GrowthPlotter({
                     aria-invalid={ages.isBlocked ? "true" : "false"}
                     value={dom}
                     onChange={(e) => onDomChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-semibold text-slate-900 focus:bg-white min-h-[44px]"
                   />
                 </div>
               </div>
@@ -627,12 +629,13 @@ export function GrowthPlotter({
                   <input
                     id="metric-weight-input"
                     type="number"
+                    inputMode="numeric"
                     min={400}
                     max={10000}
                     step={10}
                     value={weightGrams}
                     onChange={(e) => onWeightChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white min-h-[44px]"
                   />
                   <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-slate-400 pointer-events-none">
                     g
@@ -651,12 +654,13 @@ export function GrowthPlotter({
                   <input
                     id="metric-length-input"
                     type="number"
+                    inputMode="decimal"
                     min={20}
                     max={70}
                     step={0.5}
                     value={lengthCm}
                     onChange={(e) => onLengthChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white min-h-[44px]"
                   />
                   <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-slate-400 pointer-events-none">
                     cm
@@ -675,12 +679,13 @@ export function GrowthPlotter({
                   <input
                     id="metric-hc-input"
                     type="number"
+                    inputMode="decimal"
                     min={15}
                     max={45}
                     step={0.5}
                     value={headCircumferenceCm}
                     onChange={(e) => onHcChange(Number(e.target.value))}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white"
+                    className="w-full px-3 py-2.5 sm:py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-900 focus:bg-white min-h-[44px]"
                   />
                   <span className="absolute inset-y-0 right-3 flex items-center text-xs font-semibold text-slate-400 pointer-events-none">
                     cm
@@ -706,7 +711,7 @@ export function GrowthPlotter({
             }
             icon={<TrendingUp className="w-4 h-4 text-clinical-navy-800" />}
             action={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                 {/* View Mode Toggle: Curve vs Longitudinal */}
                 <div
                   role="tablist"
@@ -718,7 +723,7 @@ export function GrowthPlotter({
                     role="tab"
                     aria-selected={activeViewMode === "chart"}
                     onClick={() => setActiveViewMode("chart")}
-                    className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${
+                    className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${
                       activeViewMode === "chart"
                         ? "bg-white text-clinical-navy-950 shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
@@ -732,54 +737,56 @@ export function GrowthPlotter({
                     role="tab"
                     aria-selected={activeViewMode === "longitudinal"}
                     onClick={() => setActiveViewMode("longitudinal")}
-                    className={`px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${
+                    className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 rounded-md transition-all flex items-center gap-1 ${
                       activeViewMode === "longitudinal"
                         ? "bg-white text-clinical-navy-950 shadow-xs"
                         : "text-slate-600 hover:text-slate-900"
                     }`}
                   >
                     <History className="w-3.5 h-3.5" />
-                    <span>Longitudinal Tracking</span>
+                    <span>Longitudinal</span>
                   </button>
                 </div>
 
-                {activeViewMode === "chart" && (
-                  <button
-                    type="button"
-                    onClick={() => setShowDataTable(!showDataTable)}
-                    aria-expanded={showDataTable}
-                    className="px-2 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors"
-                  >
-                    {showDataTable ? "Show Chart" : "Table"}
-                  </button>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {activeViewMode === "chart" && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDataTable(!showDataTable)}
+                      aria-expanded={showDataTable}
+                      className="min-h-[36px] sm:min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition-colors"
+                    >
+                      {showDataTable ? "Show Chart" : "Table"}
+                    </button>
+                  )}
 
-                {activeViewMode === "chart" && (
-                  <div
-                    role="tablist"
-                    aria-label="Growth Metric Selector"
-                    className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold"
-                  >
-                    {(["weight", "length", "headCircumference"] as GrowthMetric[]).map(
-                      (metric) => (
-                        <button
-                          key={metric}
-                          role="tab"
-                          aria-selected={activeMetric === metric}
-                          type="button"
-                          onClick={() => setActiveMetric(metric)}
-                          className={`px-2 py-1 rounded-md transition-all ${
-                            activeMetric === metric
-                              ? "bg-white text-clinical-navy-950 shadow-xs"
-                              : "text-slate-600 hover:text-slate-900"
-                          }`}
-                        >
-                          {metric === "weight" ? "Weight" : metric === "length" ? "Length" : "HC"}
-                        </button>
-                      )
-                    )}
-                  </div>
-                )}
+                  {activeViewMode === "chart" && (
+                    <div
+                      role="tablist"
+                      aria-label="Growth Metric Selector"
+                      className="flex items-center gap-1 bg-slate-200/80 p-0.5 rounded-lg text-xs font-semibold"
+                    >
+                      {(["weight", "length", "headCircumference"] as GrowthMetric[]).map(
+                        (metric) => (
+                          <button
+                            key={metric}
+                            role="tab"
+                            aria-selected={activeMetric === metric}
+                            type="button"
+                            onClick={() => setActiveMetric(metric)}
+                            className={`min-h-[36px] sm:min-h-[32px] px-2.5 py-1 rounded-md transition-all ${
+                              activeMetric === metric
+                                ? "bg-white text-clinical-navy-950 shadow-xs"
+                                : "text-slate-600 hover:text-slate-900"
+                            }`}
+                          >
+                            {metric === "weight" ? "Weight" : metric === "length" ? "Length" : "HC"}
+                          </button>
+                        )
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             }
           >
