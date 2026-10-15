@@ -105,7 +105,12 @@ export function FeedSheetModal({
   if (!isOpen) return null;
 
   const handlePrint = () => {
+    const originalTitle = document.title;
+    document.title = `Liptis Nutrition NeoPed™ LBW Clinical Worksheet - ${patientId}`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
   };
 
   const isGrowthBlocked = ages.isBlocked;

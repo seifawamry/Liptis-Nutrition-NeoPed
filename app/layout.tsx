@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Liptis Nutrition NeoPed™ LBW Clinical Suite",
   description:
     "Clinical decision support system for preterm & Low Birth Weight infants. Deterministic ESPGHAN 2022 calculation matrix and Fenton/WHO sex-specific growth charts.",
-  applicationName: "NeoPed™ LBW Suite",
+  applicationName: "Liptis Nutrition NeoPed™ LBW Suite",
   authors: [{ name: "Liptis Nutrition" }],
   keywords: [
     "Liptis Nutrition",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "NeoPed™ LBW",
+    title: "Liptis Nutrition NeoPed™ LBW",
   },
   formatDetection: {
     telephone: false,
