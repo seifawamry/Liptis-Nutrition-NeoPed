@@ -18,6 +18,46 @@ import {
   ProductProfile,
 } from "./product-config";
 import { APP_VERSION, APP_VERSION_LABEL, ENGINE_VERSION, CLINICAL_GOVERNANCE } from "./version";
+import {
+  TinGuideRow,
+  TinGuideMetadata,
+  TinGuideComparisonResult,
+  TinGuideComparisonStatus,
+  PreparationAdministrationRecord,
+  TIN_GUIDE_METADATA,
+  PREPARATION_SPEC,
+  PEDIAMIL_LBW_TIN_GUIDE_ROWS,
+  getTinGuideRowForWeight,
+  comparePrescriptionWithTinGuide,
+  calculatePreparationAccounting,
+} from "./tin-guide";
+
+export {
+  TIN_GUIDE_METADATA,
+  PREPARATION_SPEC,
+  PEDIAMIL_LBW_TIN_GUIDE_ROWS,
+  getTinGuideRowForWeight,
+  comparePrescriptionWithTinGuide,
+  calculatePreparationAccounting,
+};
+export type {
+  TinGuideRow,
+  TinGuideMetadata,
+  TinGuideComparisonResult,
+  TinGuideComparisonStatus,
+  PreparationAdministrationRecord,
+};
+
+export interface NutritionOptions {
+  prescribedDailyVolumeMl?: number;
+  administeredVolumeMl?: number;
+  batchesPrepared?: number;
+  batchType?: "full" | "half";
+  measuredFinalBatchVolumeMl?: number;
+  volumeDiscardedOrSpilledMl?: number;
+  feedsAdministered?: number;
+  administeredVolumePerFeed?: number;
+}
 
 export interface FormulaProfile {
   name: string;
@@ -524,6 +564,7 @@ export interface FeedingSchedule {
     continuousSumDifference: number;
   };
   roundingDisclosure: string;
+  scheduleTypeLabel?: string;
 }
 
 export interface StandardTermTargets {
@@ -713,6 +754,14 @@ export interface DeliveredPatientNutrientPayload {
     vitaminDCoveragePercent: number;
   };
 
+  // Administration tracking & calculation basis metadata
+  calculationBasis?: "expected_theoretical" | "actual_administered";
+  isTheoreticalDelivery?: boolean;
+  prescribedDailyVolumeMl?: number;
+  administeredVolumeMl?: number;
+  calculationVolumeMl?: number;
+  deliveryStatusExplanation?: string;
+
   // Categorized items array for clean rendering and filtering
   items: NutrientDeliveryItem[];
 }
@@ -731,6 +780,17 @@ export interface NutritionCalculationResult {
   targetFluidMlPerKgPerDay?: number;
   formulaProfile?: FormulaProfile;
   totalDailyVolumeMl?: number;
+
+  // 4-Quantity Separation & Tin Guide Reference
+  prescribedDailyVolumeMl?: number;
+  impliedFluidAllowanceMlPerKg?: number;
+  isReconciliationDiscrepancy?: boolean;
+  reconciliationMessage?: string;
+  administeredVolumeMl?: number;
+  calculationBasis?: "expected_theoretical" | "actual_administered";
+  isTheoreticalDelivery?: boolean;
+  tinGuideComparison?: TinGuideComparisonResult | null;
+  preparationAccounting?: PreparationAdministrationRecord;
 
   // Delivered Energy
   deliveredEnergyKcalPerDay?: number;
@@ -1196,7 +1256,8 @@ export function calculateLbwNutrition(
   weightGrams: number,
   fluidAllowanceMlPerKg: number = 150,
   formula: FormulaProfile = STANDARD_LBW_MATRIX,
-  pmaWeeks?: number
+  pmaWeeks?: number,
+  options?: NutritionOptions
 ): NutritionCalculationResult {
   const auditMetadata = createAuditMetadata();
 
@@ -1219,19 +1280,64 @@ export function calculateLbwNutrition(
   // Select active formula matrix based on graduation boundary
   const activeFormula = isGraduated ? STANDARD_STAGE_1_MATRIX : formula;
 
-  // 1. Daily Fluid Volume (mL/day)
-  const totalDailyVolumeMl = Math.round(weightKg * fluidAllowanceMlPerKg * 10) / 10;
+  // 1. Quantity 1: Doctor-Prescribed Daily Clinical Volume
+  let prescribedDailyVolumeMl = Math.round(weightKg * fluidAllowanceMlPerKg * 10) / 10;
+  let impliedFluidAllowanceMlPerKg = fluidAllowanceMlPerKg;
+  let isReconciliationDiscrepancy = false;
+  let reconciliationMessage: string | undefined = undefined;
 
-  // 2. Delivered Energy
+  if (options?.prescribedDailyVolumeMl !== undefined && options.prescribedDailyVolumeMl > 0) {
+    const enteredPrescribed = options.prescribedDailyVolumeMl;
+    const calculatedFromAllowance = Math.round(weightKg * fluidAllowanceMlPerKg * 10) / 10;
+    if (Math.abs(enteredPrescribed - calculatedFromAllowance) > 1.0) {
+      isReconciliationDiscrepancy = true;
+      reconciliationMessage = `Prescribed total daily volume (${enteredPrescribed} mL/d) differs from weight-based fluid allowance (${calculatedFromAllowance} mL/d = ${fluidAllowanceMlPerKg} mL/kg/d). Confirm intended prescription with the attending clinician.`;
+    }
+    prescribedDailyVolumeMl = enteredPrescribed;
+    impliedFluidAllowanceMlPerKg = Math.round((enteredPrescribed / weightKg) * 10) / 10;
+  }
+
+  // 2. Quantity 3 & 4: Preparation Batch Accounting & Administered Volume Tracking
+  const preparationAccounting = calculatePreparationAccounting({
+    batchType: options?.batchType,
+    batchesPrepared: options?.batchesPrepared,
+    measuredFinalBatchVolumeMl: options?.measuredFinalBatchVolumeMl,
+    volumeDiscardedOrSpilledMl: options?.volumeDiscardedOrSpilledMl,
+    totalAdministeredVolumeMl: options?.administeredVolumeMl,
+    prescribedDailyVolumeMl,
+  });
+
+  // 3. Quantity 2: Manufacturer Tin-Guide Daily Reference Comparison
+  const tinGuideComparison = isGraduated
+    ? null
+    : comparePrescriptionWithTinGuide(
+        prescribedDailyVolumeMl,
+        weightKg,
+        options?.administeredVolumeMl
+      );
+
+  // 4. Volume Basis for Nutrient Delivery Calculations
+  // CLINICAL RULE: When administered volume is entered, calculate from administered volume.
+  // When missing, calculate from prescribed volume and clearly label as expected/theoretical delivery.
+  const isVolumeAdministered =
+    options?.administeredVolumeMl !== undefined && options.administeredVolumeMl > 0;
+  const effectiveVolumeMl = isVolumeAdministered
+    ? options.administeredVolumeMl!
+    : prescribedDailyVolumeMl;
+  const calculationBasis: "expected_theoretical" | "actual_administered" = isVolumeAdministered
+    ? "actual_administered"
+    : "expected_theoretical";
+
+  // 5. Delivered Energy (Calculated from effective administered/prescribed feed volume)
   const deliveredEnergyKcalPerDay =
-    Math.round(((totalDailyVolumeMl * activeFormula.energyKcalPer100Ml) / 100) * 10) / 10;
+    Math.round(((effectiveVolumeMl * activeFormula.energyKcalPer100Ml) / 100) * 10) / 10;
   const deliveredEnergyKcalPerKgPerDay =
     Math.round((deliveredEnergyKcalPerDay / weightKg) * 10) / 10;
   const energyCompliance = evaluateEnergyCompliance(deliveredEnergyKcalPerKgPerDay);
 
-  // 3. Delivered Protein
+  // 6. Delivered Protein
   const deliveredProteinGramsPerDay =
-    Math.round(((totalDailyVolumeMl * activeFormula.proteinGramsPer100Ml) / 100) * 100) / 100;
+    Math.round(((effectiveVolumeMl * activeFormula.proteinGramsPer100Ml) / 100) * 100) / 100;
   const deliveredProteinGramsPerKgPerDay =
     Math.round((deliveredProteinGramsPerDay / weightKg) * 100) / 100;
 
@@ -1241,15 +1347,15 @@ export function calculateLbwNutrition(
     proteinBracket
   );
 
-  // 4. Protein-to-Energy Ratio (g protein / 100 kcal)
+  // 7. Protein-to-Energy Ratio (g protein / 100 kcal)
   const rawPeRatio = (deliveredProteinGramsPerDay / deliveredEnergyKcalPerDay) * 100;
   const proteinToEnergyRatioGramsPer100Kcal = Math.round(rawPeRatio * 100) / 100;
   const peRatioCompliance = evaluatePeRatioCompliance(proteinToEnergyRatioGramsPer100Kcal);
 
-  // 5. Delivered Carbohydrates (g/day & g/kg/day)
+  // 8. Delivered Carbohydrates (g/day & g/kg/day)
   const formulaCarbsPer100Ml = activeFormula.carbsGramsPer100Ml ?? (isGraduated ? 7.18 : 6.37);
   const deliveredCarbsGramsPerDay =
-    Math.round(((totalDailyVolumeMl * formulaCarbsPer100Ml) / 100) * 100) / 100;
+    Math.round(((effectiveVolumeMl * formulaCarbsPer100Ml) / 100) * 100) / 100;
   const deliveredCarbsGramsPerKgPerDay =
     Math.round((deliveredCarbsGramsPerDay / weightKg) * 100) / 100;
   const carbsCompliance = evaluateCarbohydrateCompliance(
@@ -1257,10 +1363,10 @@ export function calculateLbwNutrition(
     isGraduated
   );
 
-  // 6. Delivered Total Lipids (g/day & g/kg/day)
+  // 9. Delivered Total Lipids (g/day & g/kg/day)
   const formulaFatPer100Ml = activeFormula.fatGramsPer100Ml ?? (isGraduated ? 3.65 : 4.88);
   const deliveredFatGramsPerDay =
-    Math.round(((totalDailyVolumeMl * formulaFatPer100Ml) / 100) * 100) / 100;
+    Math.round(((effectiveVolumeMl * formulaFatPer100Ml) / 100) * 100) / 100;
   const deliveredFatGramsPerKgPerDay =
     Math.round((deliveredFatGramsPerDay / weightKg) * 100) / 100;
   const fatCompliance = evaluateLipidsCompliance(
@@ -1268,15 +1374,15 @@ export function calculateLbwNutrition(
     isGraduated
   );
 
-  // 7. Feeding Schedules with Reconciled Discrepancies
-  const q2hVolumePerFeedMl = Math.round((totalDailyVolumeMl / 12) * 10) / 10;
-  const q3hVolumePerFeedMl = Math.round((totalDailyVolumeMl / 8) * 10) / 10;
-  const continuousInfusionMlPerHour = Math.round((totalDailyVolumeMl / 24) * 10) / 10;
+  // 10. Feeding Schedules (Theoretical schedule derived from clinician-prescribed volume)
+  const q2hVolumePerFeedMl = Math.round((prescribedDailyVolumeMl / 12) * 10) / 10;
+  const q3hVolumePerFeedMl = Math.round((prescribedDailyVolumeMl / 8) * 10) / 10;
+  const continuousInfusionMlPerHour = Math.round((prescribedDailyVolumeMl / 24) * 10) / 10;
 
-  const q2hSumDifference = Math.round((q2hVolumePerFeedMl * 12 - totalDailyVolumeMl) * 10) / 10;
-  const q3hSumDifference = Math.round((q3hVolumePerFeedMl * 8 - totalDailyVolumeMl) * 10) / 10;
+  const q2hSumDifference = Math.round((q2hVolumePerFeedMl * 12 - prescribedDailyVolumeMl) * 10) / 10;
+  const q3hSumDifference = Math.round((q3hVolumePerFeedMl * 8 - prescribedDailyVolumeMl) * 10) / 10;
   const continuousSumDifference =
-    Math.round((continuousInfusionMlPerHour * 24 - totalDailyVolumeMl) * 10) / 10;
+    Math.round((continuousInfusionMlPerHour * 24 - prescribedDailyVolumeMl) * 10) / 10;
 
   const feedingSchedule: FeedingSchedule = {
     q2hFeedsCount: 12,
@@ -1284,6 +1390,7 @@ export function calculateLbwNutrition(
     q3hFeedsCount: 8,
     q3hVolumePerFeedMl,
     continuousInfusionMlPerHour,
+    scheduleTypeLabel: "Theoretical schedule from clinician-prescribed volume",
     reconciliationDeltaMl: {
       q2hSumDifference,
       q3hSumDifference,
@@ -1292,7 +1399,7 @@ export function calculateLbwNutrition(
     roundingDisclosure: `Rates rounded to 0.1 mL. Total daily reconciliation discrepancy: q3h ${q3hSumDifference > 0 ? "+" : ""}${q3hSumDifference.toFixed(1)} mL (max bound ±0.4 mL); q2h ${q2hSumDifference > 0 ? "+" : ""}${q2hSumDifference.toFixed(1)} mL (max bound ±0.6 mL); continuous ${continuousSumDifference > 0 ? "+" : ""}${continuousSumDifference.toFixed(1)} mL (max bound ±1.2 mL).`,
   };
 
-  // 6. Clinical Overall Status (Distinct, non-contradictory)
+  // 11. Clinical Overall Status (Distinct, non-contradictory)
   let overallStatus: OverallClinicalStatus = "Within reference range";
   if (isGraduated) {
     overallStatus = "Within reference range"; // Evaluated against standard term targets
@@ -1320,7 +1427,7 @@ export function calculateLbwNutrition(
     }
   }
 
-  // 7. Clinical Content & Commercial Routing
+  // 12. Clinical Content & Commercial Routing
   let imageSrc = "/pediamil-lbw.png";
   let recommendationText = "ESPGHAN Preterm guidelines apply. Specialized high-protein, high-energy matrix recommended.";
   let graduationAlertText: string | undefined = undefined;
@@ -1344,9 +1451,9 @@ export function calculateLbwNutrition(
 
   const clinicalSummary = isGraduated
     ? `Patient weight (${weightGrams}g) exceeds 3,500g graduation ceiling. Term-equivalent targets active (~100 kcal/kg/d). Product routed: Pediamil® 1.`
-    : `Preterm LBW pathway active (${proteinBracket.classification}). Prescribed ${fluidAllowanceMlPerKg} mL/kg/d delivers ${deliveredEnergyKcalPerKgPerDay} kcal/kg/d (${energyCompliance.badgeLabel}) and ${deliveredProteinGramsPerKgPerDay} g/kg/d protein (${proteinCompliance.badgeLabel}). P:E ratio: ${proteinToEnergyRatioGramsPer100Kcal} g/100 kcal (${peRatioCompliance.badgeLabel}). Product routed: Pediamil® LBW.`;
+    : `Preterm LBW pathway active (${proteinBracket.classification}). Prescribed ${prescribedDailyVolumeMl} mL/d (${impliedFluidAllowanceMlPerKg} mL/kg/d) delivers ${deliveredEnergyKcalPerKgPerDay} kcal/kg/d (${energyCompliance.badgeLabel}) and ${deliveredProteinGramsPerKgPerDay} g/kg/d protein (${proteinCompliance.badgeLabel}) [Basis: ${calculationBasis === "actual_administered" ? "Actual Administered" : "Expected Prescribed"}]. P:E ratio: ${proteinToEnergyRatioGramsPer100Kcal} g/100 kcal (${peRatioCompliance.badgeLabel}). Product routed: Pediamil® LBW.`;
 
-  // 8. Comprehensive Patient Delivered Daily Nutritional Payload with Age Goals & Coverage
+  // 13. Comprehensive Patient Delivered Daily Nutritional Payload with Age Goals & Coverage
   const activeProductProfile = activeFormula.productProfile || (isGraduated ? PEDIAMIL_1_PRODUCT : PEDIAMIL_LBW_PRODUCT);
   const effectivePmaWeeks = pmaWeeks !== undefined && !isNaN(pmaWeeks)
     ? pmaWeeks
@@ -1362,7 +1469,10 @@ export function calculateLbwNutrition(
     weightGrams,
     fluidAllowanceMlPerKg,
     activeProductProfile,
-    effectivePmaWeeks
+    effectivePmaWeeks,
+    effectiveVolumeMl,
+    calculationBasis,
+    prescribedDailyVolumeMl
   );
 
   return {
@@ -1373,7 +1483,16 @@ export function calculateLbwNutrition(
     currentWeightKg: weightKg,
     targetFluidMlPerKgPerDay: fluidAllowanceMlPerKg,
     formulaProfile: activeFormula,
-    totalDailyVolumeMl,
+    totalDailyVolumeMl: prescribedDailyVolumeMl,
+    prescribedDailyVolumeMl,
+    impliedFluidAllowanceMlPerKg,
+    isReconciliationDiscrepancy,
+    reconciliationMessage,
+    administeredVolumeMl: options?.administeredVolumeMl,
+    calculationBasis,
+    isTheoreticalDelivery: !isVolumeAdministered,
+    tinGuideComparison,
+    preparationAccounting,
     deliveredEnergyKcalPerDay,
     deliveredEnergyKcalPerKgPerDay,
     energyCompliance,
@@ -1508,11 +1627,28 @@ export function calculatePatientDeliveredNutrientPayload(
   weightGrams: number,
   fluidAllowanceMlPerKg: number,
   product: ProductProfile,
-  pmaWeeks?: number
+  pmaWeeks?: number,
+  effectiveVolumeMl?: number,
+  calculationBasis: "expected_theoretical" | "actual_administered" = "expected_theoretical",
+  prescribedVolumeMl?: number
 ): DeliveredPatientNutrientPayload {
   const weightKg = weightGrams / 1000;
-  const totalDailyVolumeMl = Math.round(weightKg * fluidAllowanceMlPerKg * 10) / 10;
-  const factor = totalDailyVolumeMl / 100;
+  const prescribedDailyVolumeMl =
+    prescribedVolumeMl !== undefined
+      ? prescribedVolumeMl
+      : Math.round(weightKg * fluidAllowanceMlPerKg * 10) / 10;
+
+  const isVolumeAdministered =
+    calculationBasis === "actual_administered" &&
+    effectiveVolumeMl !== undefined &&
+    effectiveVolumeMl > 0;
+
+  const calculationVolumeMl = isVolumeAdministered
+    ? effectiveVolumeMl!
+    : prescribedDailyVolumeMl;
+
+  const totalDailyVolumeMl = calculationVolumeMl;
+  const factor = calculationVolumeMl / 100;
   const comp = product.composition;
   const recon = product.reconstitution;
   const isPreterm = weightGrams <= 3500;
@@ -2209,6 +2345,15 @@ export function calculatePatientDeliveredNutrientPayload(
     productReferenceSummaryScore: overallCoverageScorePercent,
     overallCoverageScorePercent,
     coverageHighlights,
+
+    calculationBasis: isVolumeAdministered ? "actual_administered" : "expected_theoretical",
+    isTheoreticalDelivery: !isVolumeAdministered,
+    prescribedDailyVolumeMl,
+    administeredVolumeMl: isVolumeAdministered ? effectiveVolumeMl : undefined,
+    calculationVolumeMl,
+    deliveryStatusExplanation: isVolumeAdministered
+      ? `Delivered nutrient quantities calculated from actual documented administration (${calculationVolumeMl} mL/day).`
+      : `Delivered nutrient quantities reflect expected / theoretical delivery based on clinician-prescribed volume (${prescribedDailyVolumeMl} mL/day).`,
 
     items,
   };

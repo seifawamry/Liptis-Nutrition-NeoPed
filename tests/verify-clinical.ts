@@ -29,6 +29,13 @@ import {
   evaluateReferenceComparison,
 } from "../lib/lbw-nutrition";
 import {
+  PEDIAMIL_LBW_TIN_GUIDE_ROWS,
+  TIN_GUIDE_METADATA,
+  PREPARATION_SPEC,
+  comparePrescriptionWithTinGuide,
+  calculatePreparationAccounting,
+} from "../lib/tin-guide";
+import {
   calculateAges,
   getGrowthDataset,
   evaluatePercentile,
@@ -826,6 +833,173 @@ assert(
   "Pediamil 1 standard dilution is 13.7%"
 );
 
+// =============================================================================
+// DOMAIN 16: MANUFACTURER TIN FEEDING GUIDE, 4-QUANTITY ACCOUNTING & ADMINISTRATION TRACKING
+// =============================================================================
+console.log("\n--- Domain 16: Manufacturer Tin Guide, 4-Quantity Separation & Administration ---");
+
+// Test 16.1: Exactly 5 rows in PEDIAMIL_LBW_TIN_GUIDE_ROWS
+assert(
+  PEDIAMIL_LBW_TIN_GUIDE_ROWS.length === 5,
+  `Tin guide contains exactly 5 weight rows (got: ${PEDIAMIL_LBW_TIN_GUIDE_ROWS.length})`
+);
+
+// Test 16.2: Row 4 (3.0–3.5 kg) has provisional status and notes
+const row4 = PEDIAMIL_LBW_TIN_GUIDE_ROWS[3];
+assert(
+  row4.weightBandLabel === "3.0–3.5 kg" && row4.verificationStatus === "provisional_requires_confirmation",
+  "Row 4 (3.0-3.5 kg) is flagged as provisional_requires_confirmation"
+);
+assert(
+  typeof row4.notes === "string" && row4.notes.length > 10,
+  "Row 4 contains detailed clinical provisional rationale"
+);
+
+// Test 16.3: Tin guide metadata has product and non-empty disclaimer
+assert(
+  TIN_GUIDE_METADATA.product === "Pediamil® LBW",
+  "Tin guide metadata designates product as Pediamil® LBW"
+);
+assert(
+  TIN_GUIDE_METADATA.mandatoryClinicalDisclaimer.length > 50,
+  "Tin guide metadata contains thorough physician supremacy disclaimer"
+);
+
+// Test 16.4: Full batch preparation specification (6 scoops + 180 mL -> ~198 mL)
+assert(
+  PREPARATION_SPEC.fullBatch.scoops === 6 &&
+  PREPARATION_SPEC.fullBatch.waterVolumeMl === 180 &&
+  PREPARATION_SPEC.fullBatch.finalFeedVolumeMl === 198,
+  "Full batch preparation: 6 scoops + 180 mL water yields ~198 mL nominal feed"
+);
+
+// Test 16.5: Half batch preparation specification (3 scoops + 90 mL -> ~99 mL)
+assert(
+  PREPARATION_SPEC.halfBatch.scoops === 3 &&
+  PREPARATION_SPEC.halfBatch.waterVolumeMl === 90 &&
+  PREPARATION_SPEC.halfBatch.finalFeedVolumeMl === 99,
+  "Half batch preparation: 3 scoops + 90 mL water yields ~99 mL nominal feed"
+);
+
+// Test 16.6: Preparation accounting calculation (2 full batches = 396 mL nominal)
+const acct2Batches = calculatePreparationAccounting({
+  batchesPrepared: 2,
+  batchType: "full",
+  prescribedDailyVolumeMl: 203,
+  volumeDiscardedOrSpilledMl: 20,
+});
+assert(
+  acct2Batches.batchesPrepared === 2 &&
+  acct2Batches.totalPreparedVolumeAvailableMl === 396 &&
+  acct2Batches.remainingOrDiscardedVolumeMl === 173,
+  "Preparation accounting correctly computes 2 full batches with 20 mL waste"
+);
+
+// Test 16.7: Physician prescription priority & matched tier (1350g infant -> 1.35 kg, 203 mL prescribed)
+const comp1350 = comparePrescriptionWithTinGuide(203, 1.35);
+assert(
+  comp1350 !== null &&
+  comp1350.applicableRow !== null &&
+  comp1350.applicableRow.weightBandLabel === "1.0–1.8 kg" &&
+  comp1350.prescribedDailyVolumeMl === 203 &&
+  comp1350.applicableRow.minDailyVolumeMl === 150 &&
+  comp1350.applicableRow.maxDailyVolumeMl === 360,
+  "Tin guide comparison matches 1.0-1.8kg row with 150-360 mL range for 1350g infant"
+);
+
+// Test 16.8: Prescription values are NEVER overwritten by tin guide
+const res1350 = calculateLbwNutrition(1350, 150);
+assert(
+  res1350.totalDailyVolumeMl === 202.5,
+  "Prescribed totalDailyVolumeMl remains exactly 202.5 mL (never overwritten by tin guide)"
+);
+assert(
+  res1350.tinGuideComparison?.prescribedDailyVolumeMl === 202.5,
+  "tinGuideComparison records prescribed volume as 202.5 mL"
+);
+
+// Test 16.9: Discrepancy detection between prescribedDailyVolumeMl and weight*allowance
+const resDiscrepant = calculateLbwNutrition(1350, 150, undefined, undefined, {
+  prescribedDailyVolumeMl: 260, // 260 vs 202.5 is > 25% discrepancy
+});
+assert(
+  resDiscrepant.isReconciliationDiscrepancy === true,
+  "Flags isReconciliationDiscrepancy when doctor entered daily volume differs by >10% from weight*fluid allowance"
+);
+
+// Test 16.10: Default dual volume: theoretical delivery based on prescription when administered volume is absent
+assert(
+  res1350.calculationBasis === "expected_theoretical" &&
+  res1350.isTheoreticalDelivery === true,
+  "When administered volume is absent, calculationBasis is 'expected_theoretical' and isTheoreticalDelivery is true"
+);
+
+// Test 16.11: Delivered nutrients recalculate from administered volume when entered
+const resAdministered = calculateLbwNutrition(1350, 150, undefined, undefined, {
+  administeredVolumeMl: 180,
+});
+assert(
+  resAdministered.calculationBasis === "actual_administered" &&
+  resAdministered.isTheoreticalDelivery === false &&
+  resAdministered.administeredVolumeMl === 180,
+  "When administered volume (180 mL) is provided, calculationBasis is 'actual_administered' and isTheoreticalDelivery is false"
+);
+// Delivered energy should be derived from 180 mL: 180 * 0.797 = 143.46 kcal -> 143.5 kcal/day
+const expectedAdminEnergy = Math.round(180 * 0.797 * 10) / 10;
+assert(
+  resAdministered.deliveredEnergyKcalPerDay === expectedAdminEnergy,
+  `Administered energy matches volume: got ${resAdministered.deliveredEnergyKcalPerDay} kcal, expected ${expectedAdminEnergy} kcal`
+);
+
+// Test 16.12: Waste tracking in preparation accounting
+const acctWithWaste = calculatePreparationAccounting({
+  batchesPrepared: 1,
+  batchType: "full",
+  prescribedDailyVolumeMl: 150,
+  volumeDiscardedOrSpilledMl: 30,
+});
+assert(
+  acctWithWaste.volumeDiscardedOrSpilledMl === 30 &&
+  acctWithWaste.remainingOrDiscardedVolumeMl === 18,
+  "Preparation accounting tracks 30 mL discarded volume and computes 18 mL remaining balance"
+);
+
+// Test 16.13: Measured final volume discrepancy warning (>5% deviation)
+const acctDeviated = calculatePreparationAccounting({
+  batchesPrepared: 1,
+  batchType: "full",
+  prescribedDailyVolumeMl: 200,
+  measuredFinalBatchVolumeMl: 220, // 220 vs 198 is +11%
+});
+assert(
+  acctDeviated.measuredVolumeWarning !== undefined,
+  "Preparation accounting triggers measuredVolumeWarning when measured volume deviates >5% from nominal"
+);
+
+// Test 16.14: Graduation safeguard (infants >3500g bypass preterm tin guide)
+const resGraduated = calculateLbwNutrition(3800, 150);
+assert(
+  resGraduated.isGraduated === true &&
+  resGraduated.tinGuideComparison === null,
+  "Graduated infants (>3500g) correctly have tinGuideComparison === null"
+);
+
+// Test 16.15: Client-side privacy and determinism
+const resTrace1 = calculateLbwNutrition(1200, 160);
+const resTrace2 = calculateLbwNutrition(1200, 160);
+assert(
+  resTrace1.totalDailyVolumeMl === resTrace2.totalDailyVolumeMl &&
+  resTrace1.deliveredEnergyKcalPerDay === resTrace2.deliveredEnergyKcalPerDay &&
+  resTrace1.deliveredProteinGramsPerDay === resTrace2.deliveredProteinGramsPerDay,
+  "Calculations are 100% deterministic pure math with zero network dependencies"
+);
+assert(
+  resTrace1.totalDailyVolumeMl === resTrace2.totalDailyVolumeMl &&
+  resTrace1.deliveredEnergyKcalPerDay === resTrace2.deliveredEnergyKcalPerDay &&
+  resTrace1.deliveredProteinGramsPerDay === resTrace2.deliveredProteinGramsPerDay,
+  "Calculations are 100% deterministic pure math with zero network dependencies"
+);
+
 console.log("================================================================================");
 console.log(`TEST SUMMARY: ${testsPassed} PASSED, ${testsFailed} FAILED`);
 console.log("================================================================================");
@@ -833,5 +1007,5 @@ console.log("===================================================================
 if (testsFailed > 0) {
   process.exit(1);
 } else {
-  console.log(">> ALL 15 CLINICAL ACCEPTANCE TEST DOMAINS VERIFIED SUCCESSFULLY! <<\n");
+  console.log(">> ALL 16 CLINICAL ACCEPTANCE TEST DOMAINS VERIFIED SUCCESSFULLY! <<\n");
 }

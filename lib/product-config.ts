@@ -160,11 +160,11 @@ export const PEDIAMIL_LBW_PRODUCT: ProductProfile = {
     standardDilutionPercent: 15.0, // 15.0 g powder per 100 mL prepared feed (531 kcal / 100g -> 79.7 kcal / 100mL)
     powderMassGramsPer100Ml: 15.0,
     powderGramsPerScoop: 5.0,
-    scoopsPerStandardVolume: "3 level scoops (15.0g) added to 90 mL water to yield 100 mL prepared feed",
+    scoopsPerStandardVolume: "6 level scoops (~30g) in 180 mL water yields ~198 mL prepared feed (or 3 scoops / ~15g in 90 mL water yields ~99 mL half-batch)",
     waterVolumeMlPer3Scoops: 90,
-    finalFeedVolumeMlPer3Scoops: 100,
+    finalFeedVolumeMlPer3Scoops: 99, // ~99 mL half-batch per approved manufacturer specification
     preparationInstructions:
-      "Wash hands and sterilize all feeding utensils. Boil fresh drinking water for 5 minutes and allow to cool to ~40°C. Pour 90 mL of lukewarm water into sterilized feeding bottle. Add exactly 3 level scoops (15.0g) of Pediamil LBW powder using the enclosed measuring scoop. Cap bottle and shake vigorously until completely dissolved. Check temperature on inner wrist before administration.",
+      "Prepare according to the current Pediamil LBW label and approved hospital policy. Standard batch: Pour 180 mL of lukewarm water (~40°C) into sterilized feeding bottle, add 6 level scoops (~30g total powder) of Pediamil LBW to yield approximately 198 mL prepared feed. For half-batch: Pour 90 mL water, add 3 level scoops (~15g) to yield approximately 99 mL prepared feed. Do not alter concentration, dilution, scoop count, or water volume without an approved clinical/manufacturer protocol. Cap bottle and shake vigorously until completely dissolved.",
   },
   composition: {
     energyKcalPer100Ml: 79.7, // 79.7 kcal / 100 mL (~0.80 kcal/mL)

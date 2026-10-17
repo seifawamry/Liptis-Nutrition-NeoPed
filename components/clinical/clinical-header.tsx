@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Printer, ShieldCheck, Activity, LineChart, Columns, Sparkles } from "lucide-react";
+import { Printer, ShieldCheck, Activity, LineChart, Columns, Sparkles, BookOpen } from "lucide-react";
 import { cn } from "./ui-primitives";
 import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
@@ -10,12 +10,14 @@ interface ClinicalHeaderProps {
   activeTab: "nutrition" | "growth" | "split";
   onTabChange: (tab: "nutrition" | "growth" | "split") => void;
   onOpenFeedSheet: () => void;
+  onOpenExecutiveOverview?: () => void;
 }
 
 export function ClinicalHeader({
   activeTab,
   onTabChange,
   onOpenFeedSheet,
+  onOpenExecutiveOverview,
 }: ClinicalHeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-clinical-navy-950 text-white border-b border-clinical-navy-800 shadow-md">
@@ -104,14 +106,28 @@ export function ClinicalHeader({
           </div>
 
           {/* Clinical Action Buttons */}
-          <div className="flex items-center gap-2 w-full md:w-auto">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
+            {onOpenExecutiveOverview && (
+              <button
+                id="executive-overview-btn"
+                type="button"
+                onClick={onOpenExecutiveOverview}
+                aria-haspopup="dialog"
+                aria-label="Open Executive Overview and Evidence Registry for Management Review"
+                className="w-full sm:w-auto px-3.5 py-2.5 sm:py-2 min-h-[44px] rounded-lg bg-blue-700 hover:bg-blue-600 active:bg-blue-800 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 border border-blue-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+              >
+                <BookOpen className="w-4 h-4 shrink-0 text-blue-200" aria-hidden="true" />
+                <span>Executive Overview & Evidence</span>
+              </button>
+            )}
+
             <button
               id="generate-feed-sheet-btn"
               type="button"
               onClick={onOpenFeedSheet}
               aria-haspopup="dialog"
               aria-label="Generate Clinical Feed Sheet printable hospital document"
-              className="w-full md:w-auto px-3.5 py-2.5 sm:py-2 min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              className="w-full sm:w-auto px-3.5 py-2.5 sm:py-2 min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
             >
               <Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
               <span>Generate Clinical Feed Sheet</span>

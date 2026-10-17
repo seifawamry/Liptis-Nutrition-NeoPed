@@ -2,11 +2,27 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { X, Printer, ShieldAlert, FileText, GraduationCap, AlertTriangle } from "lucide-react";
+import {
+  X,
+  Printer,
+  ShieldAlert,
+  FileText,
+  GraduationCap,
+  AlertTriangle,
+  Scale,
+  ClipboardList,
+  FlaskConical,
+  CheckCircle2,
+  Info,
+} from "lucide-react";
 import {
   NutritionCalculationResult,
   ESPGHAN_DIRECT_GUIDELINES,
 } from "@/lib/lbw-nutrition";
+import {
+  TIN_GUIDE_METADATA,
+  PREPARATION_SPEC,
+} from "@/lib/tin-guide";
 import { AgeCalculations, BiologicalSex, PercentileEvaluation } from "@/lib/growth-engine";
 import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
@@ -346,11 +362,18 @@ export function FeedSheetModal({
                 )}
               </div>
 
-              {/* Section 2: Enteral Feed Prescription & Schedule */}
+              {/* Section A: Clinician Prescription */}
               <div className="border border-slate-200 rounded-lg p-3.5 space-y-3">
-                <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                  <span>2. Enteral Nutrition Prescription & Schedule</span>
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold">A</span>
+                    <span>Clinician Prescription (Authoritative Clinical Order)</span>
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-900 border border-blue-300">
+                    Primary Prescribing Authority
+                  </span>
+                </div>
+
                 <div className="flex flex-col sm:flex-row items-center gap-3 bg-slate-50 p-2.5 rounded-md border border-slate-200">
                   <div className="shrink-0 w-14 h-16 flex items-center justify-center bg-white rounded-lg border border-slate-200 p-1 shadow-2xs">
                     <Image
@@ -364,13 +387,13 @@ export function FeedSheetModal({
                   </div>
                   <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs w-full">
                     <div>
-                      <span className="text-slate-500 text-[11px] block">Weight:</span>
+                      <span className="text-slate-500 text-[11px] block">Patient Weight:</span>
                       <strong className="text-slate-900 font-mono text-sm">
                         {nut.currentWeightGrams} g ({nut.currentWeightKg?.toFixed(3)} kg)
                       </strong>
                     </div>
                     <div>
-                      <span className="text-slate-500 text-[11px] block">Fluid Allowance:</span>
+                      <span className="text-slate-500 text-[11px] block">Prescribed Fluid Allowance:</span>
                       <strong className="text-blue-900 font-mono text-sm">
                         {nut.targetFluidMlPerKgPerDay} mL/kg/day
                       </strong>
@@ -385,24 +408,27 @@ export function FeedSheetModal({
                       </span>
                     </div>
                     <div>
-                      <span className="text-slate-500 text-[11px] block">Total Daily Volume:</span>
+                      <span className="text-slate-500 text-[11px] block">Prescribed Daily Volume:</span>
                       <strong className="text-emerald-700 font-mono text-sm">
-                        {nut.totalDailyVolumeMl} mL/day
+                        {nut.prescribedDailyVolumeMl ?? nut.totalDailyVolumeMl} mL/day
                       </strong>
                     </div>
                   </div>
                 </div>
 
-                {/* Feeding interval table */}
+                {/* Theoretical Feeding Schedule from Clinician-Prescribed Volume */}
                 {nut.feedingSchedule && (
-                  <div className="overflow-x-auto">
+                  <div className="overflow-x-auto space-y-1">
+                    <div className="text-[11px] font-bold text-slate-700">
+                      Theoretical Schedule from Clinician-Prescribed Volume:
+                    </div>
                     <table className="w-full text-xs text-left border border-slate-200">
                       <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] font-bold">
                         <tr>
                           <th className="p-2 border-r border-slate-200">Administration Modality</th>
                           <th className="p-2 border-r border-slate-200">Frequency / Day</th>
                           <th className="p-2 border-r border-slate-200">Dose per Feed</th>
-                          <th className="p-2">24-Hour Total</th>
+                          <th className="p-2">Prescribed 24h Total</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-200 font-mono">
@@ -414,7 +440,7 @@ export function FeedSheetModal({
                           <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
                             {nut.feedingSchedule.q2hVolumePerFeedMl} mL / feed
                           </td>
-                          <td className="p-2 text-slate-700">{nut.totalDailyVolumeMl} mL</td>
+                          <td className="p-2 text-slate-700">{nut.prescribedDailyVolumeMl ?? nut.totalDailyVolumeMl} mL</td>
                         </tr>
                         <tr className="bg-slate-50/70">
                           <td className="p-2 border-r border-slate-200 font-sans font-medium">
@@ -424,7 +450,7 @@ export function FeedSheetModal({
                           <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
                             {nut.feedingSchedule.q3hVolumePerFeedMl} mL / feed
                           </td>
-                          <td className="p-2 text-slate-700">{nut.totalDailyVolumeMl} mL</td>
+                          <td className="p-2 text-slate-700">{nut.prescribedDailyVolumeMl ?? nut.totalDailyVolumeMl} mL</td>
                         </tr>
                         <tr>
                           <td className="p-2 border-r border-slate-200 font-sans font-medium">
@@ -434,35 +460,178 @@ export function FeedSheetModal({
                           <td className="p-2 border-r border-slate-200 font-bold text-slate-900">
                             {nut.feedingSchedule.continuousInfusionMlPerHour} mL / hour
                           </td>
-                          <td className="p-2 text-slate-700">{nut.totalDailyVolumeMl} mL</td>
+                          <td className="p-2 text-slate-700">{nut.prescribedDailyVolumeMl ?? nut.totalDailyVolumeMl} mL</td>
                         </tr>
                       </tbody>
                     </table>
-                    <p className="text-[10px] text-slate-400 mt-1 italic font-mono">
+                    <p className="text-[10px] text-slate-400 italic font-mono">
                       {nut.feedingSchedule.roundingDisclosure}
-                    </p>
-                  </div>
-                )}
-
-                {/* Preparation & Reconstitution Instructions */}
-                {nut.formulaProfile?.productProfile && (
-                  <div className="p-2.5 bg-slate-50 rounded border border-slate-200 text-[11px] space-y-1">
-                    <span className="font-bold text-slate-900 block">Preparation & Reconstitution Protocol:</span>
-                    <p className="text-slate-700">
-                      {nut.formulaProfile.productProfile.reconstitution.preparationInstructions}
-                    </p>
-                    <p className="text-[10px] text-slate-500 font-mono">
-                      Standard Dilution: {nut.formulaProfile.productProfile.reconstitution.standardDilutionPercent}% w/v ({nut.formulaProfile.productProfile.reconstitution.powderMassGramsPer100Ml}g powder per 100 mL feed).
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Section 3: ESPGHAN 2022 Macronutrient Compliance Audit */}
+              {/* Section B: Manufacturer Preparation Reference */}
               <div className="border border-slate-200 rounded-lg p-3.5 space-y-2.5">
-                <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-                  <span>3. Delivered Macronutrients vs. ESPGHAN 2022 Guidelines</span>
-                </h3>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center text-[10px] font-bold">B</span>
+                    <span>Manufacturer Preparation Reference</span>
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-900 border border-purple-300">
+                    Approved Product Specification
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Full Batch:</span>
+                    <strong className="text-slate-900 font-mono">6 level scoops (~30g)</strong>
+                    <span className="text-[10px] text-slate-600 block">+ 180 mL water</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Full Yield:</span>
+                    <strong className="text-purple-900 font-mono">Approximately 198 mL</strong>
+                    <span className="text-[10px] text-slate-600 block">final prepared feed</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Half Batch:</span>
+                    <strong className="text-slate-900 font-mono">3 level scoops (~15g)</strong>
+                    <span className="text-[10px] text-slate-600 block">+ 90 mL water</span>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Half Yield:</span>
+                    <strong className="text-purple-900 font-mono">Approximately 99 mL</strong>
+                    <span className="text-[10px] text-slate-600 block">(not exactly 100 mL)</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-slate-50 rounded border border-slate-200 space-y-1 text-[11px] text-slate-600">
+                  <p>
+                    <strong>Source & Verification:</strong> Pediamil® LBW Official Specification Sheet (Liptis-Spec-2026-v1.0, verified 2026-10-02).
+                  </p>
+                  <p className="text-amber-800 font-medium">
+                    <strong>Review Warning:</strong> {TIN_GUIDE_METADATA.powderDensityNotice}
+                  </p>
+                  <p className="italic text-slate-500 text-[10.5px]">
+                    <strong>Preparation Policy:</strong> {TIN_GUIDE_METADATA.preparationStandardNotice}
+                  </p>
+                </div>
+              </div>
+
+              {/* Section C: Manufacturer Tin-Guide Comparison */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-amber-600 text-white flex items-center justify-center text-[10px] font-bold">C</span>
+                    <span>Manufacturer Tin-Guide Comparison</span>
+                  </h3>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
+                    Provisional Reference Range
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Applicable Weight Band:</span>
+                    <strong className="text-slate-900 font-mono">
+                      {nut.tinGuideComparison?.applicableRow?.weightBandLabel ?? "1.0–1.8 kg"}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Printed Tin Reference Range:</span>
+                    <strong className="text-amber-950 font-mono">
+                      {nut.tinGuideComparison?.tinReferenceRangeLabel ?? "150–360 mL/day"}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Comparison Status:</span>
+                    <strong className="text-slate-900">
+                      {nut.tinGuideComparison?.statusLabel ?? "Active"}
+                    </strong>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-amber-50 rounded border border-amber-300 text-[11px] text-amber-950 space-y-1">
+                  <p className="font-bold">
+                    Notice: {nut.tinGuideComparison?.reviewMessage}
+                  </p>
+                  <p className="text-[10.5px] text-amber-900">
+                    <strong>Mandatory Clinical Governance Rule:</strong> {TIN_GUIDE_METADATA.mandatoryClinicalDisclaimer}
+                  </p>
+                </div>
+              </div>
+
+              {/* Section D: Actual Administration Record */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">D</span>
+                    <span>Actual Administration & Preparation Record</span>
+                  </h3>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    nut.calculationBasis === "actual_administered"
+                      ? "bg-emerald-100 text-emerald-900 border-emerald-300"
+                      : "bg-slate-100 text-slate-700 border-slate-300"
+                  }`}>
+                    {nut.calculationBasis === "actual_administered"
+                      ? "Measured Bedside Administration"
+                      : "Expected Theoretical from Prescription"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Batches Prepared (24h):</span>
+                    <strong className="text-slate-900 font-mono">
+                      {nut.preparationAccounting?.batchesPrepared ?? 1} batch(es)
+                    </strong>
+                    <span className="text-[10px] text-slate-500 block">
+                      ({nut.preparationAccounting?.totalPreparedVolumeAvailableMl} mL total)
+                    </span>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Final Batch Volume:</span>
+                    <strong className="text-slate-900 font-mono">
+                      {nut.preparationAccounting?.hasMeasuredBatchVolume
+                        ? `${nut.preparationAccounting.measuredFinalVolumeMl} mL (Measured)`
+                        : `~${nut.preparationAccounting?.expectedPreparedBatchVolumeMl ?? 198} mL (Standard)`}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Administered Volume (24h):</span>
+                    <strong className={`font-mono ${nut.administeredVolumeMl !== undefined ? "text-emerald-700 font-bold" : "text-slate-700"}`}>
+                      {nut.administeredVolumeMl !== undefined
+                        ? `${nut.administeredVolumeMl} mL`
+                        : `${nut.prescribedDailyVolumeMl ?? nut.totalDailyVolumeMl} mL (Prescribed)`}
+                    </strong>
+                  </div>
+                  <div className="p-2 bg-slate-50 border border-slate-200 rounded">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 block">Discarded / Remaining:</span>
+                    <strong className="text-slate-900 font-mono">
+                      {nut.preparationAccounting?.remainingOrDiscardedVolumeMl ?? 0} mL
+                    </strong>
+                  </div>
+                </div>
+
+                {nut.preparationAccounting?.measuredVolumeWarning && (
+                  <div className="p-2 bg-amber-50 rounded border border-amber-300 text-amber-950 text-xs">
+                    <strong>Measured Batch Volume Alert:</strong> {nut.preparationAccounting.measuredVolumeWarning}
+                  </div>
+                )}
+              </div>
+
+              {/* Section E: Delivered Nutrients vs. ESPGHAN 2022 Guidelines */}
+              <div className="border border-slate-200 rounded-lg p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold">E</span>
+                    <span>Delivered Nutrients & Electrolyte Densities</span>
+                  </h3>
+                  <span className="text-[10px] font-semibold text-slate-600">
+                    Calculation Basis: <strong className="text-slate-900">{nut.calculationBasis === "actual_administered" ? `Actual Administered Volume (${nut.administeredVolumeMl} mL)` : `Expected / Prescribed Volume (${nut.prescribedDailyVolumeMl ?? nut.totalDailyVolumeMl} mL)`}</strong>
+                  </span>
+                </div>
 
                 {nut.isGraduated ? (
                   <div className="p-4 rounded-lg bg-blue-50 border-2 border-blue-300 text-blue-950 space-y-2.5">
@@ -701,11 +870,12 @@ export function FeedSheetModal({
                 </div>
               )}
 
-              {/* Section 5: Anthropometric Growth Interpretation */}
+              {/* Section F: Anthropometric Growth Interpretation */}
               <div className="border border-slate-200 rounded-lg p-3.5 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-1.5 gap-1">
-                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider">
-                    5. Anthropometric Growth Trajectory Assessment
+                  <h3 className="text-xs font-bold text-clinical-navy-950 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-5 h-5 rounded-full bg-teal-600 text-white flex items-center justify-center text-[10px] font-bold">F</span>
+                    <span>Anthropometric Growth Trajectory Assessment</span>
                   </h3>
                   {weightPercentile && (
                     <span className="text-[10.5px] font-mono text-slate-500">
@@ -884,18 +1054,25 @@ export function FeedSheetModal({
                 )}
               </div>
 
-              {/* Institutional Sign-Off Block */}
-              <div className="border-t-2 border-slate-900 pt-4 grid grid-cols-2 gap-8 text-xs">
-                <div className="space-y-4">
-                  <span className="font-bold text-slate-900 block uppercase tracking-wider text-[11px]">
-                    Attending Neonatologist / Pediatrician Verification & Order Transcribing:
+              {/* Section G: Institutional Sign-Off Block */}
+              <div className="border-t-2 border-slate-900 pt-4 space-y-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-slate-900 text-white flex items-center justify-center text-[10px] font-bold">G</span>
+                  <span className="font-bold text-slate-900 uppercase tracking-wider text-xs">
+                    Attending Clinician Verification & Formal Institutional Sign-Off
                   </span>
-                  <div className="h-10 border-b border-dashed border-slate-400" />
-                  <div className="text-[10px] text-slate-500 flex justify-between font-mono">
-                    <span>Signature & Medical License Stamp</span>
-                    <span>Date / Time</span>
-                  </div>
                 </div>
+                <div className="grid grid-cols-2 gap-8 text-xs">
+                  <div className="space-y-3">
+                    <span className="font-bold text-slate-800 block text-[11px]">
+                      Attending Neonatologist / Pediatrician Verification & Order Transcribing:
+                    </span>
+                    <div className="h-10 border-b border-dashed border-slate-400" />
+                    <div className="text-[10px] text-slate-500 flex justify-between font-mono">
+                      <span>Signature & Medical License Stamp</span>
+                      <span>Date / Time</span>
+                    </div>
+                  </div>
 
                 <div className="space-y-4">
                   <span className="font-bold text-slate-900 block uppercase tracking-wider text-[11px]">
@@ -908,8 +1085,9 @@ export function FeedSheetModal({
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Regulatory & Institutional Audit Footnote */}
+            {/* Regulatory & Institutional Audit Footnote */}
               <div className="text-[10px] text-slate-400 pt-2 border-t border-slate-200 space-y-1 font-mono">
                 <p>
                   <strong>Application Version:</strong> {APP_VERSION_LABEL} • {CLINICAL_GOVERNANCE.privacyNotice}

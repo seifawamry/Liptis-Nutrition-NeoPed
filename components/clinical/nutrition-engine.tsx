@@ -32,6 +32,7 @@ import {
   FileCode,
   Download,
 } from "lucide-react";
+import { TinGuideComparison } from "./tin-guide-comparison";
 
 interface NutritionEngineProps {
   weightGrams: number;
@@ -41,6 +42,18 @@ interface NutritionEngineProps {
   calculationResult: NutritionCalculationResult;
   onResetPatient?: () => void;
   ages?: AgeCalculations;
+  prescribedDailyVolumeMl?: number;
+  onPrescribedDailyVolumeChange?: (val: number | undefined) => void;
+  administeredVolumeMl?: number;
+  onAdministeredVolumeChange?: (val: number | undefined) => void;
+  batchesPrepared?: number;
+  onBatchesPreparedChange?: (val: number) => void;
+  batchType?: "full" | "half";
+  onBatchTypeChange?: (val: "full" | "half") => void;
+  measuredFinalBatchVolumeMl?: number;
+  onMeasuredBatchVolumeChange?: (val: number | undefined) => void;
+  volumeDiscardedOrSpilledMl?: number;
+  onVolumeDiscardedChange?: (val: number) => void;
 }
 
 export function NutritionEngine({
@@ -51,6 +64,18 @@ export function NutritionEngine({
   calculationResult: result,
   onResetPatient,
   ages,
+  prescribedDailyVolumeMl,
+  onPrescribedDailyVolumeChange,
+  administeredVolumeMl,
+  onAdministeredVolumeChange,
+  batchesPrepared = 1,
+  onBatchesPreparedChange,
+  batchType = "full",
+  onBatchTypeChange,
+  measuredFinalBatchVolumeMl,
+  onMeasuredBatchVolumeChange,
+  volumeDiscardedOrSpilledMl = 0,
+  onVolumeDiscardedChange,
 }: NutritionEngineProps) {
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [showSourcePanel, setShowSourcePanel] = useState(false);
@@ -324,6 +349,36 @@ export function NutritionEngine({
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Clinician Prescription Discrepancy & Reconciliation Warning Banner */}
+      {!result.isBlocked && result.isReconciliationDiscrepancy && result.reconciliationMessage && (
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="p-4 rounded-xl bg-amber-50 border-2 border-amber-400 text-amber-950 space-y-2 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div className="space-y-1">
+              <h3 className="text-xs font-bold text-amber-900 uppercase tracking-wide">
+                Prescription Volume Reconciliation Discrepancy
+              </h3>
+              <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                {result.reconciliationMessage}
+              </p>
+              <div className="flex items-center gap-2 pt-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => onPrescribedDailyVolumeChange?.(undefined)}
+                  className="px-2.5 py-1 rounded bg-amber-200 hover:bg-amber-300 text-amber-950 font-bold border border-amber-400 text-[11px]"
+                >
+                  Reconcile with Weight-Based Fluid Allowance ({Math.round((weightGrams / 1000) * fluidAllowance * 10) / 10} mL/d)
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -1126,6 +1181,27 @@ export function NutritionEngine({
           )}
         </div>
       </div>
+
+      {/* Manufacturer Tin Feeding Guide Comparison & Preparation Accounting */}
+      {!result.isBlocked && !result.isGraduated && result.tinGuideComparison && result.preparationAccounting && (
+        <TinGuideComparison
+          weightKg={result.currentWeightKg || weightGrams / 1000}
+          fluidAllowanceMlPerKg={fluidAllowance}
+          prescribedDailyVolumeMl={result.prescribedDailyVolumeMl || result.totalDailyVolumeMl || 0}
+          administeredVolumeMl={administeredVolumeMl}
+          batchesPrepared={batchesPrepared}
+          batchType={batchType}
+          measuredFinalBatchVolumeMl={measuredFinalBatchVolumeMl}
+          volumeDiscardedOrSpilledMl={volumeDiscardedOrSpilledMl}
+          onAdministeredVolumeChange={onAdministeredVolumeChange}
+          onBatchesPreparedChange={onBatchesPreparedChange}
+          onBatchTypeChange={onBatchTypeChange}
+          onMeasuredBatchVolumeChange={onMeasuredBatchVolumeChange}
+          onVolumeDiscardedChange={onVolumeDiscardedChange}
+          tinGuideComparison={result.tinGuideComparison}
+          preparationAccounting={result.preparationAccounting}
+        />
+      )}
 
       {/* Patient Delivered Daily Nutritional Payload Section (Full Width for Maximum Legibility & Doctor Workflow) */}
       {!result.isBlocked && result.deliveredNutrientPayload && (

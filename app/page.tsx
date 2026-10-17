@@ -6,6 +6,7 @@ import { ClinicalHeader } from "@/components/clinical/clinical-header";
 import { NutritionEngine } from "@/components/clinical/nutrition-engine";
 import { GrowthPlotter } from "@/components/clinical/growth-plotter";
 import { FeedSheetModal } from "@/components/clinical/feed-sheet-modal";
+import { ExecutiveOverviewModal } from "@/components/clinical/executive-overview-modal";
 import { calculateLbwNutrition } from "@/lib/lbw-nutrition";
 import {
   BiologicalSex,
@@ -13,7 +14,19 @@ import {
   getGrowthDataset,
   evaluatePercentile,
 } from "@/lib/growth-engine";
-import { ShieldCheck, Sparkles, BookOpen, AlertTriangle, ShieldAlert, X } from "lucide-react";
+import {
+  ShieldCheck,
+  Sparkles,
+  BookOpen,
+  AlertTriangle,
+  ShieldAlert,
+  X,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  FileCheck2,
+  Award,
+} from "lucide-react";
 import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
 export default function Home() {
@@ -23,6 +36,8 @@ export default function Home() {
   // Tab navigation: "growth" | "nutrition" | "split"
   const [activeTab, setActiveTab] = useState<"growth" | "nutrition" | "split">("growth");
   const [isFeedSheetOpen, setIsFeedSheetOpen] = useState(false);
+  const [isExecutiveOverviewOpen, setIsExecutiveOverviewOpen] = useState(false);
+  const [isExecutiveBannerExpanded, setIsExecutiveBannerExpanded] = useState(false);
   const [feedSheetValidationErrors, setFeedSheetValidationErrors] = useState<string[]>([]);
 
   // Default dates: DOB 14 days ago, DOM today
@@ -49,6 +64,14 @@ export default function Home() {
   const [lengthCm, setLengthCm] = useState<number>(39.5);
   const [headCircumferenceCm, setHeadCircumferenceCm] = useState<number>(27.2);
 
+  // 4-Quantity Tracking & Preparation Parameters
+  const [prescribedDailyVolumeMl, setPrescribedDailyVolumeMl] = useState<number | undefined>(undefined);
+  const [administeredVolumeMl, setAdministeredVolumeMl] = useState<number | undefined>(undefined);
+  const [batchesPrepared, setBatchesPrepared] = useState<number>(1);
+  const [batchType, setBatchType] = useState<"full" | "half">("full");
+  const [measuredFinalBatchVolumeMl, setMeasuredFinalBatchVolumeMl] = useState<number | undefined>(undefined);
+  const [volumeDiscardedOrSpilledMl, setVolumeDiscardedOrSpilledMl] = useState<number>(0);
+
   // Patient reset callback
   const handleResetPatient = useCallback(() => {
     setWeightGrams(1350);
@@ -60,6 +83,12 @@ export default function Home() {
     setDom(defaultDates.dom);
     setLengthCm(39.5);
     setHeadCircumferenceCm(27.2);
+    setPrescribedDailyVolumeMl(undefined);
+    setAdministeredVolumeMl(undefined);
+    setBatchesPrepared(1);
+    setBatchType("full");
+    setMeasuredFinalBatchVolumeMl(undefined);
+    setVolumeDiscardedOrSpilledMl(0);
   }, [defaultDates]);
 
   // Derived ages with strict validation
@@ -70,8 +99,25 @@ export default function Home() {
   // Deterministic nutrition calculation with strict validation & age-specific targets
   const calculationResult = useMemo(() => {
     const pmaWeeks = ages && !ages.isBlocked ? ages.pmaWeeksDecimal : undefined;
-    return calculateLbwNutrition(weightGrams, fluidAllowance, undefined, pmaWeeks);
-  }, [weightGrams, fluidAllowance, ages]);
+    return calculateLbwNutrition(weightGrams, fluidAllowance, undefined, pmaWeeks, {
+      prescribedDailyVolumeMl,
+      administeredVolumeMl,
+      batchesPrepared,
+      batchType,
+      measuredFinalBatchVolumeMl,
+      volumeDiscardedOrSpilledMl,
+    });
+  }, [
+    weightGrams,
+    fluidAllowance,
+    ages,
+    prescribedDailyVolumeMl,
+    administeredVolumeMl,
+    batchesPrepared,
+    batchType,
+    measuredFinalBatchVolumeMl,
+    volumeDiscardedOrSpilledMl,
+  ]);
 
   // Derived dataset & percentiles
   const growthDataset = useMemo(() => {
@@ -142,6 +188,7 @@ export default function Home() {
         activeTab={activeTab}
         onTabChange={setActiveTab}
         onOpenFeedSheet={handleOpenFeedSheet}
+        onOpenExecutiveOverview={() => setIsExecutiveOverviewOpen(true)}
       />
 
       {/* Feed Sheet Accessible Error Summary Banner */}
@@ -182,6 +229,145 @@ export default function Home() {
 
       {/* Main Suite Content Area */}
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 focus:outline-none">
+        {/* Executive Description & Management Review Banner */}
+        <section
+          aria-label="Executive Briefing & Data Evidence Overview"
+          className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4 sm:p-5 shadow-md border border-blue-800/40 space-y-3"
+        >
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-300 shrink-0">
+                <Sparkles className="w-5 h-5 text-clinical-gold" aria-hidden="true" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
+                    Executive Description & System Verification
+                  </span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-mono">
+                    Zero Clinical Error
+                  </span>
+                </div>
+                <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                  Liptis Nutrition NeoPed™ LBW Clinical Platform
+                </h2>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setIsExecutiveOverviewOpen(true)}
+                className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 border border-blue-400/30"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>Full Evidence Dossier</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsExecutiveBannerExpanded(!isExecutiveBannerExpanded)}
+                className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold transition-all border border-white/10 flex items-center gap-1"
+                aria-expanded={isExecutiveBannerExpanded}
+              >
+                <span>{isExecutiveBannerExpanded ? "Less" : "Summary"}</span>
+                {isExecutiveBannerExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-slate-300 leading-relaxed">
+            <strong>NeoPed™</strong> is Liptis Nutrition’s dedicated clinical decision support platform for Low Birth Weight (LBW) and Very Low Birth Weight (VLBW) infants in neonatal intensive care. Engineered to eliminate prescribing errors and ensure mathematical precision, it unifies international enteral feeding standards, manufacturer tin guides, and longitudinal growth tracking with 100% client-side data privacy.
+          </p>
+
+          {isExecutiveBannerExpanded && (
+            <div className="pt-3 border-t border-blue-900/60 space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
+                  <div className="font-bold text-blue-200 flex items-center gap-1.5">
+                    <FileCheck2 className="w-4 h-4 text-emerald-400" />
+                    <span>4-Quantity Separation</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-normal">
+                    Strictly segregates Doctor’s Prescribed Volume, Manufacturer Tin Guide Reference, Prepared Batch Volume, and Actually Administered Bedside Volume.
+                  </p>
+                </div>
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
+                  <div className="font-bold text-blue-200 flex items-center gap-1.5">
+                    <Award className="w-4 h-4 text-amber-400" />
+                    <span>Reconstitution Precision</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-normal">
+                    Calibrated preparation: 6 scoops + 180 mL water yields ~198 mL full batch (3 scoops / 90 mL yields ~99 mL half batch). Tracks powder usage and discarded waste.
+                  </p>
+                </div>
+                <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-1">
+                  <div className="font-bold text-blue-200 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-teal-400" />
+                    <span>Client-Side Privacy</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300 leading-normal">
+                    100% deterministic pure mathematical computation. Zero network transmission of Protected Health Information (PHI) — HIPAA / GDPR compliant by design.
+                  </p>
+                </div>
+              </div>
+
+              {/* Direct Clickable Evidence Links */}
+              <div className="space-y-1.5 pt-1">
+                <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                  Direct Links to Authoritative Data & Guidelines:
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <a
+                    href="https://pubmed.ncbi.nlm.nih.gov/36511826/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-900/60 hover:bg-blue-800 text-blue-200 border border-blue-700/60 transition-colors"
+                  >
+                    <span>ESPGHAN 2022 Guidelines (PubMed: 36511826)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href="https://bmcpediatr.biomedcentral.com/articles/10.1186/1471-2431-13-59"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-900/60 hover:bg-indigo-800 text-indigo-200 border border-indigo-700/60 transition-colors"
+                  >
+                    <span>Fenton 2013 Preterm Growth Curves (BMC Pediatrics)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href="https://www.who.int/tools/child-growth-standards/standards"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-teal-900/60 hover:bg-teal-800 text-teal-200 border border-teal-700/60 transition-colors"
+                  >
+                    <span>WHO 2006 Child Growth Standards (WHO.int)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href="https://peditools.org"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700/60 transition-colors"
+                  >
+                    <span>PediTools Clinical Calculator References</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                  <a
+                    href="https://ciaaw.org/atomic-weights.htm"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                  >
+                    <span>IUPAC Atomic Weights (Ca: 40.078, P: 30.973762)</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+
         {/* View Routing with Tabpanel Semantics */}
         {activeTab === "growth" && (
           <section
@@ -230,6 +416,18 @@ export default function Home() {
               calculationResult={calculationResult}
               onResetPatient={handleResetPatient}
               ages={ages}
+              prescribedDailyVolumeMl={prescribedDailyVolumeMl}
+              onPrescribedDailyVolumeChange={setPrescribedDailyVolumeMl}
+              administeredVolumeMl={administeredVolumeMl}
+              onAdministeredVolumeChange={setAdministeredVolumeMl}
+              batchesPrepared={batchesPrepared}
+              onBatchesPreparedChange={setBatchesPrepared}
+              batchType={batchType}
+              onBatchTypeChange={setBatchType}
+              measuredFinalBatchVolumeMl={measuredFinalBatchVolumeMl}
+              onMeasuredBatchVolumeChange={setMeasuredFinalBatchVolumeMl}
+              volumeDiscardedOrSpilledMl={volumeDiscardedOrSpilledMl}
+              onVolumeDiscardedChange={setVolumeDiscardedOrSpilledMl}
             />
           </section>
         )}
@@ -285,11 +483,30 @@ export default function Home() {
                 onFluidChange={setFluidAllowance}
                 calculationResult={calculationResult}
                 onResetPatient={handleResetPatient}
+                ages={ages}
+                prescribedDailyVolumeMl={prescribedDailyVolumeMl}
+                onPrescribedDailyVolumeChange={setPrescribedDailyVolumeMl}
+                administeredVolumeMl={administeredVolumeMl}
+                onAdministeredVolumeChange={setAdministeredVolumeMl}
+                batchesPrepared={batchesPrepared}
+                onBatchesPreparedChange={setBatchesPrepared}
+                batchType={batchType}
+                onBatchTypeChange={setBatchType}
+                measuredFinalBatchVolumeMl={measuredFinalBatchVolumeMl}
+                onMeasuredBatchVolumeChange={setMeasuredFinalBatchVolumeMl}
+                volumeDiscardedOrSpilledMl={volumeDiscardedOrSpilledMl}
+                onVolumeDiscardedChange={setVolumeDiscardedOrSpilledMl}
               />
             </div>
           </section>
         )}
       </main>
+
+      {/* Executive Overview & Clinical Governance Modal */}
+      <ExecutiveOverviewModal
+        isOpen={isExecutiveOverviewOpen}
+        onClose={() => setIsExecutiveOverviewOpen(false)}
+      />
 
       {/* Institutional Printable Feed Sheet Modal */}
       <FeedSheetModal
