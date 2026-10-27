@@ -1870,25 +1870,6 @@ export function calculatePatientDeliveredNutrientPayload(
       coverageBadge: proteinCov.badge,
     },
     {
-      id: "carbs",
-      name: "Carbohydrates (100% Lactose)",
-      category: "macronutrient",
-      amountPerDay: carbsGramsPerDay,
-      amountPerKgPerDay: carbsGramsPerKgPerDay,
-      unit: "g",
-      concentrationPer100Ml: `${comp.carbsGramsPer100Ml} g`,
-      clinicalTarget: "100% Lactose Matrix (No Isolated Range)",
-      clinicalInterpretation: isPreterm
-        ? "100% lactose digestible carbohydrate matrix (plus 2'-FL HMO & GOS prebiotics) enhances calcium absorption and bifidogenic microflora without isolated range restrictions."
-        : "Standard infant carbohydrate intake for mature digestion.",
-      referenceComparison: carbsRefComp,
-      status: "within_target",
-      coveragePercent: 100,
-      coverageRatio: 100,
-      coverageLevel: "optimal",
-      coverageBadge: "100% Lactose",
-    },
-    {
       id: "lipids",
       name: "Total Lipids / Fatty Acids",
       category: "macronutrient",

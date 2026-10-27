@@ -313,8 +313,8 @@ export function PatientNutrientPayload({
 
   const filteredItems =
     activeCategory === "all"
-      ? payload.items
-      : payload.items.filter((item) => item.category === activeCategory);
+      ? payload.items.filter((item) => item.id !== "carbs")
+      : payload.items.filter((item) => item.category === activeCategory && item.id !== "carbs");
 
   const handleCopy = () => {
     const textLines = [

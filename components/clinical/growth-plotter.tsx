@@ -1198,7 +1198,7 @@ export function GrowthPlotter({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
             {/* 1. Energy */}
             <div className="p-2.5 sm:p-3.5 bg-amber-50/80 border-2 border-amber-200 rounded-xl flex flex-col justify-between">
               <div>
@@ -1239,27 +1239,7 @@ export function GrowthPlotter({
               </div>
             </div>
 
-            {/* 3. Carbohydrates */}
-            <div className="p-2.5 sm:p-3.5 bg-purple-50/80 border-2 border-purple-200 rounded-xl flex flex-col justify-between">
-              <div>
-                <span className="text-purple-950 block text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
-                  Carbohydrates
-                </span>
-                <div className="mt-1">
-                  <strong className="text-slate-950 font-mono text-base sm:text-lg font-black block">
-                    {calculationResult.deliveredNutrientPayload?.carbsGramsPerKgPerDay ?? "—"}
-                  </strong>
-                  <span className="text-[11px] sm:text-xs font-bold text-slate-700 font-sans block truncate">
-                    g/kg/d ({calculationResult.deliveredNutrientPayload?.carbsGramsPerDay ?? "—"} g/d)
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 pt-1.5 border-t border-purple-200/90 text-[10px] sm:text-xs font-bold text-purple-950 leading-tight">
-                100% Lactose Digestible Matrix
-              </div>
-            </div>
-
-            {/* 4. Total Lipids */}
+            {/* 3. Total Lipids */}
             <div className="p-2.5 sm:p-3.5 bg-emerald-50/80 border-2 border-emerald-200 rounded-xl flex flex-col justify-between">
               <div>
                 <span className="text-emerald-950 block text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
