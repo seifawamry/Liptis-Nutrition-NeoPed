@@ -228,11 +228,11 @@ export default function Home() {
       )}
 
       {/* Main Suite Content Area */}
-      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 space-y-4 sm:space-y-6 focus:outline-none">
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto p-2.5 sm:p-6 space-y-3.5 sm:space-y-6 focus:outline-none">
         {/* Executive Description & Management Review Banner */}
         <section
           aria-label="Executive Briefing & Data Evidence Overview"
-          className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-4 sm:p-5 shadow-md border border-blue-800/40 space-y-3"
+          className="rounded-2xl bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white p-3.5 sm:p-5 shadow-md border border-blue-800/40 space-y-3"
         >
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -241,7 +241,7 @@ export default function Home() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-blue-300">
+                  <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-blue-300">
                     Executive Description & System Verification
                   </span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 font-mono">
@@ -258,7 +258,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setIsExecutiveOverviewOpen(true)}
-                className="w-full sm:w-auto px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 border border-blue-400/30"
+                className="flex-1 sm:flex-initial min-h-[40px] px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5 border border-blue-400/30"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>Full Evidence Dossier</span>
@@ -266,7 +266,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setIsExecutiveBannerExpanded(!isExecutiveBannerExpanded)}
-                className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold transition-all border border-white/10 flex items-center gap-1"
+                className="min-h-[40px] px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-semibold transition-all border border-white/10 flex items-center gap-1 shrink-0"
                 aria-expanded={isExecutiveBannerExpanded}
               >
                 <span>{isExecutiveBannerExpanded ? "Less" : "Summary"}</span>

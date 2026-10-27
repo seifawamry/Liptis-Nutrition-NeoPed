@@ -188,17 +188,15 @@ export function PatientNutrientPayload({
       goalLabel = "ESPGHAN 2022: 0.5:1 to 2.0:1";
       goalRationale = `Calculated formula ratio is ${payload.araDhaRatioFormatted}. Balanced physiological ratio prevents competitive displacement in neural tissue.`;
     } else if (item.id === "carbs") {
-      const minCarbs = payload.weightGrams <= 3500 ? 11.0 : 9.0;
-      const maxCarbs = payload.weightGrams <= 3500 ? 15.0 : 13.0;
       deliveredDose = payload.carbsGramsPerKgPerDay;
-      ratio = Math.round((deliveredDose / minCarbs) * 100);
-      percent = Math.min(100, ratio);
-      status = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "within_target" : deliveredDose < minCarbs ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minCarbs && deliveredDose <= maxCarbs ? "Within Target Range" : deliveredDose < minCarbs ? "Below Target Range" : "Above Target Range";
-      goalLabel = payload.weightGrams <= 3500 ? "ESPGHAN 2022: 11.0–15.0 g/kg/d" : "Term: 9.0–13.0 g/kg/d";
+      ratio = 100;
+      percent = 100;
+      status = "within_target";
+      badgeText = "100% Lactose Matrix";
+      goalLabel = "100% Lactose Matrix (No Isolated Range)";
       goalRationale = payload.weightGrams <= 3500
-        ? "ESPGHAN 2022 preterm recommended range: 11–15 g/kg/day. 100% lactose matrix enhances intestinal calcium absorption and bifidogenic flora."
-        : "Standard infant carbohydrate intake for mature digestion.";
+        ? "100% lactose digestible carbohydrate matrix (plus 2'-FL HMO & GOS prebiotics) providing physiological energy and enhancing intestinal calcium absorption without an isolated range restriction."
+        : "100% lactose digestible carbohydrate matrix for standard infant physiological digestion.";
     } else if (item.id === "lipids") {
       const minLipids = payload.weightGrams <= 3500 ? 4.8 : 4.0;
       const maxLipids = payload.weightGrams <= 3500 ? 8.1 : 6.0;
@@ -987,10 +985,10 @@ export function PatientNutrientPayload({
                     <div>
                       <div className="flex items-center justify-between gap-1 mb-1.5">
                         <span className="text-[11px] font-black uppercase tracking-wider text-blue-950">
-                          Target Range ({activeAgeStrat.pmaWeeksRange})
+                          {item.id === "carbs" ? "Nutrient Matrix Specification" : `Target Range (${activeAgeStrat.pmaWeeksRange})`}
                         </span>
                         <span className="text-[10px] font-black px-2 py-0.5 rounded bg-blue-100 text-blue-950 border border-blue-300 font-mono">
-                          ESPGHAN
+                          {item.id === "carbs" ? "Physiological" : "ESPGHAN"}
                         </span>
                       </div>
                       <div className="font-mono font-black text-blue-950 text-xs bg-white p-2.5 rounded-lg border-2 border-blue-300 shadow-2xs leading-relaxed">

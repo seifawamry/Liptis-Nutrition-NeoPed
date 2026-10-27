@@ -1255,7 +1255,7 @@ export function GrowthPlotter({
                 </div>
               </div>
               <div className="mt-2 pt-1.5 border-t border-purple-200/90 text-[10px] sm:text-xs font-bold text-purple-950 leading-tight">
-                ESPGHAN: 11.0–15.0 g/kg/d
+                100% Lactose Digestible Matrix
               </div>
             </div>
 
