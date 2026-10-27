@@ -45,11 +45,11 @@ export function ClinicalHeader({
 
       {/* Main Header Brand Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-4">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-4">
           {/* Brand & Title */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 w-full md:w-auto justify-between sm:justify-start">
+          <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-4 w-full md:w-auto">
             {/* Primary NeoPed Suite Identity */}
-            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
               <div className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg overflow-hidden border border-clinical-gold/60 shadow-md shrink-0 bg-clinical-navy-950">
                 <Image
                   src="/icons/icon-192.png"
@@ -78,9 +78,9 @@ export function ClinicalHeader({
             <div className="hidden sm:block h-7 w-[1px] bg-clinical-navy-700 shrink-0" />
 
             {/* Corporate & Formula Brand Logos */}
-            <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-              <div className="bg-white px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
-                <div className="relative w-20 sm:w-28 h-6 sm:h-7">
+            <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+              <div className="bg-white px-1.5 py-0.5 sm:px-2.5 sm:py-1 rounded-lg shadow-sm border border-slate-200 flex items-center justify-center shrink-0">
+                <div className="relative w-16 sm:w-28 h-5 sm:h-7">
                   <Image
                     src="/logos/liptis-nutrition.png"
                     alt="Liptis Nutrition Logo"
@@ -92,7 +92,7 @@ export function ClinicalHeader({
               </div>
 
               <div className="bg-white/95 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg border border-white/20 flex items-center justify-center shrink-0">
-                <div className="relative w-18 sm:w-24 h-6 sm:h-7">
+                <div className="relative w-16 sm:w-24 h-5 sm:h-7">
                   <Image
                     src="/logos/pediamil-lbw.png"
                     alt="Pediamil LBW"
@@ -105,8 +105,8 @@ export function ClinicalHeader({
             </div>
           </div>
 
-          {/* Clinical Action Buttons */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full md:w-auto">
+          {/* Clinical Action Buttons: Sleek 2-column grid on mobile */}
+          <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto">
             {onOpenExecutiveOverview && (
               <button
                 id="executive-overview-btn"
@@ -114,10 +114,11 @@ export function ClinicalHeader({
                 onClick={onOpenExecutiveOverview}
                 aria-haspopup="dialog"
                 aria-label="Open Executive Overview and Evidence Registry for Management Review"
-                className="w-full sm:w-auto px-3.5 py-2.5 sm:py-2 min-h-[44px] rounded-lg bg-blue-700 hover:bg-blue-600 active:bg-blue-800 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 border border-blue-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+                className="px-2.5 sm:px-3.5 py-2 min-h-[44px] rounded-lg bg-blue-700 hover:bg-blue-600 active:bg-blue-800 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 sm:gap-2 border border-blue-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
               >
                 <BookOpen className="w-4 h-4 shrink-0 text-blue-200" aria-hidden="true" />
-                <span>Executive Overview & Evidence</span>
+                <span className="sm:hidden">Overview</span>
+                <span className="hidden sm:inline">Executive Overview & Evidence</span>
               </button>
             )}
 
@@ -127,10 +128,11 @@ export function ClinicalHeader({
               onClick={onOpenFeedSheet}
               aria-haspopup="dialog"
               aria-label="Generate Clinical Feed Sheet printable hospital document"
-              className="w-full sm:w-auto px-3.5 py-2.5 sm:py-2 min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-2 border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              className="px-2.5 sm:px-3.5 py-2 min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 sm:gap-2 border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
             >
               <Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span>Generate Clinical Feed Sheet</span>
+              <span className="sm:hidden">Print Sheet</span>
+              <span className="hidden sm:inline">Generate Clinical Feed Sheet</span>
             </button>
           </div>
         </div>

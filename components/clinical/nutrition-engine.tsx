@@ -571,41 +571,41 @@ export function NutritionEngine({
               subtitle="Reconciled intervals with explicit rounding disclosure"
               icon={<Clock className="w-4 h-4 text-clinical-navy-800" aria-hidden="true" />}
             >
-              <div className="grid grid-cols-3 gap-2.5 text-center">
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 text-center">
                 {/* q2h */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-200">
+                  <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">
                     q2h (12 Feeds)
                   </div>
-                  <div className="text-base font-bold text-slate-900 mt-1">
+                  <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 sm:mt-1">
                     {result.feedingSchedule.q2hVolumePerFeedMl}
                     <span className="text-xs font-normal text-slate-500 ml-0.5">mL</span>
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">every 2 hours</div>
+                  <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">every 2 hours</div>
                 </div>
 
                 {/* q3h */}
-                <div className="bg-blue-50/60 p-3 rounded-lg border border-blue-200">
-                  <div className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider">
+                <div className="bg-blue-50/60 p-2 sm:p-3 rounded-lg border border-blue-200">
+                  <div className="text-[10px] sm:text-[11px] font-semibold text-blue-700 uppercase tracking-wider truncate">
                     q3h (8 Feeds)
                   </div>
-                  <div className="text-base font-bold text-blue-950 mt-1">
+                  <div className="text-sm sm:text-base font-bold text-blue-950 mt-0.5 sm:mt-1">
                     {result.feedingSchedule.q3hVolumePerFeedMl}
                     <span className="text-xs font-normal text-slate-500 ml-0.5">mL</span>
                   </div>
-                  <div className="text-[10px] text-blue-600/80 mt-0.5">every 3 hours</div>
+                  <div className="text-[9.5px] sm:text-[10px] text-blue-600/80 mt-0.5">every 3 hours</div>
                 </div>
 
                 {/* continuous */}
-                <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                  <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                <div className="bg-slate-50 p-2 sm:p-3 rounded-lg border border-slate-200">
+                  <div className="text-[10px] sm:text-[11px] font-semibold text-slate-500 uppercase tracking-wider truncate">
                     Continuous
                   </div>
-                  <div className="text-base font-bold text-slate-900 mt-1">
+                  <div className="text-sm sm:text-base font-bold text-slate-900 mt-0.5 sm:mt-1">
                     {result.feedingSchedule.continuousInfusionMlPerHour}
                     <span className="text-xs font-normal text-slate-500 ml-0.5">mL/hr</span>
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-0.5">infusion pump</div>
+                  <div className="text-[9.5px] sm:text-[10px] text-slate-400 mt-0.5">infusion pump</div>
                 </div>
               </div>
 
@@ -740,8 +740,8 @@ export function NutritionEngine({
                 }
                 subtitle={
                   result.isGraduated
-                    ? "Standard infant energy, protein, carbohydrate & lipid accretion with Pediamil® 1"
-                    : "Deterministic 4-tier energy, protein, carbohydrate & lipid accretion evaluation"
+                    ? "Standard infant energy, protein & lipid accretion with Pediamil® 1"
+                    : "Deterministic energy, protein & lipid accretion evaluation"
                 }
                 icon={<Flame className="w-4 h-4 text-orange-500" />}
               >
@@ -845,59 +845,7 @@ export function NutritionEngine({
                     </p>
                   </div>
 
-                  {/* 3. Delivered Carbohydrates Gauge */}
-                  <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
-                    <RangeGauge
-                      currentValue={result.deliveredCarbsGramsPerKgPerDay || result.deliveredNutrientPayload?.carbsGramsPerKgPerDay || 0}
-                      minTarget={result.isGraduated ? 9.0 : ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MIN}
-                      maxTarget={result.isGraduated ? 13.0 : ESPGHAN_DIRECT_GUIDELINES.CARBOHYDRATES.TYPICAL_MAX}
-                      minScale={result.isGraduated ? 6.0 : 7.0}
-                      maxScale={result.isGraduated ? 16.0 : 18.0}
-                      unit="g/kg/day"
-                      metricName={
-                        result.isGraduated
-                          ? "Delivered Carbohydrates (Term Infant Target: 9.0–13.0 g/kg/d | 100% Lactose Matrix)"
-                          : "Delivered Carbohydrates (ESPGHAN 2022: 11.0–15.0 g/kg/d | 8.0–13.0 g/100 kcal)"
-                      }
-                      status={result.carbsCompliance?.status || "on_target"}
-                    />
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-700 border-t border-slate-200/80 pt-2 font-mono">
-                      <div>
-                        Total Daily Carbs:{" "}
-                        <strong className="text-slate-950 font-bold">
-                          {result.deliveredCarbsGramsPerDay ?? result.deliveredNutrientPayload?.carbsGramsPerDay} g/day
-                        </strong>
-                      </div>
-                      <div>
-                        Carbohydrate Density:{" "}
-                        <strong className="text-amber-950 font-bold">
-                          {result.isGraduated ? "7.18 g/100 mL (10.5 g/100 kcal)" : "6.37 g/100 mL (8.0 g/100 kcal)"}
-                        </strong>
-                      </div>
-                      <div className="flex items-center gap-1.5 sm:justify-end">
-                        <span className="text-slate-500 font-sans text-[11px] font-semibold">Evaluation:</span>
-                        <strong className="text-slate-900 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-950 border border-emerald-300">
-                          {result.carbsCompliance?.badgeLabel || "Evaluated"}
-                        </strong>
-                      </div>
-                    </div>
-                    <div className="p-2.5 bg-amber-50/60 rounded-lg border border-amber-200/80 text-[11px] text-amber-950 space-y-1">
-                      <div className="font-semibold text-amber-900 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-600" aria-hidden="true" />
-                        <span>Carbohydrate Composition & Gut Physiology:</span>
-                      </div>
-                      <p className="text-amber-950/90 leading-tight">
-                        {result.isGraduated
-                          ? "100% Lactose Digestible Carbohydrates (7.18 g/100 mL) + GOS Prebiotics (0.55 g/100 mL). Zero maltodextrin. Supports lactase maturation, stool softening, and physiological calcium absorption."
-                          : "100% Lactose Digestible Carbohydrate (6.32 g/100 mL, 99.2% of carbohydrates) + 2'-FL HMO (0.14 g/100 mL = 0.95 g/100g powder) + GOS Prebiotics (0.30 g/100 mL = 2.0 g/100g powder) + Dietary Fibers (0.44 g/100 mL). Promotes intestinal lactobacilli colonization and calcium/magnesium uptake."}
-                      </p>
-                    </div>
-                    <p className="text-[11px] text-slate-500 leading-tight">
-                      {result.carbsCompliance?.interpretation}
-                    </p>
-                  </div>
-
-                  {/* 4. Delivered Total Lipids Gauge */}
+                  {/* 3. Delivered Total Lipids Gauge */}
                   <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200 space-y-3">
                     <RangeGauge
                       currentValue={result.deliveredFatGramsPerKgPerDay || result.deliveredNutrientPayload?.fatGramsPerKgPerDay || 0}
@@ -1043,7 +991,7 @@ export function NutritionEngine({
                       </div>
                       <p className="text-[10.5px] text-slate-500 leading-tight">
                         {result.overallStatus === "Within reference range"
-                          ? "Energy, protein, carbohydrates, lipids, and P:E ratio all satisfy recommended reference boundaries."
+                          ? "Energy, protein, lipids, and P:E ratio all satisfy recommended reference boundaries."
                           : "One or more nutritional parameters fall outside standard targets. Review clinical plan."}
                       </p>
                     </div>
