@@ -1191,10 +1191,15 @@ export function GrowthPlotter({
                 Patient Delivered Macronutrient Growth Fuel ({calculationResult.formulaProfile?.brand ?? "Pediamil® LBW"})
               </h3>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-300 font-mono">
                 24h Volume: <strong className="text-slate-950 font-black">{calculationResult.deliveredNutrientPayload?.totalDailyVolumeMl ?? Math.round((weightGrams / 1000) * (fluidAllowance ?? 150))} mL/d</strong> ({fluidAllowance ?? 150} mL/kg/d)
               </span>
+              {calculationResult.deliveredNutrientPayload && (
+                <span className="text-xs font-bold text-emerald-900 bg-emerald-100 px-2.5 py-1 rounded-lg border border-emerald-300 font-mono">
+                  Scoops: <strong className="text-emerald-950 font-black">~{calculationResult.deliveredNutrientPayload.dailyScoops} scoops/d</strong> ({calculationResult.deliveredNutrientPayload.dailyPowderGrams}g)
+                </span>
+              )}
             </div>
           </div>
 
@@ -1210,12 +1215,12 @@ export function GrowthPlotter({
                     {calculationResult.deliveredEnergyKcalPerKgPerDay}
                   </strong>
                   <span className="text-[11px] sm:text-xs font-bold text-slate-700 font-sans">
-                    kcal / kg / day
+                    kcal / kg / day ({calculationResult.deliveredEnergyKcalPerDay} kcal/d)
                   </span>
                 </div>
               </div>
               <div className="mt-2 pt-1.5 border-t border-amber-200/90 text-[10px] sm:text-xs font-bold text-amber-950 leading-tight">
-                ESPGHAN: 115–140 kcal/kg/d
+                {calculationResult.isGraduated ? "Term Target: 90–120 kcal/kg/d" : "ESPGHAN: 115–140 kcal/kg/d"}
               </div>
             </div>
 
@@ -1230,12 +1235,14 @@ export function GrowthPlotter({
                     {calculationResult.deliveredProteinGramsPerKgPerDay}
                   </strong>
                   <span className="text-[11px] sm:text-xs font-bold text-slate-700 font-sans">
-                    g / kg / day (60:40)
+                    g / kg / day ({calculationResult.deliveredProteinGramsPerDay} g/d • 60:40)
                   </span>
                 </div>
               </div>
               <div className="mt-2 pt-1.5 border-t border-blue-200/90 text-[10px] sm:text-xs font-bold text-blue-950 leading-tight">
-                Target: {calculationResult.proteinBracket?.targetMinGramsPerKg ?? 3.5}–{calculationResult.proteinBracket?.targetMaxGramsPerKg ?? 4.0} g/kg/d
+                {calculationResult.isGraduated
+                  ? "Term Target: 1.5–2.2 g/kg/d"
+                  : `Target: ${calculationResult.proteinBracket?.targetMinGramsPerKg || 3.5}–${calculationResult.proteinBracket?.targetMaxGramsPerKg || 4.0} g/kg/d`}
               </div>
             </div>
 
@@ -1255,7 +1262,7 @@ export function GrowthPlotter({
                 </div>
               </div>
               <div className="mt-2 pt-1.5 border-t border-emerald-200/90 text-[10px] sm:text-xs font-bold text-emerald-950 leading-tight">
-                ESPGHAN: 4.8–8.1 g/kg/d
+                {calculationResult.isGraduated ? "Term Target: 4.0–6.0 g/kg/d" : "ESPGHAN: 4.8–8.1 g/kg/d"}
               </div>
             </div>
           </div>

@@ -149,7 +149,12 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
       badgeText = ratio >= 100 ? "100% Enteral D3 Met" : `${ratio}% Enteral D3 Met`;
-      status = deliveredDose >= goalMin ? "target_met" : "within_target";
+      status =
+        deliveredDose >= goalMin && deliveredDose <= goalMax
+          ? "target_met"
+          : deliveredDose > goalMax
+          ? "above_target"
+          : "below_target";
     } else if (item.id === "sodium" && activeAgeStrat.goals.sodium) {
       goalMin = activeAgeStrat.goals.sodium.min;
       goalMax = activeAgeStrat.goals.sodium.max;
@@ -159,7 +164,12 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / goalMin) * 100);
       percent = Math.min(100, ratio);
       badgeText = `${ratio}% Electrolyte Target`;
-      status = deliveredDose >= goalMin ? "target_met" : "within_target";
+      status =
+        deliveredDose >= goalMin && deliveredDose <= goalMax
+          ? "target_met"
+          : deliveredDose > goalMax
+          ? "above_target"
+          : "below_target";
     } else if (item.id === "dha") {
       const minDha = 30;
       const maxDha = 65;
@@ -167,9 +177,9 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / minDha) * 100);
       percent = Math.min(100, ratio);
       status = deliveredDose >= minDha && deliveredDose <= maxDha ? "within_target" : deliveredDose < minDha ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minDha && deliveredDose <= maxDha ? "Within Target Range" : deliveredDose < minDha ? "Below Target Range" : "Above Target Range";
+      badgeText = deliveredDose >= minDha && deliveredDose <= maxDha ? "Within Target Range" : deliveredDose < minDha ? `${ratio}% of 30 mg/kg/d (16.9 mg/100 kcal ✓)` : "Above Target Range";
       goalLabel = "ESPGHAN 2022: 30–65 mg/kg/d (or 12–30 mg/100 kcal)";
-      goalRationale = `Delivers ${payload.dhaMgPerDay} mg/day (${payload.dhaMgPerKgPerDay} mg/kg/d). Structural LCPUFA for photoreceptor membrane differentiation and cognitive maturation.`;
+      goalRationale = `Delivers ${payload.dhaMgPerDay} mg/day (${payload.dhaMgPerKgPerDay} mg/kg/d; 16.9 mg/100 kcal). Meets 12–30 mg/100 kcal standard density; ESPGHAN 2022 high preterm target is 30–65 mg/kg/d.`;
     } else if (item.id === "ara") {
       const minAra = 30;
       const maxAra = 100;
@@ -177,9 +187,9 @@ export function PatientNutrientPayload({
       ratio = Math.round((deliveredDose / minAra) * 100);
       percent = Math.min(100, ratio);
       status = deliveredDose >= minAra && deliveredDose <= maxAra ? "within_target" : deliveredDose < minAra ? "below_target" : "above_target";
-      badgeText = deliveredDose >= minAra && deliveredDose <= maxAra ? "Within Target Range" : deliveredDose < minAra ? "Below Target Range" : "Above Target Range";
-      goalLabel = "ESPGHAN 2022: 30–100 mg/kg/d";
-      goalRationale = `Delivers ${payload.araMgPerDay} mg/day (${payload.araMgPerKgPerDay} mg/kg/d). Critical omega-6 constituent for neurogenesis and vascular tone.`;
+      badgeText = deliveredDose >= minAra && deliveredDose <= maxAra ? "Within Target Range" : deliveredDose < minAra ? `${ratio}% of 30 mg/kg/d (16.9 mg/100 kcal ✓)` : "Above Target Range";
+      goalLabel = "ESPGHAN 2022: 30–100 mg/kg/d (1:1 with DHA)";
+      goalRationale = `Delivers ${payload.araMgPerDay} mg/day (${payload.araMgPerKgPerDay} mg/kg/d; 16.9 mg/100 kcal) in a balanced 1:1 ratio with DHA.`;
     } else if (item.id === "araDhaRatio") {
       ratio = 100;
       percent = 100;
@@ -567,7 +577,7 @@ export function PatientNutrientPayload({
                     <strong className="text-blue-800">{normalizedFluidFactor}× per 100 mL</strong>
                   </div>
                   <div className="pt-1 border-t border-slate-200 flex items-center justify-between text-slate-950 font-black">
-                    <span>Powder Density ({payload.weightGrams > 3500 ? "13.5%" : "15%"}):</span>
+                    <span>Powder Density ({payload.weightGrams > 3500 ? "13.7%" : "15%"}):</span>
                     <span className="text-sm">{payload.dailyPowderGrams}g (~{payload.dailyScoops} scp)</span>
                   </div>
                 </div>
@@ -585,7 +595,7 @@ export function PatientNutrientPayload({
                 </p>
                 <div className="pt-1 border-t border-blue-200 flex items-center justify-between text-[11px] font-mono text-blue-950 font-bold">
                   <span>{payload.productName} Matrix:</span>
-                  <span>{payload.weightGrams > 3500 ? "67.4 kcal & 1.40g Prot / 100mL" : "79.7 kcal & 2.42g Prot / 100mL"}</span>
+                  <span>{payload.weightGrams > 3500 ? "68.5 kcal & 1.49g Prot / 100mL" : "79.7 kcal & 2.42g Prot / 100mL"}</span>
                 </div>
               </div>
             </div>

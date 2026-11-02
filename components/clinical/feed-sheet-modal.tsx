@@ -772,7 +772,7 @@ export function FeedSheetModal({
                             <span className="text-[9.5px] text-slate-400 block font-normal font-sans">K = 39.10 g/mol</span>
                           </td>
                           <td className="p-2 font-sans text-slate-600">
-                            2.0–3.0 mmol/kg/day (78–117 mg/kg/d)
+                            2.0–3.5 mmol/kg/day (78–137 mg/kg/d)
                           </td>
                         </tr>
                         <tr>
@@ -790,7 +790,7 @@ export function FeedSheetModal({
                             <span className="text-[9.5px] text-slate-400 block font-normal font-sans">Cl = 35.45 g/mol</span>
                           </td>
                           <td className="p-2 font-sans text-slate-600">
-                            2.0–3.0 mmol/kg/day (71–106 mg/kg/d)
+                            3.0–5.0 mmol/kg/day (106–177 mg/kg/d)
                           </td>
                         </tr>
                         <tr className="bg-slate-50/70">

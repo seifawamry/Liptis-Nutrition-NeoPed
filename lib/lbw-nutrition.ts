@@ -1653,12 +1653,10 @@ export function calculatePatientDeliveredNutrientPayload(
   const recon = product.reconstitution;
   const isPreterm = weightGrams <= 3500;
 
-  // Reconstitution & logistics
+  // Reconstitution & logistics (90 mL water per 3 scoops / 100 mL prepared feed = 30 mL water per scoop)
   const dailyPowderGrams = Math.round(recon.powderMassGramsPer100Ml * factor * 10) / 10;
   const dailyScoops = Math.round((dailyPowderGrams / recon.powderGramsPerScoop) * 10) / 10;
-  const waterVolumeMlPerDay = Math.round(
-    (recon.waterVolumeMlPer3Scoops / recon.finalFeedVolumeMlPer3Scoops) * totalDailyVolumeMl * 10
-  ) / 10;
+  const waterVolumeMlPerDay = Math.round((recon.waterVolumeMlPer3Scoops / 100) * totalDailyVolumeMl * 10) / 10;
   const scoopsPerFeedQ3h = Math.round((dailyScoops / 8) * 10) / 10;
   const scoopsPerFeedQ2h = Math.round((dailyScoops / 12) * 10) / 10;
 
@@ -1814,6 +1812,31 @@ export function calculatePatientDeliveredNutrientPayload(
     { minimum: 0.5, maximum: 2.0 },
     "ARA:DHA Ratio"
   );
+  const zincRefComp = evaluateReferenceComparison(
+    zincMgPerKgPerDay,
+    isPreterm ? { minimum: 1.2, maximum: 2.5 } : { minimum: 0.5, maximum: 1.5 },
+    "Zinc (Zn)"
+  );
+  const magnesiumRefComp = evaluateReferenceComparison(
+    magnesiumMgPerKgPerDay,
+    isPreterm ? { minimum: 8.0, maximum: 15.0 } : { minimum: 5.0, maximum: 12.0 },
+    "Magnesium (Mg)"
+  );
+  const potassiumRefComp = evaluateReferenceComparison(
+    potassiumMmolPerKgPerDay,
+    isPreterm ? { minimum: 2.0, maximum: 3.5 } : { minimum: 1.5, maximum: 3.0 },
+    "Potassium (K)"
+  );
+  const chlorideRefComp = evaluateReferenceComparison(
+    chlorideMmolPerKgPerDay,
+    isPreterm ? { minimum: 3.0, maximum: 5.0 } : { minimum: 1.5, maximum: 3.5 },
+    "Chloride (Cl)"
+  );
+  const vitaminARefComp = evaluateReferenceComparison(
+    vitaminAMcgPerKgPerDay,
+    isPreterm ? { minimum: 400.0, maximum: 1000.0 } : { minimum: 60.0, maximum: 300.0 },
+    "Vitamin A (Retinol)"
+  );
 
   // Detailed items array for UI rendering and doctor interpretation
   const items: NutrientDeliveryItem[] = [
@@ -1827,7 +1850,12 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.energyKcalPer100Ml} kcal`,
       clinicalTarget: `Goal: ${ageStrat.goals.energy.label}`,
       clinicalInterpretation: ageStrat.goals.energy.rationale,
-      status: energyCov.ratio >= 95 ? "target_met" : energyCov.ratio >= 85 ? "within_target" : "below_target",
+      status:
+        energyKcalPerKgPerDay >= ageStrat.goals.energy.min && energyKcalPerKgPerDay <= ageStrat.goals.energy.max
+          ? "target_met"
+          : energyKcalPerKgPerDay > ageStrat.goals.energy.max
+          ? "above_target"
+          : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -1853,7 +1881,12 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.proteinGramsPer100Ml} g`,
       clinicalTarget: `Goal: ${ageStrat.goals.protein.label}`,
       clinicalInterpretation: `Whey: ${wheyGramsPerDay}g/d, Casein: ${caseinGramsPerDay}g/d. ${ageStrat.goals.protein.rationale}`,
-      status: proteinCov.ratio >= 90 ? "target_met" : "within_target",
+      status:
+        proteinGramsPerKgPerDay >= ageStrat.goals.protein.min && proteinGramsPerKgPerDay <= ageStrat.goals.protein.max
+          ? "target_met"
+          : proteinGramsPerKgPerDay > ageStrat.goals.protein.max
+          ? "above_target"
+          : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -1879,13 +1912,18 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.fatGramsPer100Ml} g`,
       clinicalTarget: isPreterm ? "ESPGHAN 2022: 4.8–8.1 g/kg/d" : "Term: 4.0–6.0 g/kg/d",
       clinicalInterpretation: isPreterm
-        ? "ESPGHAN 2022 recommended range: 4.8–8.1 g/kg/day total fat providing ~50% non-protein calories and essential fatty acids."
+        ? "ESPGHAN 2022 recommended range: 4.8–8.1 g/kg/day total fat providing ~55% of dietary calories and essential fatty acids."
         : "Standard term lipid intake supporting growth and fat-soluble vitamin absorption.",
       referenceComparison: lipidsRefComp,
-      status: lipidsRefComp.isWithinTarget ? "within_target" : "below_target",
+      status:
+        lipidsRefComp.status === "WITHIN_RANGE"
+          ? "within_target"
+          : lipidsRefComp.status === "ABOVE_RANGE"
+          ? "above_target"
+          : "below_target",
       coveragePercent: Math.min(100, Math.round((fatGramsPerKgPerDay / (isPreterm ? 4.8 : 4.0)) * 100)),
       coverageRatio: Math.round((fatGramsPerKgPerDay / (isPreterm ? 4.8 : 4.0)) * 100),
-      coverageLevel: "complete",
+      coverageLevel: lipidsRefComp.isWithinTarget ? "complete" : "review",
       coverageBadge: lipidsRefComp.statusLabel,
     },
     {
@@ -1900,7 +1938,7 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.calciumMgPer100Ml} mg`,
       clinicalTarget: `Goal: ${ageStrat.goals.calcium.label}`,
       clinicalInterpretation: ageStrat.goals.calcium.rationale,
-      status: calciumCov.ratio >= 100 ? "target_met" : "within_target",
+      status: calciumCov.ratio >= 100 ? "target_met" : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -1928,7 +1966,7 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.phosphorusMgPer100Ml} mg`,
       clinicalTarget: `Goal: ${ageStrat.goals.phosphorus.label}`,
       clinicalInterpretation: `Ca:P Ratio = ${comp.calciumPhosphorusRatio} (Molar: ${calciumPhosphorusMolarRatio}). ${ageStrat.goals.phosphorus.rationale}`,
-      status: phosphorusCov.ratio >= 100 ? "target_met" : "within_target",
+      status: phosphorusCov.ratio >= 100 ? "target_met" : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -1954,7 +1992,7 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.ironMgPer100Ml} mg`,
       clinicalTarget: `Goal: ${ageStrat.goals.iron.label}`,
       clinicalInterpretation: ageStrat.goals.iron.rationale,
-      status: ironCov.ratio >= 100 ? "target_met" : "within_target",
+      status: ironCov.ratio >= 100 ? "target_met" : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -1978,13 +2016,19 @@ export function calculatePatientDeliveredNutrientPayload(
       amountPerKgPerDay: zincMgPerKgPerDay,
       unit: "mg",
       concentrationPer100Ml: `${comp.zincMgPer100Ml} mg`,
-      clinicalTarget: isPreterm ? "ESPGHAN 2022: 1.0–2.0 mg/kg/d" : "Term: 0.5–1.0 mg/kg/d",
+      clinicalTarget: isPreterm ? "ESPGHAN 2022: 1.2–2.5 mg/kg/d" : "Term: 0.5–1.5 mg/kg/d",
       clinicalInterpretation: "Essential cofactor for somatic protein synthesis, immune response, and linear growth.",
-      status: "within_target",
-      coveragePercent: 100,
-      coverageRatio: 100,
-      coverageLevel: "complete",
-      coverageBadge: "Within displayed reference range",
+      referenceComparison: zincRefComp,
+      status:
+        zincRefComp.status === "WITHIN_RANGE"
+          ? "within_target"
+          : zincRefComp.status === "ABOVE_RANGE"
+          ? "above_target"
+          : "below_target",
+      coveragePercent: Math.min(100, Math.round((zincMgPerKgPerDay / (isPreterm ? 1.2 : 0.5)) * 100)),
+      coverageRatio: Math.round((zincMgPerKgPerDay / (isPreterm ? 1.2 : 0.5)) * 100),
+      coverageLevel: zincRefComp.isWithinTarget ? "complete" : "review",
+      coverageBadge: zincRefComp.statusLabel,
     },
     {
       id: "magnesium",
@@ -1994,13 +2038,19 @@ export function calculatePatientDeliveredNutrientPayload(
       amountPerKgPerDay: magnesiumMgPerKgPerDay,
       unit: "mg",
       concentrationPer100Ml: `${comp.magnesiumMgPer100Ml} mg`,
-      clinicalTarget: isPreterm ? "ESPGHAN 2022: 8–15 mg/kg/d" : "Term: 5–8 mg/kg/d",
+      clinicalTarget: isPreterm ? "ESPGHAN 2022: 8.0–15.0 mg/kg/d" : "Term: 5.0–12.0 mg/kg/d",
       clinicalInterpretation: "Crucial neuromuscular and enzymatic cofactor; supports calcium homeostasis.",
-      status: "within_target",
-      coveragePercent: 100,
-      coverageRatio: 100,
-      coverageLevel: "complete",
-      coverageBadge: "Within displayed reference range",
+      referenceComparison: magnesiumRefComp,
+      status:
+        magnesiumRefComp.status === "WITHIN_RANGE"
+          ? "within_target"
+          : magnesiumRefComp.status === "ABOVE_RANGE"
+          ? "above_target"
+          : "below_target",
+      coveragePercent: Math.min(100, Math.round((magnesiumMgPerKgPerDay / (isPreterm ? 8.0 : 5.0)) * 100)),
+      coverageRatio: Math.round((magnesiumMgPerKgPerDay / (isPreterm ? 8.0 : 5.0)) * 100),
+      coverageLevel: magnesiumRefComp.isWithinTarget ? "complete" : "review",
+      coverageBadge: magnesiumRefComp.statusLabel,
     },
     {
       id: "sodium",
@@ -2014,7 +2064,12 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.sodiumMgPer100Ml} mg`,
       clinicalTarget: `Goal: ${ageStrat.goals.sodium.label}`,
       clinicalInterpretation: `${sodiumMmolPerKgPerDay} mmol/kg/d (converted via MW 22.99). ${ageStrat.goals.sodium.rationale}`,
-      status: sodiumCov.ratio >= 90 ? "target_met" : "within_target",
+      status:
+        sodiumMmolPerKgPerDay >= ageStrat.goals.sodium.min && sodiumMmolPerKgPerDay <= ageStrat.goals.sodium.max
+          ? "target_met"
+          : sodiumMmolPerKgPerDay > ageStrat.goals.sodium.max
+          ? "above_target"
+          : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -2040,13 +2095,19 @@ export function calculatePatientDeliveredNutrientPayload(
       mmolPerKgPerDay: potassiumMmolPerKgPerDay,
       unit: "mg",
       concentrationPer100Ml: `${comp.potassiumMgPer100Ml} mg`,
-      clinicalTarget: isPreterm ? "ESPGHAN 2022: 2.0–3.0 mmol/kg/d" : "Term: 1.5–2.5 mmol/kg/d",
+      clinicalTarget: isPreterm ? "ESPGHAN 2022: 2.0–3.5 mmol/kg/d" : "Term: 1.5–3.0 mmol/kg/d",
       clinicalInterpretation: `Delivers ${potassiumMmolPerKgPerDay} mmol/kg/d (MW 39.10). Major intracellular cation for muscle and myocardial tone.`,
-      status: "within_target",
-      coveragePercent: 100,
-      coverageRatio: 100,
-      coverageLevel: "complete",
-      coverageBadge: `${potassiumMmolPerKgPerDay} mmol/kg/d (Reference Range: 2.0–3.0)`,
+      referenceComparison: potassiumRefComp,
+      status:
+        potassiumRefComp.status === "WITHIN_RANGE"
+          ? "within_target"
+          : potassiumRefComp.status === "ABOVE_RANGE"
+          ? "above_target"
+          : "below_target",
+      coveragePercent: Math.min(100, Math.round((potassiumMmolPerKgPerDay / (isPreterm ? 2.0 : 1.5)) * 100)),
+      coverageRatio: Math.round((potassiumMmolPerKgPerDay / (isPreterm ? 2.0 : 1.5)) * 100),
+      coverageLevel: potassiumRefComp.isWithinTarget ? "complete" : "review",
+      coverageBadge: `${potassiumMmolPerKgPerDay} mmol/kg/d (Reference Range: ${isPreterm ? "2.0–3.5" : "1.5–3.0"})`,
     },
     {
       id: "chloride",
@@ -2058,13 +2119,19 @@ export function calculatePatientDeliveredNutrientPayload(
       mmolPerKgPerDay: chlorideMmolPerKgPerDay,
       unit: "mg",
       concentrationPer100Ml: `${comp.chlorideMgPer100Ml} mg`,
-      clinicalTarget: isPreterm ? "ESPGHAN 2022: 2.0–3.0 mmol/kg/d" : "Term: 1.5–2.5 mmol/kg/d",
+      clinicalTarget: isPreterm ? "ESPGHAN 2022: 3.0–5.0 mmol/kg/d" : "Term: 1.5–3.5 mmol/kg/d",
       clinicalInterpretation: `Delivers ${chlorideMmolPerKgPerDay} mmol/kg/d (MW 35.45). Maintains serum electroneutrality and acid-base equilibrium.`,
-      status: "within_target",
-      coveragePercent: 100,
-      coverageRatio: 100,
-      coverageLevel: "complete",
-      coverageBadge: `${chlorideMmolPerKgPerDay} mmol/kg/d (Reference Range: 2.0–3.0)`,
+      referenceComparison: chlorideRefComp,
+      status:
+        chlorideRefComp.status === "WITHIN_RANGE"
+          ? "within_target"
+          : chlorideRefComp.status === "ABOVE_RANGE"
+          ? "above_target"
+          : "below_target",
+      coveragePercent: Math.min(100, Math.round((chlorideMmolPerKgPerDay / (isPreterm ? 3.0 : 1.5)) * 100)),
+      coverageRatio: Math.round((chlorideMmolPerKgPerDay / (isPreterm ? 3.0 : 1.5)) * 100),
+      coverageLevel: chlorideRefComp.isWithinTarget ? "complete" : "review",
+      coverageBadge: `${chlorideMmolPerKgPerDay} mmol/kg/d (Reference Range: ${isPreterm ? "3.0–5.0" : "1.5–3.5"})`,
     },
     {
       id: "vitaminD3",
@@ -2076,7 +2143,12 @@ export function calculatePatientDeliveredNutrientPayload(
       concentrationPer100Ml: `${comp.vitaminD3McgPer100Ml} mcg (${Math.round(comp.vitaminD3McgPer100Ml * 40)} IU)`,
       clinicalTarget: `Goal: ${ageStrat.goals.vitaminD3.label}`,
       clinicalInterpretation: ageStrat.goals.vitaminD3.rationale,
-      status: vitDCov.ratio >= 90 ? "target_met" : "within_target",
+      status:
+        vitaminD3IuPerDay >= ageStrat.goals.vitaminD3.min && vitaminD3IuPerDay <= ageStrat.goals.vitaminD3.max
+          ? "target_met"
+          : vitaminD3IuPerDay > ageStrat.goals.vitaminD3.max
+          ? "above_target"
+          : "below_target",
       ageSpecificGoal: {
         ageCategory: ageStrat.id,
         ageCategoryLabel: ageStrat.label,
@@ -2100,13 +2172,19 @@ export function calculatePatientDeliveredNutrientPayload(
       amountPerKgPerDay: vitaminAMcgPerKgPerDay,
       unit: "mcg RE",
       concentrationPer100Ml: `${comp.vitaminAMcgPer100Ml} mcg`,
-      clinicalTarget: isPreterm ? "ESPGHAN 2022: 400–1000 mcg RE/kg/d" : "Term: 250–500 mcg/d",
+      clinicalTarget: isPreterm ? "ESPGHAN 2022: 400–1000 mcg RE/kg/d" : "Term: 60–300 mcg RE/kg/d",
       clinicalInterpretation: "Protects respiratory epithelial integrity, surfactant production, and retinal development.",
-      status: "within_target",
-      coveragePercent: 100,
-      coverageRatio: 100,
-      coverageLevel: "complete",
-      coverageBadge: "Within displayed reference range",
+      referenceComparison: vitaminARefComp,
+      status:
+        vitaminARefComp.status === "WITHIN_RANGE"
+          ? "within_target"
+          : vitaminARefComp.status === "ABOVE_RANGE"
+          ? "above_target"
+          : "below_target",
+      coveragePercent: Math.min(100, Math.round((vitaminAMcgPerKgPerDay / (isPreterm ? 400 : 60)) * 100)),
+      coverageRatio: Math.round((vitaminAMcgPerKgPerDay / (isPreterm ? 400 : 60)) * 100),
+      coverageLevel: vitaminARefComp.isWithinTarget ? "complete" : "review",
+      coverageBadge: vitaminARefComp.statusLabel,
     },
     {
       id: "dha",

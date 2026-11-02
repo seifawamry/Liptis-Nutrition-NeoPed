@@ -340,7 +340,7 @@ export function NutritionEngine({
                 2. Official Manufacturer Spec & Reconstitution Standards
               </span>
               <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
-                <li>Pediamil® LBW: 79.7 kcal/100 mL, 2.42g protein/100 mL, 4.10g fat/100 mL (15.0g powder/100 mL)</li>
+                <li>Pediamil® LBW: 79.7 kcal/100 mL, 2.42g protein/100 mL, 4.88g fat/100 mL (15.0g powder/100 mL)</li>
                 <li>Standard dilution: 1 level scoop (5.0g) + 30 mL water; 3 level scoops + 90 mL water = 100 mL feed</li>
                 <li>Molar mass conversions: IUPAC / CIAAW Standard Atomic Weights (Na 22.99, K 39.10, Cl 35.45, Ca 40.08, P 30.97)</li>
               </ul>
@@ -556,7 +556,7 @@ export function NutritionEngine({
                   <span className="text-xs font-black uppercase tracking-wider text-emerald-900 block flex items-center justify-between">
                     <span>{formulaBrand} Scoops</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 border border-emerald-300 font-mono">
-                      1 scp = {isPreterm ? "5.0g" : "4.5g"}
+                      1 scp = {isPreterm ? "5.0g" : "4.57g"}
                     </span>
                   </span>
                   <div className="mt-2">
@@ -665,17 +665,29 @@ export function NutritionEngine({
               </span>
             </div>
 
-            {/* 1. Delivered Energy Gauge */}
+              {/* 1. Delivered Energy Gauge */}
             <div className="p-4 rounded-xl bg-slate-50/80 border-2 border-slate-200 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Flame className="w-4 h-4 text-orange-500" />
                   <span className="font-bold text-sm text-slate-950">Delivered Energy</span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                  Covered by {formulaBrand} ✓
-                </span>
+                {result.energyCompliance?.status === "suboptimal" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                    Below Target Range
+                  </span>
+                ) : result.energyCompliance?.status === "exceeding" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400">
+                    <AlertTriangle className="w-3.5 h-3.5 text-purple-700" />
+                    Above Target Range
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                    Covered by {formulaBrand} ✓
+                  </span>
+                )}
               </div>
 
               <RangeGauge
@@ -707,8 +719,22 @@ export function NutritionEngine({
                 </div>
                 <div className="flex items-center gap-1.5 sm:justify-end">
                   <span className="text-slate-500 font-sans text-[11px] font-semibold">ESPGHAN Status:</span>
-                  <strong className="text-emerald-950 font-sans text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-100 border border-emerald-300">
-                    Within Target Range
+                  <strong
+                    className={`font-sans text-[11px] font-bold px-2 py-0.5 rounded border ${
+                      result.energyCompliance?.status === "suboptimal"
+                        ? "text-amber-950 bg-amber-100 border-amber-300"
+                        : result.energyCompliance?.status === "exceeding"
+                        ? "text-purple-950 bg-purple-100 border-purple-300"
+                        : "text-emerald-950 bg-emerald-100 border-emerald-300"
+                    }`}
+                  >
+                    {result.energyCompliance?.status === "suboptimal"
+                      ? "Below Target Range"
+                      : result.energyCompliance?.status === "exceeding"
+                      ? "Above Target Range"
+                      : result.energyCompliance?.status === "conditional"
+                      ? "Conditional Catch-Up Range"
+                      : "Within Target Range"}
                   </strong>
                 </div>
               </div>
@@ -721,22 +747,34 @@ export function NutritionEngine({
                   <Award className="w-4 h-4 text-blue-600" />
                   <span className="font-bold text-sm text-slate-950">Delivered True Protein</span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                  Covered by {formulaBrand} ✓
-                </span>
+                {result.proteinCompliance?.status === "suboptimal" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                    Below Target Range
+                  </span>
+                ) : result.proteinCompliance?.status === "exceeding" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400">
+                    <AlertTriangle className="w-3.5 h-3.5 text-purple-700" />
+                    Above Target Range
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                    Covered by {formulaBrand} ✓
+                  </span>
+                )}
               </div>
 
               <RangeGauge
                 currentValue={result.deliveredProteinGramsPerKgPerDay || 0}
-                minTarget={result.isGraduated ? 1.8 : (result.proteinBracket?.targetMinGramsPerKg || 3.0)}
-                maxTarget={result.isGraduated ? 2.5 : (result.proteinBracket?.targetMaxGramsPerKg || 3.6)}
+                minTarget={result.isGraduated ? 1.5 : (result.proteinBracket?.targetMinGramsPerKg || 3.0)}
+                maxTarget={result.isGraduated ? 2.2 : (result.proteinBracket?.targetMaxGramsPerKg || 3.6)}
                 minScale={result.isGraduated ? 1.0 : 2.0}
                 maxScale={result.isGraduated ? 3.5 : 5.0}
                 unit="g/kg/day"
                 metricName={
                   result.isGraduated
-                    ? "Delivered Protein (Term Target: 1.8–2.5 g/kg/d)"
+                    ? "Delivered Protein (Term Target: 1.5–2.2 g/kg/d)"
                     : `Delivered Protein (${result.proteinBracket?.classification}: ${result.proteinBracket?.targetMinGramsPerKg}–${result.proteinBracket?.targetMaxGramsPerKg} g/kg/d)`
                 }
                 status={result.proteinCompliance?.status || "on_target"}
@@ -769,10 +807,22 @@ export function NutritionEngine({
                   <Droplets className="w-4 h-4 text-emerald-600" />
                   <span className="font-bold text-sm text-slate-950">Delivered Total Lipids (Fat)</span>
                 </div>
-                <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                  Covered by {formulaBrand} ✓
-                </span>
+                {result.fatCompliance?.status === "suboptimal" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                    Below Target Range
+                  </span>
+                ) : result.fatCompliance?.status === "exceeding" ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400">
+                    <AlertTriangle className="w-3.5 h-3.5 text-purple-700" />
+                    Above 8.1 g/kg/d Reference
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                    Covered by {formulaBrand} ✓
+                  </span>
+                )}
               </div>
 
               <RangeGauge
@@ -1027,14 +1077,14 @@ export function NutritionEngine({
                       <tr>
                         <td className="p-2 border-r border-slate-200 font-sans font-semibold">Powder Mass</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-emerald-950">{dailyPowderGrams} g / day</td>
-                        <td className="p-2 border-r border-slate-200">15.0 g / 100 mL</td>
+                        <td className="p-2 border-r border-slate-200">{isPreterm ? "15.0 g / 100 mL" : "13.7 g / 100 mL"}</td>
                         <td className="p-2 font-sans text-slate-600 text-[11px]">Level scoops only, do not pack</td>
                       </tr>
                       <tr className="bg-slate-50/70">
                         <td className="p-2 border-r border-slate-200 font-sans font-semibold">Scoops Required</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-emerald-950">{dailyScoops} scoops / day</td>
                         <td className="p-2 border-r border-slate-200">3 scoops / 100 mL feed</td>
-                        <td className="p-2 font-sans text-slate-600 text-[11px]">Enclosed manufacturer scoop ({isPreterm ? "5.0g" : "4.5g"})</td>
+                        <td className="p-2 font-sans text-slate-600 text-[11px]">Enclosed manufacturer scoop ({isPreterm ? "5.0g" : "4.57g"})</td>
                       </tr>
                       <tr>
                         <td className="p-2 border-r border-slate-200 font-sans font-semibold">Sterile Water Needed</td>
@@ -1113,33 +1163,69 @@ export function NutritionEngine({
                         <td className="p-2 border-r border-slate-200 font-sans font-semibold">Energy</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{result.deliveredEnergyKcalPerDay} kcal/d</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{result.deliveredEnergyKcalPerKgPerDay} kcal/kg/d</td>
-                        <td className="p-2 border-r border-slate-200 font-sans text-slate-700">115–140 kcal/kg/d (Typical)</td>
+                        <td className="p-2 border-r border-slate-200 font-sans text-slate-700">{result.isGraduated ? "90–120 kcal/kg/d (Term)" : "115–140 kcal/kg/d (Typical)"}</td>
                         <td className="p-2 text-center font-sans">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                            Covered by {formulaBrand} ✓
-                          </span>
+                          {result.energyCompliance?.status === "suboptimal" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                              Below Target Range
+                            </span>
+                          ) : result.energyCompliance?.status === "exceeding" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400">
+                              Above Target Range
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                              Covered by {formulaBrand} ✓
+                            </span>
+                          )}
                         </td>
                       </tr>
                       <tr className="bg-slate-50/70">
                         <td className="p-2 border-r border-slate-200 font-sans font-semibold">True Protein</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{result.deliveredProteinGramsPerDay} g/d</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{result.deliveredProteinGramsPerKgPerDay} g/kg/d</td>
-                        <td className="p-2 border-r border-slate-200 font-sans text-slate-700">{result.proteinBracket?.targetMinGramsPerKg}–{result.proteinBracket?.targetMaxGramsPerKg} g/kg/d (60:40 Whey:Casein)</td>
+                        <td className="p-2 border-r border-slate-200 font-sans text-slate-700">
+                          {result.isGraduated
+                            ? "1.5–2.2 g/kg/d (60:40 Whey:Casein)"
+                            : `${result.proteinBracket?.targetMinGramsPerKg}–${result.proteinBracket?.targetMaxGramsPerKg} g/kg/d (60:40 Whey:Casein)`}
+                        </td>
                         <td className="p-2 text-center font-sans">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                            Covered by {formulaBrand} ✓
-                          </span>
+                          {result.proteinCompliance?.status === "suboptimal" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                              Below Target Range
+                            </span>
+                          ) : result.proteinCompliance?.status === "exceeding" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400">
+                              Above Target Range
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                              Covered by {formulaBrand} ✓
+                            </span>
+                          )}
                         </td>
                       </tr>
                       <tr>
                         <td className="p-2 border-r border-slate-200 font-sans font-semibold">Total Lipids (Fat)</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{result.deliveredFatGramsPerDay ?? payload?.fatGramsPerDay} g/d</td>
                         <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{result.deliveredFatGramsPerKgPerDay ?? payload?.fatGramsPerKgPerDay} g/kg/d</td>
-                        <td className="p-2 border-r border-slate-200 font-sans text-slate-700">4.8–8.1 g/kg/d (Milk Fat • DHA/ARA)</td>
+                        <td className="p-2 border-r border-slate-200 font-sans text-slate-700">
+                          {result.isGraduated ? "4.0–6.0 g/kg/d (>60% Milk Fat)" : "4.8–8.1 g/kg/d (Milk Fat • DHA/ARA)"}
+                        </td>
                         <td className="p-2 text-center font-sans">
-                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                            Covered by {formulaBrand} ✓
-                          </span>
+                          {result.fatCompliance?.status === "suboptimal" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                              Below Target Range
+                            </span>
+                          ) : result.fatCompliance?.status === "exceeding" ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-950 border border-purple-400">
+                              Above 8.1 g/kg/d Reference
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                              Covered by {formulaBrand} ✓
+                            </span>
+                          )}
                         </td>
                       </tr>
                       {payload && (
@@ -1148,55 +1234,87 @@ export function NutritionEngine({
                             <td className="p-2 border-r border-slate-200 font-sans font-semibold">Calcium (Ca²⁺)</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{payload.calciumMgPerDay} mg/d</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{payload.calciumMgPerKgPerDay} mg/kg/d ({payload.calciumMmolPerKgPerDay} mmol/kg/d)</td>
-                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">120–140 mg/kg/d (Ca:P ~{payload.calciumPhosphorusRatio})</td>
+                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">
+                              {result.isGraduated ? "70–100 mg/kg/d" : `120–140 mg/kg/d (Ca:P ~${payload.calciumPhosphorusRatio})`}
+                            </td>
                             <td className="p-2 text-center font-sans">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                                Covered by {formulaBrand} ✓
-                              </span>
+                              {payload.calciumMgPerKgPerDay >= (result.isGraduated ? 70 : 120) ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                                  Covered by {formulaBrand} ✓
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                                  {Math.round((payload.calciumMgPerKgPerDay / (result.isGraduated ? 70 : 120)) * 100)}% of Min Target
+                                </span>
+                              )}
                             </td>
                           </tr>
                           <tr>
                             <td className="p-2 border-r border-slate-200 font-sans font-semibold">Phosphorus (P)</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{payload.phosphorusMgPerDay} mg/d</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{payload.phosphorusMgPerKgPerDay} mg/kg/d ({payload.phosphorusMmolPerKgPerDay} mmol/kg/d)</td>
-                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">65–90 mg/kg/d</td>
+                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">{result.isGraduated ? "35–60 mg/kg/d" : "65–90 mg/kg/d"}</td>
                             <td className="p-2 text-center font-sans">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                                Covered by {formulaBrand} ✓
-                              </span>
+                              {payload.phosphorusMgPerKgPerDay >= (result.isGraduated ? 35 : 65) ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                                  Covered by {formulaBrand} ✓
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                                  {Math.round((payload.phosphorusMgPerKgPerDay / (result.isGraduated ? 35 : 65)) * 100)}% of Min Target
+                                </span>
+                              )}
                             </td>
                           </tr>
                           <tr className="bg-slate-50/70">
                             <td className="p-2 border-r border-slate-200 font-sans font-semibold">Elemental Iron (Fe)</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{payload.ironMgPerDay} mg/d</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{payload.ironMgPerKgPerDay} mg/kg/d</td>
-                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">2.0–3.0 mg/kg/d</td>
+                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">{result.isGraduated ? "1.0–2.0 mg/kg/d" : "2.0–3.0 mg/kg/d"}</td>
                             <td className="p-2 text-center font-sans">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                                Covered by {formulaBrand} ✓
-                              </span>
+                              {payload.ironMgPerKgPerDay >= (result.isGraduated ? 1.0 : 2.0) ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                                  Covered by {formulaBrand} ✓
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                                  {Math.round((payload.ironMgPerKgPerDay / (result.isGraduated ? 1.0 : 2.0)) * 100)}% Enteral Fe
+                                </span>
+                              )}
                             </td>
                           </tr>
                           <tr>
                             <td className="p-2 border-r border-slate-200 font-sans font-semibold">Vitamin D3</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-slate-950">{payload.vitaminD3IuPerDay} IU/d</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-950">{payload.vitaminD3IuPerKgPerDay} IU/kg/d</td>
-                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">400–1,000 IU/day</td>
+                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">{result.isGraduated ? "400–800 IU/day" : "400–1,000 IU/day"}</td>
                             <td className="p-2 text-center font-sans">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                                Covered by {formulaBrand} ✓
-                              </span>
+                              {payload.vitaminD3IuPerDay >= 400 ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                                  Covered by {formulaBrand} ✓
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-950 border border-amber-400">
+                                  {Math.round((payload.vitaminD3IuPerDay / 400) * 100)}% Enteral D3 (Add D3 Drops)
+                                </span>
+                              )}
                             </td>
                           </tr>
                           <tr className="bg-slate-50/70">
                             <td className="p-2 border-r border-slate-200 font-sans font-semibold">DHA & ARA</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-slate-950">DHA {payload.dhaMgPerDay} • ARA {payload.araMgPerDay} mg/d</td>
                             <td className="p-2 border-r border-slate-200 font-bold text-blue-950">DHA {payload.dhaMgPerKgPerDay} • ARA {payload.araMgPerKgPerDay} mg/kg/d</td>
-                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">DHA 30–65 • ARA 30–100 mg/kg/d (1:1 Ratio)</td>
+                            <td className="p-2 border-r border-slate-200 font-sans text-slate-700">12–30 mg/100 kcal (ESPGHAN 30–65 mg/kg/d • 1:1)</td>
                             <td className="p-2 text-center font-sans">
-                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
-                                Covered by {formulaBrand} ✓
-                              </span>
+                              {payload.dhaMgPerKgPerDay >= 30 ? (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400">
+                                  Covered by {formulaBrand} ✓
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-950 border border-blue-400">
+                                  16.9 mg/100 kcal (1:1 Ratio ✓)
+                                </span>
+                              )}
                             </td>
                           </tr>
                         </>
