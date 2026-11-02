@@ -319,24 +319,49 @@ export function NutritionEngine({
               <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
                 <li>Energy: 115–140 kcal/kg/d (Typical), 140–160 (Conditional catch-up)</li>
                 <li>Protein: 3.5–4.0 g/kg/d (Conditionally up to 4.5 g/kg/d for slow growth)</li>
-                <li>Protein-to-Energy ratio: 2.8–3.6 g / 100 kcal</li>
+                <li>Lipids: 4.8–8.1 g/kg/d | P:E ratio: 2.8–3.6 g / 100 kcal</li>
                 <li>Fluid volume: 150–180 mL/kg/d typical for growing preterm infants</li>
               </ul>
-              <p className="text-[10.5px] text-slate-400 italic mt-1">Source: J Pediatr Gastroenterol Nutr. 2022;76(2):248-268.</p>
+              <p className="text-[10.5px] text-slate-600 mt-1">
+                Embleton ND et al. <em>J Pediatr Gastroenterol Nutr</em>. 2023;76(2):248–268 (Epub 2022 Oct 28).{" "}
+                <a
+                  href="https://pubmed.ncbi.nlm.nih.gov/36705703/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-emerald-700 underline hover:text-emerald-900"
+                >
+                  Verified PubMed PMID: 36705703 ↗
+                </a>
+              </p>
             </div>
 
             <div className="p-3 bg-white rounded-lg border border-slate-200 space-y-1.5">
               <span className="font-bold text-blue-900 block uppercase tracking-wider text-[11px]">
-                2. Official Manufacturer Product Specifications
+                2. Official Manufacturer Spec & Reconstitution Standards
               </span>
               <ul className="list-disc list-inside text-slate-700 space-y-1 text-[11px]">
-                <li>Pediamil® LBW: 79.7 kcal/100 mL, 2.42g protein/100 mL (15.0g powder/100 mL)</li>
-                <li>Pediamil® 1: 68.5 kcal/100 mL, 1.49g protein/100 mL (13.7g powder/100 mL)</li>
+                <li>Pediamil® LBW: 79.7 kcal/100 mL, 2.42g protein/100 mL, 4.10g fat/100 mL (15.0g powder/100 mL)</li>
                 <li>Standard dilution: 1 level scoop (5.0g) + 30 mL water; 3 level scoops + 90 mL water = 100 mL feed</li>
+                <li>Molar mass conversions: IUPAC / CIAAW Standard Atomic Weights (Na 22.99, K 39.10, Cl 35.45, Ca 40.08, P 30.97)</li>
               </ul>
-              <p className="text-[10.5px] text-blue-700 font-semibold mt-1">
-                Verified against Liptis Nutrition Spec Sheet 2026-v1.0 (verified 2026-10-02).
-              </p>
+              <div className="flex flex-wrap gap-3 text-[10.5px] font-bold pt-1">
+                <a
+                  href="https://www.who.int/publications/i/item/9789241595414"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-700 underline hover:text-blue-900"
+                >
+                  WHO/FAO Formula Prep Guideline ↗
+                </a>
+                <a
+                  href="https://www.ciaaw.org/atomic-weights.htm"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-slate-700 underline hover:text-slate-900"
+                >
+                  IUPAC Atomic Weights ↗
+                </a>
+              </div>
             </div>
           </div>
         </div>
