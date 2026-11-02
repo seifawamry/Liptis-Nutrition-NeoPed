@@ -252,7 +252,9 @@ export function PatientNutrientPayload({
         ratio: caRatio,
         percent: Math.min(100, caRatio),
         isMet: payload.calciumMgPerKgPerDay >= activeAgeStrat.goals.calcium.min,
-        subtitle: caRatio >= 100 ? "Accretion Target Met" : `${caRatio}% of Target`,
+        subtitle: caRatio >= 100
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `${caRatio}% of Target`,
       },
       phosphorus: {
         value: payload.phosphorusMgPerKgPerDay,
@@ -261,7 +263,9 @@ export function PatientNutrientPayload({
         ratio: pRatio,
         percent: Math.min(100, pRatio),
         isMet: payload.phosphorusMgPerKgPerDay >= activeAgeStrat.goals.phosphorus.min,
-        subtitle: `Ca:P = ${payload.calciumPhosphorusRatio}`,
+        subtitle: pRatio >= 100
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `${pRatio}% of Target`,
       },
       protein: {
         value: payload.proteinGramsPerKgPerDay,
@@ -270,7 +274,9 @@ export function PatientNutrientPayload({
         ratio: protRatio,
         percent: Math.min(100, protRatio),
         isMet: payload.proteinGramsPerKgPerDay >= activeAgeStrat.goals.protein.min,
-        subtitle: `${payload.wheyCaseinRatio} Whey/Casein`,
+        subtitle: protRatio >= 100
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `${protRatio}% of Target`,
       },
       energy: {
         value: payload.energyKcalPerKgPerDay,
@@ -279,7 +285,9 @@ export function PatientNutrientPayload({
         ratio: nrgRatio,
         percent: Math.min(100, nrgRatio),
         isMet: payload.energyKcalPerKgPerDay >= activeAgeStrat.goals.energy.min,
-        subtitle: `${(payload.energyKcalPerDay / payload.totalDailyVolumeMl).toFixed(2)} kcal/mL`,
+        subtitle: nrgRatio >= 100
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `${nrgRatio}% of Target`,
       },
       iron: {
         value: payload.ironMgPerKgPerDay,
@@ -288,7 +296,9 @@ export function PatientNutrientPayload({
         ratio: feRatio,
         percent: Math.min(100, feRatio),
         isMet: payload.ironMgPerKgPerDay >= activeAgeStrat.goals.iron.min,
-        subtitle: payload.ironMgPerKgPerDay >= 2.0 ? "Enteral Prophylactic Dose" : `${feRatio}% Enteral Fe`,
+        subtitle: payload.ironMgPerKgPerDay >= 2.0
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `${feRatio}% Enteral Fe`,
       },
       vitaminD3: {
         value: payload.vitaminD3IuPerDay,
@@ -297,7 +307,9 @@ export function PatientNutrientPayload({
         ratio: vitDRatio,
         percent: Math.min(100, vitDRatio),
         isMet: payload.vitaminD3IuPerDay >= activeAgeStrat.goals.vitaminD3.min,
-        subtitle: payload.vitaminD3IuPerDay >= 400 ? "Enteral D3 Target Met" : `${vitDRatio}% Enteral D3`,
+        subtitle: payload.vitaminD3IuPerDay >= 400
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `${vitDRatio}% Enteral D3`,
       },
       dhaAra: {
         value: `${payload.dhaMgPerKgPerDay} / ${payload.araMgPerKgPerDay}`,
@@ -306,7 +318,9 @@ export function PatientNutrientPayload({
         ratio: dhaRatio,
         percent: Math.min(100, dhaRatio),
         isMet: payload.dhaMgPerKgPerDay >= 30,
-        subtitle: `ARA:DHA Ratio ${payload.araDhaRatioFormatted}`,
+        subtitle: payload.dhaMgPerKgPerDay >= 30
+          ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+          : `ARA:DHA Ratio ${payload.araDhaRatioFormatted}`,
       },
     };
   }, [payload, activeAgeStrat]);
@@ -382,7 +396,7 @@ export function PatientNutrientPayload({
       return (
         <span className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-950 border border-emerald-400 shrink-0">
           <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-          Target Met
+          {isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓"}
         </span>
       );
     }
@@ -968,7 +982,9 @@ export function PatientNutrientPayload({
                       <div className="flex flex-wrap items-center justify-between text-xs font-bold gap-1.5">
                         <span className="text-slate-800 text-xs font-bold">Coverage Evaluation:</span>
                         <span className="font-mono text-emerald-950 font-black text-xs bg-emerald-100 px-2 py-0.5 rounded border border-emerald-300">
-                          {details.badgeText}
+                          {details.status === "target_met" || details.status === "within_target"
+                            ? (isGraduated ? "Covered by Pediamil® 1 ✓" : "Covered by Pediamil® LBW ✓")
+                            : details.badgeText}
                         </span>
                       </div>
                       <div className="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden border border-slate-300">

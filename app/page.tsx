@@ -150,13 +150,6 @@ export default function Home() {
         errors.push("Nutrition calculations are blocked due to invalid patient weight or fluid parameters.");
       }
     }
-    if (ages.isBlocked) {
-      if (ages.validation?.errors?.length) {
-        errors.push(...ages.validation.errors.map((e) => e.message));
-      } else {
-        errors.push("Growth age assessment is blocked due to invalid date or gestational age inputs.");
-      }
-    }
 
     if (errors.length > 0) {
       setFeedSheetValidationErrors(errors);
@@ -169,7 +162,7 @@ export default function Home() {
 
     setFeedSheetValidationErrors([]);
     setIsFeedSheetOpen(true);
-  }, [calculationResult, ages]);
+  }, [calculationResult]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100/70">
@@ -416,6 +409,7 @@ export default function Home() {
               calculationResult={calculationResult}
               onResetPatient={handleResetPatient}
               ages={ages}
+              onOpenFeedSheet={handleOpenFeedSheet}
               prescribedDailyVolumeMl={prescribedDailyVolumeMl}
               onPrescribedDailyVolumeChange={setPrescribedDailyVolumeMl}
               administeredVolumeMl={administeredVolumeMl}
@@ -484,6 +478,7 @@ export default function Home() {
                 calculationResult={calculationResult}
                 onResetPatient={handleResetPatient}
                 ages={ages}
+                onOpenFeedSheet={handleOpenFeedSheet}
                 prescribedDailyVolumeMl={prescribedDailyVolumeMl}
                 onPrescribedDailyVolumeChange={setPrescribedDailyVolumeMl}
                 administeredVolumeMl={administeredVolumeMl}
