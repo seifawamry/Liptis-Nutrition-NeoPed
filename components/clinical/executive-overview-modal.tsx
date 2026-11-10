@@ -9,6 +9,8 @@ import {
   BookOpen,
   Sparkles,
   Layers,
+  FileText,
+  Download,
 } from "lucide-react";
 import { APP_VERSION, APP_VERSION_LABEL, ENGINE_VERSION, CLINICAL_GOVERNANCE } from "@/lib/version";
 
@@ -93,6 +95,21 @@ export function ExecutiveOverviewModal({ isOpen, onClose }: ExecutiveOverviewMod
             <p className="text-sm text-slate-700 leading-relaxed">
               <strong>Liptis Nutrition NeoPed™</strong> was engineered as an institutional clinical decision support platform to bridge international peer-reviewed preterm guidelines with everyday bedside practice in Neonatal Intensive Care Units (NICUs). By integrating the <strong>ESPGHAN 2022 Preterm Enteral Nutrition Position Paper (PMID: 36705703)</strong>, <strong>Fenton 2013 Preterm Growth Curves (PMID: 23601190)</strong>, and <strong>WHO 2006 Child Growth Standards (PMID: 16817681)</strong>, the application empowers neonatologists and pediatricians to eliminate mathematical prescribing errors, calculate exact scoops and volumes, and monitor somatic growth with 100% transparent scientific provenance.
             </p>
+            <div className="pt-2 flex flex-wrap items-center gap-3">
+              <a
+                href="/Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+                download="Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-600 text-white font-bold text-xs shadow-sm hover:shadow transition-all inline-flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4 text-blue-200" />
+                <span>Download Doctor & KOL Presentation Guide (PDF)</span>
+              </a>
+              <span className="text-xs text-slate-600 font-medium">
+                4-page illustrated briefing prepared for Key Opinion Leaders & NICU Faculty
+              </span>
+            </div>
           </div>
 
           {/* 7 Core Architectural Pillars with Direct Verified Sources */}
@@ -648,8 +665,19 @@ export function ExecutiveOverviewModal({ isOpen, onClose }: ExecutiveOverviewMod
 
         {/* Modal Footer */}
         <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <div className="text-xs text-slate-500 font-medium">
-            Liptis Nutrition NeoPed™ Clinical Suite • {APP_VERSION_LABEL} • {ENGINE_VERSION}
+          <div className="text-xs text-slate-500 font-medium flex flex-wrap items-center gap-2 sm:gap-3">
+            <span>Liptis Nutrition NeoPed™ Clinical Suite • {APP_VERSION_LABEL} • {ENGINE_VERSION}</span>
+            <span className="hidden sm:inline text-slate-300">•</span>
+            <a
+              href="/Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+              download="Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-bold text-blue-700 hover:underline inline-flex items-center gap-1"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Doctor & KOL Guide PDF</span>
+            </a>
           </div>
           <button
             type="button"

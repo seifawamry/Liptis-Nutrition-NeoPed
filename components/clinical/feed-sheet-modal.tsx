@@ -155,7 +155,18 @@ export function FeedSheetModal({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2.5 self-end sm:self-center w-full sm:w-auto justify-end">
+          <div className="flex flex-wrap items-center gap-2 self-end sm:self-center w-full sm:w-auto justify-end">
+            <a
+              href="/Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+              download="Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 rounded-lg bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition-all"
+              title="Download official 4-page Doctor & Key Opinion Leader Clinical Presentation Guide PDF"
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Doctor Guide (PDF)</span>
+            </a>
             <button
               id="print-feed-sheet-btn"
               ref={printBtnRef}

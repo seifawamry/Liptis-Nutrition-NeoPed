@@ -2,7 +2,7 @@
 
 import React from "react";
 import Image from "next/image";
-import { Printer, ShieldCheck, Activity, LineChart, Columns, Sparkles, BookOpen } from "lucide-react";
+import { Printer, ShieldCheck, Activity, LineChart, Columns, Sparkles, BookOpen, FileText, Download } from "lucide-react";
 import { cn } from "./ui-primitives";
 import { APP_VERSION, APP_VERSION_LABEL, CLINICAL_GOVERNANCE } from "@/lib/version";
 
@@ -105,8 +105,21 @@ export function ClinicalHeader({
             </div>
           </div>
 
-          {/* Clinical Action Buttons: Sleek 2-column grid on mobile */}
-          <div className="grid grid-cols-2 gap-2 w-full md:flex md:w-auto">
+          {/* Clinical Action Buttons: Sleek responsive grid / row */}
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-1.5 sm:gap-2 w-full md:w-auto">
+            <a
+              href="/Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+              download="Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Download Doctor & Key Opinion Leader (KOL) Clinical Guide PDF"
+              className="px-2.5 sm:px-3.5 py-2 min-h-[44px] rounded-lg bg-indigo-700 hover:bg-indigo-600 active:bg-indigo-800 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 sm:gap-2 border border-indigo-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300"
+            >
+              <FileText className="w-4 h-4 shrink-0 text-indigo-200" aria-hidden="true" />
+              <span className="sm:hidden">KOL Guide</span>
+              <span className="hidden sm:inline">Doctor & KOL Guide (PDF)</span>
+            </a>
+
             {onOpenExecutiveOverview && (
               <button
                 id="executive-overview-btn"
@@ -118,7 +131,7 @@ export function ClinicalHeader({
               >
                 <BookOpen className="w-4 h-4 shrink-0 text-blue-200" aria-hidden="true" />
                 <span className="sm:hidden">Overview</span>
-                <span className="hidden sm:inline">Executive Overview & Evidence</span>
+                <span className="hidden sm:inline">Executive Overview</span>
               </button>
             )}
 
@@ -128,11 +141,11 @@ export function ClinicalHeader({
               onClick={onOpenFeedSheet}
               aria-haspopup="dialog"
               aria-label="Generate Clinical Feed Sheet printable hospital document"
-              className="px-2.5 sm:px-3.5 py-2 min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 sm:gap-2 border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
+              className="col-span-2 sm:col-span-1 px-2.5 sm:px-3.5 py-2 min-h-[44px] rounded-lg bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white text-xs font-semibold shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 sm:gap-2 border border-emerald-400/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"
             >
               <Printer className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span className="sm:hidden">Print Sheet</span>
-              <span className="hidden sm:inline">Generate Clinical Feed Sheet</span>
+              <span className="sm:hidden">Print Hospital Sheet</span>
+              <span className="hidden sm:inline">Generate Hospital Feed Sheet</span>
             </button>
           </div>
         </div>

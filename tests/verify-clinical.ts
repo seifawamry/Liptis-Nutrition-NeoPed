@@ -993,12 +993,59 @@ assert(
   resTrace1.deliveredProteinGramsPerDay === resTrace2.deliveredProteinGramsPerDay,
   "Calculations are 100% deterministic pure math with zero network dependencies"
 );
-assert(
-  resTrace1.totalDailyVolumeMl === resTrace2.totalDailyVolumeMl &&
-  resTrace1.deliveredEnergyKcalPerDay === resTrace2.deliveredEnergyKcalPerDay &&
-  resTrace1.deliveredProteinGramsPerDay === resTrace2.deliveredProteinGramsPerDay,
-  "Calculations are 100% deterministic pure math with zero network dependencies"
-);
+
+// =============================================================================
+// DOMAIN 17: SCOOPS, STERILE WATER & BEDSIDE INTERVALS VERIFICATION
+// =============================================================================
+console.log("\n--- Domain 17: Scoops, Sterile Water & Bedside Interval Verification ---");
+
+// Test 17.1: Preterm 1,350g VLBW infant at 150 mL/kg/d -> Total 202.5 mL
+const resVlbw = calculateLbwNutrition(1350, 150);
+assert(resVlbw.totalDailyVolumeMl === 202.5, `Total volume is 202.5 mL: got ${resVlbw.totalDailyVolumeMl}`);
+
+// Powder mass: 202.5 * 0.15 = 30.375g -> 30.4g
+const pld = resVlbw.deliveredNutrientPayload;
+assert(pld !== null && pld !== undefined, "Delivered nutrient payload is generated");
+if (pld) {
+  assert(pld.dailyPowderGrams === 30.4, `Daily powder is 30.4g: got ${pld.dailyPowderGrams}`);
+  // Scoops: 30.375 / 5 = 6.075 -> 6.1 scoops/day
+  assert(pld.dailyScoops === 6.1, `Daily scoops is 6.1 scoops: got ${pld.dailyScoops}`);
+  // Water volume: 202.5 * 0.9 = 182.25 mL -> 182.3 mL
+  assert(pld.waterVolumeMlPerDay === 182.3, `Water volume is 182.3 mL: got ${pld.waterVolumeMlPerDay}`);
+  // q3h scoops: 6.1 / 8 = 0.76 -> 0.8 scoops/feed
+  assert(pld.scoopsPerFeedQ3h === 0.8, `q3h scoops is 0.8: got ${pld.scoopsPerFeedQ3h}`);
+  // q2h scoops: 6.1 / 12 = 0.51 -> 0.5 scoops/feed
+  assert(pld.scoopsPerFeedQ2h === 0.5, `q2h scoops is 0.5: got ${pld.scoopsPerFeedQ2h}`);
+}
+
+// Test 17.2: Bedside schedule verification (q3h, q2h, continuous)
+assert(resVlbw.feedingSchedule !== null, "Feeding schedule is generated");
+if (resVlbw.feedingSchedule) {
+  assert(resVlbw.feedingSchedule.q3hVolumePerFeedMl === 25.3, `q3h volume is 25.3 mL: got ${resVlbw.feedingSchedule.q3hVolumePerFeedMl}`);
+  assert(resVlbw.feedingSchedule.q2hVolumePerFeedMl === 16.9, `q2h volume is 16.9 mL: got ${resVlbw.feedingSchedule.q2hVolumePerFeedMl}`);
+  assert(resVlbw.feedingSchedule.continuousInfusionMlPerHour === 8.4, `Continuous is 8.4 mL/hr: got ${resVlbw.feedingSchedule.continuousInfusionMlPerHour}`);
+}
+
+// Test 17.3: Term graduation infant (>3,500g) uses Pediamil 1 dilution (13.7%) & scoop (4.57g)
+const resTerm = calculateLbwNutrition(3800, 150);
+const pldTerm = resTerm.deliveredNutrientPayload;
+assert(resTerm.isGraduated === true, "3,800g infant is classified as graduated");
+if (pldTerm) {
+  // Volume: 3.8 * 150 = 570 mL
+  // Powder: 570 * 0.137 = 78.09 -> 78.1g
+  assert(pldTerm.dailyPowderGrams === 78.1, `Graduated powder is 78.1g: got ${pldTerm.dailyPowderGrams}`);
+  // Scoops: 78.09 / 4.57 = 17.08 -> 17.1 scoops
+  assert(pldTerm.dailyScoops === 17.1, `Graduated scoops is 17.1 scoops: got ${pldTerm.dailyScoops}`);
+  assert(pldTerm.waterVolumeMlPerDay === 513, `Graduated water volume is 513 mL: got ${pldTerm.waterVolumeMlPerDay}`);
+}
+
+// Test 17.4: Official Doctor & KOL Clinical Guide PDF asset availability
+const publicPdfPath = path.join(__dirname, "../public/Liptis_Nutrition_NeoPed_Doctor_Guide.pdf");
+assert(fs.existsSync(publicPdfPath), "Liptis_Nutrition_NeoPed_Doctor_Guide.pdf is present in public/ directory");
+if (fs.existsSync(publicPdfPath)) {
+  const stat = fs.statSync(publicPdfPath);
+  assert(stat.size > 100000, `Doctor Guide PDF has valid size (>100KB): ${stat.size} bytes`);
+}
 
 console.log("================================================================================");
 console.log(`TEST SUMMARY: ${testsPassed} PASSED, ${testsFailed} FAILED`);
@@ -1007,5 +1054,5 @@ console.log("===================================================================
 if (testsFailed > 0) {
   process.exit(1);
 } else {
-  console.log(">> ALL 16 CLINICAL ACCEPTANCE TEST DOMAINS VERIFIED SUCCESSFULLY! <<\n");
+  console.log(">> ALL 17 CLINICAL ACCEPTANCE TEST DOMAINS VERIFIED SUCCESSFULLY! <<\n");
 }

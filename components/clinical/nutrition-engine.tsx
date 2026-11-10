@@ -990,16 +990,29 @@ export function NutritionEngine({
                 </p>
               </div>
 
-              {onOpenFeedSheet && (
-                <button
-                  type="button"
-                  onClick={onOpenFeedSheet}
-                  className="min-h-[44px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              <div className="flex flex-wrap items-center gap-2.5">
+                <a
+                  href="/Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+                  download="Liptis_Nutrition_NeoPed_Doctor_Guide.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="min-h-[44px] px-4 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400"
                 >
-                  <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
-                  <span>Download Calculation Sheet (PDF)</span>
-                </button>
-              )}
+                  <FileText className="w-4 h-4 shrink-0 text-indigo-200" aria-hidden="true" />
+                  <span>Doctor & KOL Guide (PDF)</span>
+                </a>
+
+                {onOpenFeedSheet && (
+                  <button
+                    type="button"
+                    onClick={onOpenFeedSheet}
+                    className="min-h-[44px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 transition-all shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                  >
+                    <Download className="w-4 h-4 shrink-0" aria-hidden="true" />
+                    <span>Download Calculation Sheet (PDF)</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Embedded Live Calculation Worksheet Preview */}
